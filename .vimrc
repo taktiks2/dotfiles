@@ -142,7 +142,8 @@ set noswapfile
 set shiftwidth=4
 
 " tab文字数
-set tabstop=4
+set tabstop=2
+autocmd FileType python setl ts=4
 
 
 "==============================================================================
@@ -169,7 +170,7 @@ set showmatch
 syntax enable
 
 " 空白文字を可視化
-set listchars=eol:$,tab:>.,trail:_
+set listchars=tab:>-,trail:_
 set list
 
 "==============================================================================
