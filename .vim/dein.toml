@@ -27,6 +27,12 @@ repo = 'ervandew/supertab'
 # Language Server Protcol
 [[plugins]]
 repo = 'prabirshrestha/vim-lsp'
+[[plugins]]
+repo = 'prabirshrestha/async.vim'
+[[plugins]]
+repo = 'prabirshrestha/asyncomplete.vim'
+[[plugins]]
+repo = 'prabirshrestha/asyncomplete-lsp.vim'
 
 # LSPの設定？
 [[plugins]]
@@ -57,3 +63,10 @@ repo = 'fatih/vim-go'
 # html
 [[plugins]]
 repo = 'alvan/vim-closetag'
+
+# ウィンドウのリサイズを簡単にする
+[[plugins]]
+repo = 'simeji/winresizer'
+
+[[plugins]]
+repo = 'AndrewRadev/tagalong.vim'
