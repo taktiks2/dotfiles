@@ -68,5 +68,31 @@ repo = 'alvan/vim-closetag'
 [[plugins]]
 repo = 'simeji/winresizer'
 
-# [[plugins]]
- repo = 'AndrewRadev/tagalong.vim'
+# ペアのタグを自動で変更 html
+[[plugins]]
+repo = 'AndrewRadev/tagalong.vim'
+
+# カラースキーム用　ドラキュラ
+[[plugins]]
+repo = 'dracula/vim'
+
+# Fern-drawerのアイコンをカスタマイズ
+[[plugins]]
+repo = 'lambdalisue/nerdfont.vim'
+[[plugins]]
+repo = 'lambdalisue/fern-renderer-nerdfont.vim'
+hook_add = '''
+  let g:fern#renderer = 'nerdfont'
+'''
+[[plugins]]
+repo = 'lambdalisue/glyph-palette.vim'
+hook_add = '''
+  augroup my-glyph-palette
+    autocmd! *
+    autocmd FileType fern call glyph_palette#apply()
+    autocmd FileType nerdtree,startify call glyph_palette#apply()
+  augroup END
+'''
+# Fernにgitの情報を表示
+[[plugins]]
+repo = 'lambdalisue/fern-git-status.vim'
