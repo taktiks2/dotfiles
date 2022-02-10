@@ -144,6 +144,7 @@ set shiftwidth=4
 " tab文字数
 set tabstop=2
 autocmd FileType python setl ts=4
+autocmd FileType python setl expandtab
 
 
 "==============================================================================
@@ -173,10 +174,16 @@ syntax enable
 set listchars=tab:>-,trail:_
 set list
 
+" ヘルプ日本語化
+set helplang=ja
+
 "==============================================================================
 " keymap
 " python自動実行
 nmap <F5> :!python %
-
+" Fern-drawer起動
+nmap <F1> :Fern-drawer .
+" lazygit起動
+nmap <F2> :vert term ++close lazygit
 " jedi-vim docstring 表示しない
 autocmd FileType python setlocal completeopt-=preview
