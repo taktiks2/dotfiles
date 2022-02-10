@@ -118,6 +118,7 @@ let g:ale_echo_msg_error_str = 'E'
 let g:ale_echo_msg_warning_str = 'W'
 let g:ale_echo_msg_format = '[%linter%] %code: %%s [%severity%]'
 let g:ale_disable_lsp = 1
+let g:ale_set_highlights = 0
 let g:ale_linters = {
 \   'javascript': ['eslint'],
 \   'python': ['flake8'],
@@ -209,6 +210,14 @@ set showtabline=2
 
 " コマンドラインでの入力補完
 set wildmenu
+
+" カラースキーム
+colorscheme dracula
+
+" 白源フォント GUI設定
+set guifont=HackGenNerd:h16
+set printfont=HackGenNerd:h12
+set ambiwidth=double
 "==============================================================================
 " keymap
 " python自動実行
