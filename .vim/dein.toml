@@ -1,0 +1,59 @@
+# ツリー表示
+[[plugins]]
+repo = 'lambdalisue/fern.vim'
+[[plugins]]
+repo = 'yuki-yano/fern-preview.vim'
+
+# ペア補完
+[[plugins]]
+repo = 'jiangmiao/auto-pairs'
+
+# 多言語色変え
+[[plugins]]
+repo = 'sheerun/vim-polyglot'
+
+# ステータスバーカスタマイズ
+[[plugins]]
+repo = 'vim-airline/vim-airline'
+
+# コメントアウト gcc gc
+[[plugins]]
+repo = 'tpope/vim-commentary'
+
+# タブ補完
+[[plugins]]
+repo = 'ervandew/supertab'
+
+# Language Server Protcol
+[[plugins]]
+repo = 'prabirshrestha/vim-lsp'
+
+# LSPの設定？
+[[plugins]]
+repo = 'mattn/vim-lsp-settings'
+
+# c/c++補完
+[[plugins]]
+repo = 'justmao945/vim-clang'
+
+# リンタ
+[[plugins]]
+repo = 'w0rp/ale'
+
+# スニペット
+[[plugins]]
+repo = 'Shougo/neosnippet'
+[[plugins]]
+repo = 'Shougo/neosnippet-snippets'
+
+# Arduino syntax highlight
+[[plugins]]
+repo = 'sudar/vim-arduino-syntax'
+
+# golang IDE
+[[plugins]]
+repo = 'fatih/vim-go'
+
+# html
+[[plugins]]
+repo = 'alvan/vim-closetag'
