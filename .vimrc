@@ -138,15 +138,35 @@ set showcmd
 " スワップファイルを作らない
 set noswapfile
 
+" インデントを考慮して改行
+set smartindent
+
 " オートインデント文字数
-set shiftwidth=4
+set shiftwidth=2
 
 " tab文字数
 set tabstop=2
+
 autocmd FileType python setl ts=4
+" tabをスペースに展開する
 autocmd FileType python setl expandtab
 
+" Undoの永続化
+if has('persistent_undo')
+  let undo_path = expand('~/.vim/undo')
+  " ディレクトリーが存在しない場合は作成
+  if !isdirectory(undo_path)
+    call mkdir(undo_path,'p')
+  endif
+  let &undodir = undo_path
+  set undofile
+endif
 
+" 無名レジスタとクリップボードレジスタを同期
+set clipboard+=unnamedplus
+
+" テキストのない部分を矩形選択可能にする
+set virtualedit=block
 "==============================================================================
 " appearance
 " 行番号表示
@@ -161,8 +181,15 @@ set incsearch
 " 検索文字ハイライト
 set hlsearch
 
+" 大文字・小文字の区別しない
+set ignorecase
+
+" 大文字を入力した場合、大文字・小文字を区別する
+set smartcase
+
 " 現在の行を強調表示
-" set cursorline
+set cursorline
+set cursorcolumn
 
 " 括弧入力時に補完
 set showmatch
@@ -177,6 +204,11 @@ set list
 " ヘルプ日本語化
 set helplang=ja
 
+" タブラインを常に表示
+set showtabline=2
+
+" コマンドラインでの入力補完
+set wildmenu
 "==============================================================================
 " keymap
 " python自動実行
