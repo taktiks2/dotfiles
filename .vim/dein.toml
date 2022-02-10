@@ -44,7 +44,7 @@ repo = 'justmao945/vim-clang'
 
 # リンタ
 [[plugins]]
-repo = 'w0rp/ale'
+repo = 'dense-analysis/ale'
 
 # スニペット
 [[plugins]]
@@ -68,5 +68,5 @@ repo = 'alvan/vim-closetag'
 [[plugins]]
 repo = 'simeji/winresizer'
 
-[[plugins]]
-repo = 'AndrewRadev/tagalong.vim'
+# [[plugins]]
+ repo = 'AndrewRadev/tagalong.vim'
