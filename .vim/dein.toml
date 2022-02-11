@@ -117,3 +117,7 @@ repo = 'mechatroner/rainbow_csv'
 # ヤンクハイライト
 [[plugins]]
 repo = 'machakann/vim-highlightedyank'
+
+# emmet for vim
+[[plugins]]
+repo = 'mattn/emmet-vim'

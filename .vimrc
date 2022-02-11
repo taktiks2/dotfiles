@@ -48,6 +48,11 @@ if len(s:removed_plugins) > 0
 endif
 " }}}
 "==============================================================================
+" vim-plug
+call plug#begin('~/.vim/plugged')
+Plug 'turbio/bracey.vim', {'do': 'npm install --prefix server'}
+call plug#end()
+"==============================================================================
 "neosnippet Scripts-----------------------------
 imap <C-k>     <Plug>(neosnippet_expand_or_jump)
 smap <C-k>     <Plug>(neosnippet_expand_or_jump)
@@ -218,6 +223,19 @@ colorscheme dracula
 set guifont=HackGenNerd:h16
 set printfont=HackGenNerd:h12
 set ambiwidth=double
+
+" terminalモードの色
+let g:terminal_ansi_colors = [
+    \ 'black',
+    \ 'red',
+    \ 'green',
+    \ 'yellow',
+    \ 'blue',
+    \ 'magenta',
+    \ 'cyan',
+    \ 'white',
+    \ ]
+
 "==============================================================================
 " keymap
 " python自動実行
