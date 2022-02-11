@@ -224,25 +224,14 @@ set guifont=HackGenNerd:h16
 set printfont=HackGenNerd:h12
 set ambiwidth=double
 
-" terminalモードの色
-let g:terminal_ansi_colors = [
-    \ 'black',
-    \ 'red',
-    \ 'green',
-    \ 'yellow',
-    \ 'blue',
-    \ 'magenta',
-    \ 'cyan',
-    \ 'white',
-    \ ]
+" terminalモードの色付け
+set termguicolors
 
 "==============================================================================
 " keymap
 " python自動実行
 nmap <F5> :!python %
 " Fern-drawer起動
-nmap <F1> :Fern-drawer .
+nmap <F2> :Fern-drawer .
 " lazygit起動
-nmap <F2> :vert term ++close lazygit
-" jedi-vim docstring 表示しない
-autocmd FileType python setlocal completeopt-=preview
+nmap <F3> :vert term
