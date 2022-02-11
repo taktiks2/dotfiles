@@ -1,0 +1,10 @@
+[user]
+	name = taktiks2
+	email = deathproof.lee@gmail.com
+[init]
+	defaultBranch = main
+[core]
+	editor = vim
+[alias]
+	gr = log --oneline --all --graph --tags
+	st = status

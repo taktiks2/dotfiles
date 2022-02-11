@@ -2,6 +2,7 @@
 cd ~
 ln -s ~/dotfiles/.vim .
 ln -s ~/dotfiles/.vimrc .
+ln -s ~/dotfiles/.gitconfig .
 
 # Fernにアイコンを表示するためのフォントを配置
 # Debianでは動作確認済 Archでは上手く行かなかった
