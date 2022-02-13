@@ -227,6 +227,8 @@ set ambiwidth=double
 " terminalモードの色付け
 set termguicolors
 
+" for tmux
+" set term=screen-256color
 "==============================================================================
 " keymap
 " python自動実行
