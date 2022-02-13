@@ -234,4 +234,4 @@ nmap <F5> :!python %
 " Fern-drawer起動
 nmap <F2> :Fern-drawer .
 " lazygit起動
-nmap <F3> :vert term
+nmap <F3> :!lazygit
