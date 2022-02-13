@@ -4,6 +4,7 @@ ln -s ~/dotfiles/.vim .
 ln -s ~/dotfiles/.vimrc .
 ln -s ~/dotfiles/.gitconfig .
 ln -s ~/dotfiles/.sqliterc .
+echo ~/dotfiles/conda-auto-env/conda_auto_env.sh >> .bashrc
 
 # Fernにアイコンを表示するためのフォントを配置
 # Debianでは動作確認済 Archでは上手く行かなかった
