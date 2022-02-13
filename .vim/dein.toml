@@ -73,7 +73,7 @@ repo = 'sudar/vim-arduino-syntax'
 [[plugins]]
 repo = 'fatih/vim-go'
 
-# html
+# html auto close tag
 [[plugins]]
 repo = 'alvan/vim-closetag'
 
@@ -121,3 +121,38 @@ repo = 'machakann/vim-highlightedyank'
 # emmet for vim
 [[plugins]]
 repo = 'mattn/emmet-vim'
+
+# 対応タグのハイライト
+[[plugins]]
+repo = 'valloric/matchtagalways'
+
+# インデント階層のガイド
+[[plugins]]
+repo = 'nathanaelkane/vim-indent-guides'
+hook_add = '''
+  let g:indent_guides_enable_on_vim_startup = 1
+'''
+
+# css カラーコード　色付け
+[[plugins]]
+repo = 'gorodinskiy/vim-coloresque'
+
+# 爆速カーソル移動
+[[plugins]]
+repo = 'easymotion/vim-easymotion'
+hook_add = '''
+  " <Leader>f{char} to move to {char}
+  map  <Leader>f <Plug>(easymotion-bd-f)
+  nmap <Leader>f <Plug>(easymotion-overwin-f)
+
+  " s{char}{char} to move to {char}{char}
+  nmap s <Plug>(easymotion-overwin-f2)
+
+  " Move to line
+  map <Leader>L <Plug>(easymotion-bd-jk)
+  nmap <Leader>L <Plug>(easymotion-overwin-line)
+
+  " Move to word
+  map  <Leader>w <Plug>(easymotion-bd-w)
+  nmap <Leader>w <Plug>(easymotion-overwin-w)
+'''
