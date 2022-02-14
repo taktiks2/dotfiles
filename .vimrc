@@ -173,6 +173,10 @@ set clipboard+=unnamedplus
 
 " テキストのない部分を矩形選択可能にする
 set virtualedit=block
+
+" spellチェック無効（プラグイン使用のため）
+set nospell
+
 "==============================================================================
 " appearance
 " 行番号表示

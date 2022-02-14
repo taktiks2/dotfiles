@@ -156,3 +156,36 @@ hook_add = '''
   map  <Leader>w <Plug>(easymotion-bd-w)
   nmap <Leader>w <Plug>(easymotion-overwin-w)
 '''
+
+# vimセッション保存
+[[plugins]]
+repo = 'tpope/vim-obsession'
+
+# vimスペルチェック
+[[plugins]]
+repo = 'kamykn/spelunker.vim'
+hook_add = '''
+  " spelunker.vim の有効化 (1 / 0) (default 1)
+  let g:enable_spelunker_vim = 1
+
+  " スペルチェックの対象となる単語あたりの最小の文字数 (default 4)
+  " 例) 4という設定値の場合、lenとかxxxLen、xxx_lenとかのlenは3文字のため対象としません。
+  let g:spelunker_target_min_char_len = 4
+
+  " ZL/Zl コマンドで表示される候補数 (default 15)
+  let g:spelunker_max_suggest_words = 15
+
+  " 1バッファあたり検出する単語数の最大 (default 100)
+  let g:spelunker_max_hi_words_each_buf = 100
+
+  " highlightのグループ設定 (通常のtypo用)
+  let g:spelunker_spell_bad_group = 'SpelunkerSpellBad'
+
+  " highlightのグループ設定 (複合語等の場合用)
+  " Override highlight group name of complex or compound words. (default 'SpelunkerComplexOrCompoundWord')
+  let g:spelunker_complex_or_compound_word_group = 'SpelunkerComplexOrCompoundWord'
+
+  " Highlightの設定
+  highlight SpelunkerSpellBad cterm=underline ctermfg=247 gui=underline guifg=#9e9e9e
+  highlight SpelunkerComplexOrCompoundWord cterm=underline ctermfg=NONE gui=underline guifg=NONE
+'''
