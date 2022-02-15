@@ -18,6 +18,7 @@ endif
 if dein#load_state(s:dein_dir)
   call dein#begin(s:dein_dir)
 
+
   " .toml file
   let s:rc_dir = expand('~/.vim')
   if !isdirectory(s:rc_dir)
@@ -174,7 +175,7 @@ set clipboard+=unnamedplus
 " テキストのない部分を矩形選択可能にする
 set virtualedit=block
 
-" spellチェック無効（プラグイン使用のため）
+" spellチェック
 set nospell
 
 "==============================================================================
@@ -231,8 +232,6 @@ set ambiwidth=double
 " terminalモードの色付け
 set termguicolors
 
-" for tmux
-" set term=screen-256color
 "==============================================================================
 " keymap
 " python自動実行
