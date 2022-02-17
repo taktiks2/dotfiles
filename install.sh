@@ -27,4 +27,4 @@
 # ddc.vimのためにdenoをインストールする
 curl -fsSL https://deno.land/install.sh | sh
 cd /usr/bin/
-ln -s ~/.deno/bin/deno .
+sudo ln -s ~/.deno/bin/deno .
