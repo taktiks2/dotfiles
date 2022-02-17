@@ -178,6 +178,22 @@ set virtualedit=block
 " spellチェック
 set nospell
 
+"fcitx vi協調モード
+"##### auto fcitx  ###########
+let g:input_toggle = 1
+function! Fcitx2en()
+   let s:input_status = system("fcitx-remote")
+   if s:input_status == 2
+      let g:input_toggle = 1
+      let l:a = system("fcitx-remote -c")
+   endif
+endfunction
+
+set ttimeoutlen=150
+"Leave Insert mode
+autocmd InsertLeave * call Fcitx2en()
+"##### auto fcitx end ######
+
 "==============================================================================
 " appearance
 " 行番号表示
@@ -240,3 +256,12 @@ nmap <F5> :!python %
 nmap <F2> :Fern-drawer .
 " lazygit起動
 nmap <F3> :!lazygit
+" .vimrcを編集
+nmap <F6> :edit $MYVIMRC
+".vim/dein.tomlを編集
+nmap <F7> :edit ~/.vim/dein.toml
+" .vimrcを読み込み
+nmap <F8> :source $MYVIMRC
+" escを使いやすくする
+noremap <C-j> <esc>
+noremap! <C-j> <esc>
