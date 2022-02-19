@@ -208,3 +208,11 @@ hook_add = '''
   " <S-TAB>: completion back.
   inoremap <expr><S-TAB>  ddc#map#pum_visible() ? '<C-p>' : '<C-h>'
 '''
+
+# ファイル検索
+[[plugins]]
+repo = 'kien/ctrlp.vim'
+
+# 括弧を一発変換
+[[plugins]]
+repo = 'tpope/vim-surround'

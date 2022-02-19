@@ -253,15 +253,18 @@ set termguicolors
 " python自動実行
 nmap <F5> :!python %
 " Fern-drawer起動
-nmap <F2> :Fern-drawer .
-" lazygit起動
-nmap <F3> :!lazygit
+nmap <F2> :Fern-drawer .<CR>
+" ALEのトグル
+nmap <F3> :ALEToggle<CR>
 " .vimrcを編集
-nmap <F6> :edit $MYVIMRC
+nmap <F6> :edit $MYVIMRC<CR>
 ".vim/dein.tomlを編集
-nmap <F7> :edit ~/.vim/dein.toml
+nmap <F7> :edit ~/.vim/dein.toml<CR>
 " .vimrcを読み込み
-nmap <F8> :source $MYVIMRC
+nmap <F8> :source $MYVIMRC<CR>
 " escを使いやすくする
 noremap <C-j> <esc>
 noremap! <C-j> <esc>
+" 挿入モード中に右へ移動する
+inoremap ^L ^[la
+inoremap <C-l> <Right>
