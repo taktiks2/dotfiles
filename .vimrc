@@ -256,6 +256,8 @@ nmap <F5> :!python %
 nmap <F2> :Fern-drawer .<CR>
 " ALEのトグル
 nmap <F3> :ALEToggle<CR>
+" Bracey起動
+nmap <F4> :Bracey<CR>
 " .vimrcを編集
 nmap <F6> :edit $MYVIMRC<CR>
 ".vim/dein.tomlを編集
