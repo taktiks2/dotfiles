@@ -190,10 +190,14 @@ function! Fcitx2en()
 endfunction
 
 set ttimeoutlen=150
-"Leave Insert mode
+" Leave Insert mode
 autocmd InsertLeave * call Fcitx2en()
 "##### auto fcitx end ######
 
+" matchit.vimの導入
+set nocompatible
+filetype plugin on
+runtime macros/matchit.vim
 "==============================================================================
 " appearance
 " 行番号表示
