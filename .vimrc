@@ -245,8 +245,8 @@ set wildmenu
 colorscheme dracula
 
 " 白源フォント GUI設定
-set guifont=HackGenNerd:h16
-set printfont=HackGenNerd:h12
+" set guifont=HackGenNerd:h16
+" set printfont=HackGenNerd:h12
 set ambiwidth=double
 
 " terminalモードの色付け

@@ -1,6 +1,9 @@
 # ツリー表示
 [[plugins]]
 repo = 'lambdalisue/fern.vim'
+hook_add = '''
+  let g:fern#default_hidden=1
+'''
 [[plugins]]
 repo = 'yuki-yano/fern-preview.vim'
 
