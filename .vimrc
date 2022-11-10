@@ -111,7 +111,7 @@ let g:clang_format_exec = 'clang-format'
 let g:clang_c_options = '-std=c11'
 let g:clang_cpp_options = '-std=c++1z -stdlib=libc++ -pedantic-errors'
 "==============================================================================
-"リンタ w0rp/sle
+"リンタ w0rp/ale
 let g:ale_sign_column_always = 1
 let g:ale_lint_on_enter = 1
 let g:ale_set_loclist = 0
