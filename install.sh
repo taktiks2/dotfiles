@@ -7,7 +7,7 @@ ln -s ~/dotfiles/.sqliterc .
 
 # conda仮想環境自動推移　ymlファイルがあるところで勝手に推移する
 # conda env export > environment.ymlを実行してymlファイルを作成すること
-echo "source ~/dotfiles/conda-auto-env/conda_auto_env.sh" >> ~/.bashrc
+# echo "source ~/dotfiles/conda-auto-env/conda_auto_env.sh" >> ~/.bashrc
 
 # tmuxの設定
 mkdir -p ~/.tmux/plugins/tpm

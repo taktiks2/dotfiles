@@ -85,8 +85,12 @@ repo = 'simeji/winresizer'
 repo = 'AndrewRadev/tagalong.vim'
 
 # カラースキーム用　ドラキュラ
+# italicは文字が欠けるため無効化した
 [[plugins]]
 repo = 'dracula/vim'
+hook_add = '''
+  let g:dracula_italic = 0
+'''
 
 # Fern-drawerのアイコンをカスタマイズ
 [[plugins]]
