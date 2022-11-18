@@ -112,25 +112,25 @@ let g:clang_c_options = '-std=c11'
 let g:clang_cpp_options = '-std=c++1z -stdlib=libc++ -pedantic-errors'
 "==============================================================================
 "リンタ w0rp/ale
-let g:ale_sign_column_always = 1
-let g:ale_lint_on_enter = 1
-let g:ale_set_loclist = 0
-let g:ale_set_quickfix = 1
-let g:ale_open_list = 1
-let g:ale_keep_list_window_open = 0
-let g:ale_sign_error = 'E'
-let g:ale_sign_warning = 'W'
-let g:ale_echo_msg_error_str = 'E'
-let g:ale_echo_msg_warning_str = 'W'
-let g:ale_echo_msg_format = '[%linter%] %code: %%s [%severity%]'
-let g:ale_disable_lsp = 1
-let g:ale_set_highlights = 0
-let g:ale_linters = {
-\   'javascript': ['eslint'],
-\   'python': ['flake8'],
-\	'c': ['clang'],
-\	'cpp': ['clang']
-\}
+" let g:ale_sign_column_always = 1
+" let g:ale_lint_on_enter = 1
+" let g:ale_set_loclist = 0
+" let g:ale_set_quickfix = 1
+" let g:ale_open_list = 1
+" let g:ale_keep_list_window_open = 0
+" let g:ale_sign_error = 'E'
+" let g:ale_sign_warning = 'W'
+" let g:ale_echo_msg_error_str = 'E'
+" let g:ale_echo_msg_warning_str = 'W'
+" let g:ale_echo_msg_format = '[%linter%] %code: %%s [%severity%]'
+" let g:ale_disable_lsp = 1
+" let g:ale_set_highlights = 0
+" let g:ale_linters = {
+" \   'javascript': ['eslint'],
+" \   'python': ['flake8'],
+" \	'c': ['clang'],
+" \	'cpp': ['clang']
+" \}
 "==============================================================================
 " setting
 " 文字コードutf-8
