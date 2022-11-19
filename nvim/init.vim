@@ -1,6 +1,5 @@
 "==============================================================================
 " dein.vim settings {{{
-"==============================================================================
 " install dir {{{
 let s:dein_dir = expand('~/.cache/dein')
 let s:dein_repo_dir = s:dein_dir . '/repos/github.com/Shougo/dein.vim'
@@ -55,8 +54,85 @@ call plug#begin('~/.vim/plugged')
 Plug 'turbio/bracey.vim', {'do': 'npm install --prefix server'}
 call plug#end()
 "==============================================================================
-" setting
+"neosnippet Scripts-----------------------------
+imap <C-k>     <Plug>(neosnippet_expand_or_jump)
+smap <C-k>     <Plug>(neosnippet_expand_or_jump)
+xmap <C-k>     <Plug>(neosnippet_expand_target)
+imap <expr><TAB> neosnippet#expandable_or_jumpable() ?
+      \ "\<Plug>(neosnippet_expand_or_jump)"
+      \: pumvisible() ? "\<C-n>" : "\<TAB>"
+smap <expr><TAB> neosnippet#expandable_or_jumpable() ?
+      \ "\<Plug>(neosnippet_expand_or_jump)"
+      \: "\<TAB>"
+if has('conceal')
+  set conceallevel=2 concealcursor=i
+endif
+let g:neosnippet#snippets_directory = '~/.vim/snippets/'
 "==============================================================================
+"fer-preview setup
+function! s:fern_settings() abort
+  nmap <silent> <buffer> p     <Plug>(fern-action-preview:toggle)
+  nmap <silent> <buffer> <C-p> <Plug>(fern-action-preview:auto:toggle)
+  nmap <silent> <buffer> <C-d> <Plug>(fern-action-preview:scroll:down:half)
+  nmap <silent> <buffer> <C-u> <Plug>(fern-action-preview:scroll:up:half)
+endfunction
+
+augroup fern-settings
+  autocmd!
+  autocmd FileType fern call s:fern_settings()
+augroup END
+"==============================================================================
+"vim-go setup
+let g:go_highlight_array_whitespace_error = 1
+let g:go_highlight_chan_whitespace_error = 1
+let g:go_highlight_extra_types = 1
+let g:go_highlight_space_tab_error = 1
+let g:go_highlight_trailing_whitespace_error = 1
+let g:go_highlight_operators = 1
+let g:go_highlight_functions = 1
+let g:go_highlight_function_arguments = 1
+let g:go_highlight_function_calls = 1
+let g:go_highlight_fields = 1
+let g:go_highlight_types = 1
+let g:go_highlight_build_constraints = 1
+let g:go_highlight_generate_tags = 1
+let g:go_highlight_variable_assignments = 1
+let g:go_highlight_variable_declarations = 1
+"==============================================================================
+"c/c++補完
+let g:clang_auto = 0
+let g:clang_complete_auto = 0
+let g:clang_auto_select = 0
+let g:clang_use_library = 1
+let g:clang_c_completeopt   = 'menuone'
+let g:clang_cpp_completeopt = 'menuone'
+let g:clang_exec = 'clang'
+let g:clang_format_exec = 'clang-format'
+let g:clang_c_options = '-std=c11'
+let g:clang_cpp_options = '-std=c++1z -stdlib=libc++ -pedantic-errors'
+"==============================================================================
+"リンタ w0rp/ale
+" let g:ale_sign_column_always = 1
+" let g:ale_lint_on_enter = 1
+" let g:ale_set_loclist = 0
+" let g:ale_set_quickfix = 1
+" let g:ale_open_list = 1
+" let g:ale_keep_list_window_open = 0
+" let g:ale_sign_error = 'E'
+" let g:ale_sign_warning = 'W'
+" let g:ale_echo_msg_error_str = 'E'
+" let g:ale_echo_msg_warning_str = 'W'
+" let g:ale_echo_msg_format = '[%linter%] %code: %%s [%severity%]'
+" let g:ale_disable_lsp = 1
+" let g:ale_set_highlights = 0
+" let g:ale_linters = {
+" \   'javascript': ['eslint'],
+" \   'python': ['flake8'],
+" \	'c': ['clang'],
+" \	'cpp': ['clang']
+" \}
+"==============================================================================
+" setting
 " 文字コードutf-8
 set fenc=utf-8
 
@@ -124,7 +200,6 @@ filetype plugin on
 runtime macros/matchit.vim
 "==============================================================================
 " appearance
-"==============================================================================
 " 行番号表示
 set number
 
@@ -179,7 +254,6 @@ set termguicolors
 
 "==============================================================================
 " keymap
-"==============================================================================
 " python自動実行
 nmap <F5> :!python %
 " Fern-drawer起動
