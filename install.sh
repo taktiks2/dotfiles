@@ -29,3 +29,4 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs https://raw.githubusercontent.c
 sudo apt install unzip
 curl -fsSL https://deno.land/install.sh | sh
 sudo ln -s ~/.deno/bin/deno /usr/bin/
+set -o noclobber
