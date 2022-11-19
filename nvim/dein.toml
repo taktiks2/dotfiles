@@ -6,19 +6,6 @@ hook_add = '''
 '''
 [[plugins]]
 repo = 'yuki-yano/fern-preview.vim'
-hook_add = '''
-  function! s:fern_settings() abort
-    nmap <silent> <buffer> p     <Plug>(fern-action-preview:toggle)
-    nmap <silent> <buffer> <C-p> <Plug>(fern-action-preview:auto:toggle)
-    nmap <silent> <buffer> <C-d> <Plug>(fern-action-preview:scroll:down:half)
-    nmap <silent> <buffer> <C-u> <Plug>(fern-action-preview:scroll:up:half)
-  endfunction
-
-  augroup fern-settings
-    autocmd!
-    autocmd FileType fern call s:fern_settings()
-  augroup END
-'''
 
 # ペア補完
 [[plugins]]
@@ -29,21 +16,21 @@ repo = 'jiangmiao/auto-pairs'
 repo = 'sheerun/vim-polyglot'
 
 # ステータスバーカスタマイズ
-# [[plugins]]
-# repo = 'vim-airline/vim-airline'
-# [[plugins]]
-# repo = 'vim-airline/vim-airline-themes'
-# [[plugins]]
-# repo = 'ryanoasis/vim-devicons'
-# hook_add = '''
-#   let g:airline_theme='dracula'
-#   let g:airline#extensions#tabline#enabled=1
-#   let g:airline_powerline_fonts=1
-# '''
+[[plugins]]
+repo = 'vim-airline/vim-airline'
+[[plugins]]
+repo = 'vim-airline/vim-airline-themes'
+[[plugins]]
+repo = 'ryanoasis/vim-devicons'
+hook_add = '''
+  let g:airline_theme='dracula'
+  let g:airline#extensions#tabline#enabled=1
+  let g:airline_powerline_fonts=1
+'''
 
 # Git用
-# [[plugins]]
-# repo = 'tpope/vim-fugitive'
+[[plugins]]
+repo = 'tpope/vim-fugitive'
 
 # コメントアウト gcc gc
 [[plugins]]
@@ -64,91 +51,26 @@ repo = 'tpope/vim-commentary'
 # repo = 'mattn/vim-lsp-settings'
 
 # c/c++補完
-# [[plugins]]
-# repo = 'justmao945/vim-clang'
-# hook_add = '''
-#   let g:clang_auto = 0
-#   let g:clang_complete_auto = 0
-#   let g:clang_auto_select = 0
-#   let g:clang_use_library = 1
-#   let g:clang_c_completeopt   = 'menuone'
-#   let g:clang_cpp_completeopt = 'menuone'
-#   let g:clang_exec = 'clang'
-#   let g:clang_format_exec = 'clang-format'
-#   let g:clang_c_options = '-std=c11'
-#   let g:clang_cpp_options = '-std=c++1z -stdlib=libc++ -pedantic-errors'
-# '''
+[[plugins]]
+repo = 'justmao945/vim-clang'
 
 # リンタ
 # [[plugins]]
 # repo = 'dense-analysis/ale'
-# hook_add = '''
-#   let g:ale_sign_column_always = 1
-#   let g:ale_lint_on_enter = 1
-#   let g:ale_set_loclist = 0
-#   let g:ale_set_quickfix = 1
-#   let g:ale_open_list = 1
-#   let g:ale_keep_list_window_open = 0
-#   let g:ale_sign_error = 'E'
-#   let g:ale_sign_warning = 'W'
-#   let g:ale_echo_msg_error_str = 'E'
-#   let g:ale_echo_msg_warning_str = 'W'
-#   let g:ale_echo_msg_format = '[%linter%] %code: %%s [%severity%]'
-#   let g:ale_disable_lsp = 1
-#   let g:ale_set_highlights = 0
-#   let g:ale_linters = {
-#   \   'javascript': ['eslint'],
-#   \   'python': ['flake8'],
-#   \   'c': ['clang'],
-#   \   'cpp': ['clang']
-#   \}
-# '''
 
 # スニペット
 [[plugins]]
 repo = 'Shougo/neosnippet'
-hook_add = '''
-  imap <C-k>     <Plug>(neosnippet_expand_or_jump)
-  smap <C-k>     <Plug>(neosnippet_expand_or_jump)
-  xmap <C-k>     <Plug>(neosnippet_expand_target)
-  imap <expr><TAB> neosnippet#expandable_or_jumpable() ?
-        \ "\<Plug>(neosnippet_expand_or_jump)"
-        \: pumvisible() ? "\<C-n>" : "\<TAB>"
-  smap <expr><TAB> neosnippet#expandable_or_jumpable() ?
-        \ "\<Plug>(neosnippet_expand_or_jump)"
-        \: "\<TAB>"
-  if has('conceal')
-    set conceallevel=2 concealcursor=i
-  endif
-  let g:neosnippet#snippets_directory = '~/.vim/snippets/'
-'''
 [[plugins]]
 repo = 'Shougo/neosnippet-snippets'
 
 # Arduino syntax highlight
-# [[plugins]]
-# repo = 'sudar/vim-arduino-syntax'
+[[plugins]]
+repo = 'sudar/vim-arduino-syntax'
 
 # golang IDE
-# [[plugins]]
-# repo = 'fatih/vim-go'
-# hook_add = '''
-#   let g:go_highlight_array_whitespace_error = 1
-#   let g:go_highlight_chan_whitespace_error = 1
-#   let g:go_highlight_extra_types = 1
-#   let g:go_highlight_space_tab_error = 1
-#   let g:go_highlight_trailing_whitespace_error = 1
-#   let g:go_highlight_operators = 1
-#   let g:go_highlight_functions = 1
-#   let g:go_highlight_function_arguments = 1
-#   let g:go_highlight_function_calls = 1
-#   let g:go_highlight_fields = 1
-#   let g:go_highlight_types = 1
-#   let g:go_highlight_build_constraints = 1
-#   let g:go_highlight_generate_tags = 1
-#   let g:go_highlight_variable_assignments = 1
-#   let g:go_highlight_variable_declarations = 1
-# '''
+[[plugins]]
+repo = 'fatih/vim-go'
 
 # html auto close tag
 [[plugins]]
@@ -187,14 +109,13 @@ hook_add = '''
     autocmd FileType nerdtree,startify call glyph_palette#apply()
   augroup END
 '''
-
 # Fernにgitの情報を表示
-# [[plugins]]
-# repo = 'lambdalisue/fern-git-status.vim'
+[[plugins]]
+repo = 'lambdalisue/fern-git-status.vim'
 
 # csvファイルを色分け
-# [[plugins]]
-# repo = 'mechatroner/rainbow_csv'
+[[plugins]]
+repo = 'mechatroner/rainbow_csv'
 
 # ヤンクハイライト
 [[plugins]]
@@ -216,8 +137,8 @@ hook_add = '''
 '''
 
 # css カラーコード　色付け
-# [[plugins]]
-# repo = 'gorodinskiy/vim-coloresque'
+[[plugins]]
+repo = 'gorodinskiy/vim-coloresque'
 
 # 爆速カーソル移動
 [[plugins]]
