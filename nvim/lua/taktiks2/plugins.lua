@@ -17,7 +17,6 @@ packer.startup(function(use)
   use 'Mofiqul/dracula.nvim'
   use 'akinsho/bufferline.nvim'
 
-  use 'nvim-tree/nvim-tree.lua'
   use 'nvim-tree/nvim-web-devicons'
 
   use 'nvim-lua/plenary.nvim'
@@ -35,6 +34,7 @@ packer.startup(function(use)
 
   use 'windwp/nvim-autopairs'
   use 'windwp/nvim-ts-autotag'
+  use 'numToStr/Comment.nvim'
 
   use 'lewis6991/gitsigns.nvim'
   use 'dinhhuy258/git.nvim'
