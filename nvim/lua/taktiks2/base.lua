@@ -1,3 +1,5 @@
+vim.cmd("autocmd!")
+
 local opt = vim.opt
 
 opt.encoding = 'utf-8'

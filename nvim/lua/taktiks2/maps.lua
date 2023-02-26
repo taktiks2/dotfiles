@@ -1,4 +1,7 @@
+vim.cmd("autocmd!")
+
 local keymap = vim.keymap
+
 keymap.set('v', '<C-j>', '<esc>')
 keymap.set('i', '<C-j>', '<esc>')
 keymap.set('i', '<C-l>', '<right>')

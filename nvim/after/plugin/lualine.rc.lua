@@ -1,7 +1,10 @@
-require('lualine').setup {
+local status, lualine = pcall(require, "lualine")
+if (not status) then return end
+
+lualine.setup ({
   options = {
     icons_enabled = true,
-    theme = 'dracula-nvim',
+    theme = 'dracula',
     component_separators = { left = '', right = ''},
     section_separators = { left = '', right = ''},
     disabled_filetypes = {
@@ -37,4 +40,4 @@ require('lualine').setup {
   winbar = {},
   inactive_winbar = {},
   extensions = {}
-}
+})
