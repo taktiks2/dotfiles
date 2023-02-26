@@ -1,4 +1,6 @@
-local dracula = require("dracula")
+local status, dracula = pcall(require, "dracula")
+if (not status) then return end
+
 dracula.setup({
   -- customize dracula color palette
   colors = {
@@ -41,4 +43,5 @@ dracula.setup({
     -- Nothing = {} -- clear highlight of Nothing
   },
 })
+
 vim.cmd[[colorscheme dracula]]
