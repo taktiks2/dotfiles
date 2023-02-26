@@ -3,6 +3,7 @@ if (not status) then return end
 
 local protocol = require('vim.lsp.protocol')
 
+
 local on_attach = function(client, bufnr)
   -- format on save
   if client.server_capabilities.documentFormattingProvider then
@@ -15,6 +16,16 @@ local on_attach = function(client, bufnr)
 end
 
 local capabilities = require('cmp_nvim_lsp').default_capabilities()
+
+vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
+  vim.lsp.diagnostic.on_publish_diagnostics,
+  {
+    underline = true,
+    virtual_text = false,
+    signs = true,
+    update_in_insert = false,
+  }
+)
 
 -- TypeScript
 nvim_lsp.tsserver.setup {
@@ -59,6 +70,3 @@ nvim_lsp.jdtls.setup {
   on_attach = on_attach,
   capabilities = capabilities,
 }
-
-
-
