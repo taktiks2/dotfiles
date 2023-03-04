@@ -14,6 +14,7 @@ treesitter.setup {
     "toml",
     "markdown",
     "markdown_inline",
+    "fish",
     "bash",
     "c",
     "java",
