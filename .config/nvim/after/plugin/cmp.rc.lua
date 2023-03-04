@@ -20,8 +20,12 @@ cmp.setup({
   }),
   sources = cmp.config.sources({
     { name = 'nvim_lsp' },
+    { name = 'nvim_lsp_signature_help' },
+    { name = 'nvim_lua' },
     { name = 'buffer' },
     { name = 'path' },
+    { name = 'luasnip' },
+    { name = 'cmdLine' },
   }),
   formatting = {
     format = lspkind.cmp_format({ with_text = false, maxwidth = 50 })
