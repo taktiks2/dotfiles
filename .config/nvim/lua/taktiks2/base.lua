@@ -25,3 +25,5 @@ opt.mouse = 'a'
 
 opt.swapfile = false
 
+opt.splitbelow = true
+opt.splitright = true

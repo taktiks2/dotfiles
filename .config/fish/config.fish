@@ -8,4 +8,6 @@ set -g theme_nerd_fonts yes
 set -g theme_newline_cursor yes
 set -g theme_newline_prompt '> '
 
+export LANG=en_US.UTF-8
+
 alias vim="nvim"
