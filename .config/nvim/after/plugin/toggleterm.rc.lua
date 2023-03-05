@@ -26,7 +26,16 @@ end
 
 vim.api.nvim_set_keymap('n', '<leader>g', '<cmd>lua _lazygit_toggle()<CR>', { noremap = true, silent = true })
 
-toggleterm.setup({})
+toggleterm.setup({
+  size            = 60,
+  open_mapping    = [[<C-t>]],
+  shade_filetypes = {},
+  hide_numbers    = true,
+  direction       = "vertical",
+  start_in_insert = true,
+  persist_size    = true,
+  shell           = vim.o.shell,
+})
 
 vim.keymap.set('t', '<C-q>', [[<C-\><C-n>]], opts)
 vim.keymap.set('t', '<C-w>', [[<C-\><C-n><C-w>]], opts)
