@@ -27,3 +27,5 @@ opt.swapfile = false
 
 opt.splitbelow = true
 opt.splitright = true
+
+opt.shell = 'fish'
