@@ -4,12 +4,15 @@ local opt = vim.opt
 
 opt.encoding = 'utf-8'
 opt.number = true
+opt.relativenumber = true
 opt.title = true
 
 opt.autoindent = true
 opt.smartindent = true
 opt.expandtab = true
+-- opt.tabstop = 4
 opt.tabstop = 2
+-- opt.shiftwidth = 4
 opt.shiftwidth = 2
 
 opt.ignorecase = true
