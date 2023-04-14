@@ -35,3 +35,5 @@ function rbenv
 end
 
 alias vim="nvim"
+
+source /Users/taktiks2/.docker/init-fish.sh || true # Added by Docker Desktop
