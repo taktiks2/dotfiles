@@ -7,6 +7,7 @@ mason.setup({})
 
 lspconfig.setup({
   ensure_installed = {
+    "marksman",
     "tsserver",
     "lua_ls",
     "bashls",

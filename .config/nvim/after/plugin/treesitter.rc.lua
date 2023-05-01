@@ -11,6 +11,8 @@ treesitter.setup {
     disable = {},
   },
   ensure_installed = {
+    "prisma",
+    "astro",
     "toml",
     "markdown",
     "markdown_inline",
