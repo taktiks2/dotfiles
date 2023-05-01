@@ -70,3 +70,21 @@ nvim_lsp.jdtls.setup {
   on_attach = on_attach,
   capabilities = capabilities,
 }
+
+-- Astro
+nvim_lsp.astro.setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
+
+-- Prisma
+nvim_lsp.prismals.setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
+
+-- Markdown
+nvim_lsp.marksman.setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
