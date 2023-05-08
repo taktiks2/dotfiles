@@ -19,21 +19,26 @@ set PATH $HOME/bin $PATH
 set PATH $HOME/.nodebrew/current/bin $PATH
 set -x ANDROID_SDK_ROOT $HOME/Library/Android/sdk
 set -x JAVA_HOME /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
-set -gx PATH '/Users/t-osoegawa/.rbenv/shims' $PATH
-set -gx RBENV_SHELL fish
-command rbenv rehash 2>/dev/null
-function rbenv
-  set command $argv[1]
-  set -e argv[1]
 
-  switch "$command"
-  case rehash shell
-    rbenv "sh-$command" $argv|source
-  case '*'
-    command rbenv "$command" $argv
-  end
-end
+# set -gx PATH '/Users/t-osoegawa/.rbenv/shims' $PATH
+# set -gx RBENV_SHELL fish
+# command rbenv rehash 2>/dev/null
+# function rbenv
+#   set command $argv[1]
+#   set -e argv[1]
+#
+#   switch "$command"
+#   case rehash shell
+#     rbenv "sh-$command" $argv|source
+#   case '*'
+#     command rbenv "$command" $argv
+#   end
+# end
 
 alias vim="nvim"
 
 source /Users/taktiks2/.docker/init-fish.sh || true # Added by Docker Desktop
+
+
+# The next line updates PATH for the Google Cloud SDK.
+if [ -f '/Users/taktiks2/google-cloud-sdk/path.fish.inc' ]; . '/Users/taktiks2/google-cloud-sdk/path.fish.inc'; end
