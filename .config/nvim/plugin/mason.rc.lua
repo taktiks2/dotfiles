@@ -7,6 +7,9 @@ mason.setup({})
 
 lspconfig.setup({
   ensure_installed = {
+    "astro",
+    "prismals",
+    "rust_analyzer",
     "marksman",
     "tsserver",
     "lua_ls",

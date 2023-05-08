@@ -2,3 +2,7 @@
 Session.vim
 htop
 iterm2
+configstore
+config.fish.backup
+gcloud
+packer_compiled.lua
