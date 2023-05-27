@@ -11,6 +11,7 @@ treesitter.setup {
     disable = {},
   },
   ensure_installed = {
+    "go",
     "rust",
     "prisma",
     "astro",
