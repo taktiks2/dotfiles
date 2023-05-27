@@ -3,14 +3,13 @@ if (not status) then return end
 
 local protocol = require('vim.lsp.protocol')
 
-
 local on_attach = function(client, bufnr)
   -- format on save
   if client.server_capabilities.documentFormattingProvider then
     vim.api.nvim_create_autocmd("BufWritePre", {
       group = vim.api.nvim_create_augroup("Format", { clear = true }),
       buffer = bufnr,
-      callback = function() vim.lsp.buf.formatting_seq_sync() end,
+      callback = function() vim.lsp.buf.format({ bufnr = bufnr }) end,
     })
   end
 end
@@ -37,8 +36,22 @@ nvim_lsp.tsserver.setup {
 
 -- Lua
 nvim_lsp.lua_ls.setup {
-  on_attach = on_attach,
   capabilities = capabilities,
+  on_attach = on_attach,
+  settings = {
+    Lua = {
+      diagnostics = {
+        -- Get the language server to recognize the `vim` global
+        globals = { 'vim' },
+      },
+
+      workspace = {
+        -- Make the server aware of Neovim runtime files
+        library = vim.api.nvim_get_runtime_file("", true),
+        checkThirdParty = false
+      },
+    },
+  },
 }
 
 -- Bash
@@ -91,6 +104,12 @@ nvim_lsp.marksman.setup {
 
 -- Rust
 nvim_lsp.rust_analyzer.setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
+
+-- Golang
+nvim_lsp.gopls.setup {
   on_attach = on_attach,
   capabilities = capabilities,
 }
