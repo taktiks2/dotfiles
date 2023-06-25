@@ -15,11 +15,10 @@ cmp.setup({
     ['<C-e>'] = cmp.mapping.close(),
     ['<CR>'] = cmp.mapping.confirm({
       behavior = cmp.ConfirmBehavior.Replace,
-      select = true
+      select = false
     }),
   }),
   sources = cmp.config.sources({
-    { name = 'copilot' },
     { name = 'nvim_lsp' },
     { name = 'nvim_lsp_signature_help' },
     { name = 'nvim_lua' },
@@ -27,6 +26,7 @@ cmp.setup({
     { name = 'path' },
     { name = 'luasnip' },
     { name = 'cmdLine' },
+    { name = 'copilot' },
   }),
   formatting = {
     format = lspkind.cmp_format({ with_text = false, maxwidth = 50 })
