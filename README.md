@@ -3,7 +3,7 @@
 config.ymlはlazygit用、`/Users/{UserName}/Library/Application Support/lazygit`にコピーすること
 deltaと連携するために必要
 
-tmuxを開いたら`<Prefix><C-I>`してプラグインをインストールすると
+tmuxを開いたら`<Prefix> + I`してプラグインをインストールすると
 
 ```bash
 # neovimのプラグイン用
@@ -21,5 +21,8 @@ brew install --cask font-hack-nerd-font
 brew install --cask visual-studio-code
 brew install --cask google-chrome
 brew install --cask docker
+brew install neovim
+brew install lazygit
+brew inntall git-delta
 gem install cocoapods
 ```
