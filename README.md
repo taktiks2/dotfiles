@@ -21,5 +21,8 @@ brew install --cask font-hack-nerd-font
 brew install --cask visual-studio-code
 brew install --cask google-chrome
 brew install --cask docker
+brew install neovim
+brew install lazygit
+brew inntall git-delta
 gem install cocoapods
 ```
