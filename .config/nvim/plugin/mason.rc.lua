@@ -7,7 +7,6 @@ mason.setup({})
 
 lspconfig.setup({
   ensure_installed = {
-    "gopls",
     "astro",
     "prismals",
     "rust_analyzer",

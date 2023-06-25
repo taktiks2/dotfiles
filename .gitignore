@@ -6,3 +6,4 @@ configstore
 config.fish.backup
 gcloud
 packer_compiled.lua
+github-copilot
