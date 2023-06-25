@@ -39,7 +39,5 @@ set PATH $HOME/.cargo/bin $PATH
 
 alias vim="nvim"
 
-source /Users/taktiks2/.docker/init-fish.sh || true # Added by Docker Desktop
-
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/taktiks2/google-cloud-sdk/path.fish.inc' ]; . '/Users/taktiks2/google-cloud-sdk/path.fish.inc'; end
