@@ -3,7 +3,7 @@
 config.ymlはlazygit用、`/Users/{UserName}/Library/Application Support/lazygit`にコピーすること
 deltaと連携するために必要
 
-tmuxを開いたら`<Prefix><C-I>`してプラグインをインストールすると
+tmuxを開いたら`<Prefix> + I`してプラグインをインストールすると
 
 ```bash
 # neovimのプラグイン用
