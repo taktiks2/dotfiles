@@ -22,7 +22,7 @@ set -x JAVA_HOME /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
 # rust tools
 set PATH $HOME/.cargo/bin $PATH
 
-# set -gx PATH '/Users/t-osoegawa/.rbenv/shims' $PATH
+# set -gx PATH '/Users/taktiks2/.rbenv/shims' $PATH
 # set -gx RBENV_SHELL fish
 # command rbenv rehash 2>/dev/null
 # function rbenv
