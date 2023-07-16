@@ -2,7 +2,7 @@ require("neodev").setup({})
 local status, nvim_lsp = pcall(require, "lspconfig")
 if (not status) then return end
 
-local protocol = require('vim.lsp.protocol')
+local protocol = require("vim.lsp.protocol")
 
 local on_attach = function(client, bufnr)
   -- format on save
@@ -15,7 +15,7 @@ local on_attach = function(client, bufnr)
   end
 end
 
-local capabilities = require('cmp_nvim_lsp').default_capabilities()
+local capabilities = require("cmp_nvim_lsp").default_capabilities()
 
 vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
   vim.lsp.diagnostic.on_publish_diagnostics,
@@ -43,7 +43,7 @@ nvim_lsp.lua_ls.setup {
     Lua = {
       diagnostics = {
         -- Get the language server to recognize the `vim` global
-        globals = { 'vim' },
+        globals = { "vim" },
       },
       workspace = {
         -- Make the server aware of Neovim runtime files
@@ -51,7 +51,7 @@ nvim_lsp.lua_ls.setup {
         checkThirdParty = false
       },
       completion = {
-        callSnippet = 'Replace'
+        callSnippet = "Replace"
       },
     },
   },

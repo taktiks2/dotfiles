@@ -2,7 +2,7 @@ vim.cmd("autocmd!")
 
 local opt = vim.opt
 
-opt.encoding = 'utf-8'
+opt.encoding = "utf-8"
 opt.number = true
 opt.relativenumber = false
 opt.title = true
@@ -24,11 +24,11 @@ opt.list = true
 
 opt.showmatch = true
 
-opt.mouse = 'a'
+opt.mouse = "a"
 
 opt.swapfile = false
 
 opt.splitbelow = true
 opt.splitright = true
 
-opt.shell = 'fish'
+opt.shell = "fish"
