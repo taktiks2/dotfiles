@@ -81,7 +81,7 @@ packer.startup(function(use)
     "nvim-treesitter/nvim-treesitter",
     run = function() require("nvim-treesitter.install").update({ with_sync = true }) end,
   }
-  -- use "virchau13/tree-sitter-astro"
+  use "virchau13/tree-sitter-astro"
   use "HiPhish/nvim-ts-rainbow2"
   use {
     "Wansmer/treesj",
@@ -107,6 +107,15 @@ packer.startup(function(use)
       require("copilot_cmp").setup()
     end,
   }
+
+  -- live server
+  use({
+    "aurum77/live-server.nvim",
+    run = function()
+      require "live_server.util".install()
+    end,
+    cmd = { "LiveServer", "LiveServerStart", "LiveServerStop" },
+  })
 
   -- self made
   use "taktiks2/say-my-name"
