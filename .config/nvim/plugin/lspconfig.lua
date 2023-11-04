@@ -30,7 +30,7 @@ vim.lsp.handlers["textDocument/publishDiagnostics"] = vim.lsp.with(
 -- TypeScript
 nvim_lsp.tsserver.setup {
   on_attach = on_attach,
-  filetypes = { "typescript", "typescriptreact", "typescript.tsx" },
+  filetypes = { "typescript", "typescriptreact", "typescript.tsx", "javascript" },
   cmd = { "typescript-language-server", "--stdio" },
   capabilities = capabilities,
 }
@@ -119,6 +119,24 @@ nvim_lsp.gopls.setup {
 
 -- TailwindCSS
 nvim_lsp.tailwindcss.setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
+
+-- vue
+nvim_lsp.volar.setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
+
+-- CSS
+nvim_lsp.cssls.setup {
+  on_attach = on_attach,
+  capabilities = capabilities,
+}
+
+-- HTML
+nvim_lsp.html.setup {
   on_attach = on_attach,
   capabilities = capabilities,
 }

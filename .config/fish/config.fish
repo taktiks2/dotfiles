@@ -38,6 +38,9 @@ set PATH $HOME/.cargo/bin $PATH
 # end
 
 alias vim="nvim"
+alias ls="lsd"
+alias la="lsd -a"
+alias ll="lsd -al"
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/taktiks2/google-cloud-sdk/path.fish.inc' ]; . '/Users/taktiks2/google-cloud-sdk/path.fish.inc'; end
