@@ -17,6 +17,8 @@ fisher install oh-my-fish/theme-bobthefish
 brew install --cask --no-quarantine alacritty
 brew tap homebrew/cask-fonts
 brew install --cask font-hack-nerd-font
+# cargo
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 # その他
 brew install --cask visual-studio-code
 brew install --cask google-chrome
