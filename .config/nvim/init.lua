@@ -1,3 +1,2 @@
-require("taktiks2.base")
-require("taktiks2.maps")
-require("taktiks2.plugins")
+-- bootstrap lazy.nvim, LazyVim and your plugins
+require("config.lazy")
