@@ -10,3 +10,10 @@ vim.api.nvim_create_autocmd("FileType", {
     vim.opt.conceallevel = 0
   end,
 })
+
+vim.api.nvim_create_autocmd({ "FileType" }, {
+  pattern = { "markdown", "yaml" },
+  callback = function()
+    vim.b.autoformat = false -- warningが出るが無視でよい
+  end,
+})
