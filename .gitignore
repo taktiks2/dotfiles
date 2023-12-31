@@ -7,3 +7,8 @@ config.fish.backup
 gcloud
 packer_compiled.lua
 github-copilot
+gtk-2.0
+broot
+.mono
+wireshark
+yarn
