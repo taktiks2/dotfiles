@@ -44,9 +44,8 @@ return {
           if vim.bo[props.buf].modified then
             filename = "[+] " .. filename
           end
-          local full_path = vim.api.nvim_buf_get_name(props.buf)
           local icon, color = require("nvim-web-devicons").get_icon_color(filename)
-          return { full_path:gsub(vim.fn.getcwd(), "."), { " " }, { icon, guifg = color } }
+          return { filename, { " " }, { icon, guifg = color } }
         end,
       })
     end,
