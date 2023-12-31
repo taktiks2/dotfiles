@@ -17,6 +17,8 @@ set PATH $HOME/Library/Android/sdk/tools/bin $PATH
 set PATH $HOME/Library/Android/sdk/platform-tools $PATH
 set PATH $HOME/bin $PATH
 set PATH $HOME/.nodebrew/current/bin $PATH
+set PATH /opt/homebrew/opt/mysql@8.0/bin $PATH
+set DYLD_LIBRARY_PATH /opt/homebrew/opt/mysql@8.0/lib $DYLD_LIBRARY_PATH
 set -x ANDROID_SDK_ROOT $HOME/Library/Android/sdk
 set -x JAVA_HOME /Library/Java/JavaVirtualMachines/jdk-17.jdk/Contents/Home
 # rust tools
@@ -43,4 +45,6 @@ alias la="lsd -a"
 alias ll="lsd -al"
 
 # The next line updates PATH for the Google Cloud SDK.
-if [ -f '/Users/taktiks2/google-cloud-sdk/path.fish.inc' ]; . '/Users/taktiks2/google-cloud-sdk/path.fish.inc'; end
+if [ -f '/Users/taktiks2/google-cloud-sdk/path.fish.inc' ]
+    . '/Users/taktiks2/google-cloud-sdk/path.fish.inc'
+end
