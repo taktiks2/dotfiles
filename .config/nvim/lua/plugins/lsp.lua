@@ -1,8 +1,24 @@
 return {
   {
+    {
+      "neovim/nvim-lspconfig",
+      init_options = {
+        userLanguages = {
+          eelixir = "html-eex",
+          eruby = "erb",
+          rust = "html",
+        },
+      },
+      opts = {
+        servers = {
+          bashls = {},
+        },
+      },
+    },
     "williamboman/mason.nvim",
     opts = {
       ensure_installed = {
+        "bashls",
         "stylua",
         "selene",
         "shellcheck",
