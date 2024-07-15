@@ -64,33 +64,33 @@ layer_state_t layer_state_set_user(layer_state_t state) {
 
 #include "lib/oledkit/oledkit.h"
 
-oled_rotation_t oled_init_user(oled_rotation_t rotation) {
-    if (is_keyboard_master()) {
-      return rotation;
-    } else {
-      return OLED_ROTATION_270;
-    }
-}
+/* oled_rotation_t oled_init_user(oled_rotation_t rotation) { */
+/*     if (is_keyboard_master()) { */
+/*       return rotation; */
+/*     } else { */
+/*       return OLED_ROTATION_270; */
+/*     } */
+/* } */
 
-void oled_render_layer_state(void) {
-    switch (get_highest_layer(layer_state)) {
-        case 0:
-            oled_write_ln_P(PSTR("Base"), false);
-            break;
-        case 1:
-            oled_write_ln_P(PSTR("Layer 1"), false);
-            break;
-        case 2:
-            oled_write_ln_P(PSTR("Layer 2"), false);
-            break;
-        case 3:
-            oled_write_ln_P(PSTR("Layer 3"), false);
-            break;
-        default:
-            oled_write_ln_P(PSTR("Undefined"), false);
-            break;
-    }
-}
+/* void oled_render_layer_state(void) { */
+/*     switch (get_highest_layer(layer_state)) { */
+/*         case 0: */
+/*             oled_write_ln_P(PSTR("Base"), false); */
+/*             break; */
+/*         case 1: */
+/*             oled_write_ln_P(PSTR("Layer 1"), false); */
+/*             break; */
+/*         case 2: */
+/*             oled_write_ln_P(PSTR("Layer 2"), false); */
+/*             break; */
+/*         case 3: */
+/*             oled_write_ln_P(PSTR("Layer 3"), false); */
+/*             break; */
+/*         default: */
+/*             oled_write_ln_P(PSTR("Undefined"), false); */
+/*             break; */
+/*     } */
+/* } */
 
 void oledkit_render_info_user(void) {
     keyball_oled_render_keyinfo();
@@ -98,13 +98,13 @@ void oledkit_render_info_user(void) {
     keyball_oled_render_layerinfo();
 }
 
-bool oled_task_user(void) {
-    if (is_keyboard_master()) {
-        oledkit_render_info_user();
-    } else {
-        oled_render_layer_state();
-    }
-    return false;
-}
+/* bool oled_task_user(void) { */
+/*     if (is_keyboard_master()) { */
+/*         oledkit_render_info_user(); */
+/*     } else { */
+/*         oled_render_layer_state(); */
+/*     } */
+/*     return false; */
+/* } */
 
 #endif
