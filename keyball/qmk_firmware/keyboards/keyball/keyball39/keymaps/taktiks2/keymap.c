@@ -20,56 +20,90 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "quantum.h"
 
+enum custom_keycodes {
+  M_WLEFT = SAFE_RANGE,
+  M_WRIGHT,
+  M_WUP,
+  M_WDOWN
+};
+
+bool process_record_user(uint16_t keycode, keyrecord_t *record) {
+  switch(keycode) {
+    case M_WLEFT:
+      if (record->event.pressed) {
+          SEND_STRING(SS_LCTL(SS_LCMD(SS_TAP(X_LEFT))));
+      } else {
+        // nop
+      }
+      break;
+    case M_WRIGHT:
+      if (record->event.pressed) {
+          SEND_STRING(SS_LCTL(SS_LCMD(SS_TAP(X_RIGHT))));
+      } else {
+        // nop
+      }
+      break;
+    case M_WUP:
+      if (record->event.pressed) {
+          SEND_STRING(SS_LCTL(SS_LCMD(SS_TAP(X_UP))));
+      } else {
+        // nop
+      }
+      break;
+    case M_WDOWN:
+      if (record->event.pressed) {
+          SEND_STRING(SS_LCTL(SS_LCMD(SS_TAP(X_DOWN))));
+      } else {
+        // nop
+      }
+      break;
+  }
+  return true;
+};
+
 // clang-format off
 const uint16_t PROGMEM keymaps[][MATRIX_ROWS][MATRIX_COLS] = {
   // keymap for default
   [0] = LAYOUT_universal(
     KC_Q     , KC_W     , KC_E     , KC_R     , KC_T     ,                            KC_Y     , KC_U     , KC_I     , KC_O     , KC_P     ,
-    CTL_T(KC_A), KC_S   , KC_D     , KC_F     , KC_G     ,                            KC_H     , KC_J     , LT(5, KC_K), LT(3, KC_L), LT(4, KC_SCLN),
+    KC_A     , KC_S     , KC_D     , KC_F     , KC_G     ,                            KC_H     , KC_J     , LT(5, KC_K) , LT(3, KC_L) , LT(4, KC_SCLN) ,
     SFT_T(KC_Z), KC_X   , KC_C     , KC_V     , KC_B     ,                            KC_N     , KC_M     , KC_COMM  , KC_DOT   , RSFT_T(KC_SLSH),
-    KC_ESC  , KC_LALT  , LCMD_T(KC_MINS)  , LT(2, KC_TAB), LT(1, KC_SPC) ,LT(6, KC_LNG2), KC_LNG1, KC_ENT   , _______  , _______  , _______  , KC_EQL
+    KC_ESC,ALT_T(KC_MINS),CMD_T(KC_EQL),CTL_T(KC_TAB),LT(1, KC_SPC),LT(2, KC_LNG2),  KC_LNG1 ,KC_ENT, XXXXXXX , XXXXXXX  , XXXXXXX  , KC_BSPC
   ),
 
   [1] = LAYOUT_universal(
     KC_EXLM  , KC_AT    , KC_HASH  , KC_DLR   , KC_PERC  ,                            KC_CIRC  , KC_AMPR  , KC_ASTR  , KC_LPRN  , KC_RPRN  ,
     KC_TILD  , KC_PIPE  , KC_BSLS  , KC_LBRC  , KC_LCBR  ,                            KC_RCBR  , KC_RBRC  , KC_QUOT  , KC_DQUO  , KC_GRV   ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  , _______  ,      _______  , _______  , _______  , _______  , _______  , _______
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , M_WLEFT  , M_WDOWN  , M_WUP    , M_WRIGHT ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,      XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX
   ),
 
   [2] = LAYOUT_universal(
     KC_1     , KC_2     , KC_3     , KC_4     , KC_5     ,                            KC_6     , KC_7     , KC_8     , KC_9     , KC_0     ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , KC_BSPC  ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  , _______  ,      _______  , _______  , _______  , _______  , _______  , _______
+    KC_F1    , KC_F2    , KC_F3    , KC_F4    , KC_F5    ,                            KC_F6    , KC_F7    , KC_F8    , KC_F9    , KC_F10   ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , KC_F11   , KC_F12   ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,      XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX
   ),
 
   [3] = LAYOUT_universal(
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  , _______  ,      _______  , _______  , _______  , _______  , _______  , _______
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,      XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX
   ),
 
   [4] = LAYOUT_universal(
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  ,                            KC_LEFT  , KC_DOWN  , KC_UP    , KC_RIGHT , _______  ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  , _______  ,      _______  , _______  , _______  , _______  , _______  , _______
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            KC_LEFT  , KC_DOWN  , KC_UP    , KC_RIGHT , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,      XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX
   ),
 
   [5] = LAYOUT_universal(
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , KC_BTN1  , _______  , KC_BTN2  , KC_MCTL  ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  , _______  ,      _______  , _______  , _______  , _______  , _______  , _______
-  ),
-
-  [6] = LAYOUT_universal(
-    KC_F1    , KC_F2    , KC_F3    , KC_F4    , KC_F5    ,                            KC_F6    , KC_F7    , KC_F8    , KC_F9    , KC_F10   ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , KC_F11   , KC_F12   ,
-    _______  , _______  , _______  , _______  , _______  ,                            _______  , _______  , _______  , _______  , _______  ,
-    _______  , _______  , _______  , _______  , _______  , _______  ,      _______  , _______  , _______  , _______  , _______  , _______
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            C(KC_UP) , KC_BTN1  , XXXXXXX  , KC_BTN2  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,                            XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,
+    XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  ,      XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX  , XXXXXXX
   ),
 };
 // clang-format on
@@ -80,52 +114,14 @@ layer_state_t layer_state_set_user(layer_state_t state) {
     return state;
 }
 
-
 #ifdef OLED_ENABLE
 
 #include "lib/oledkit/oledkit.h"
-
-/* oled_rotation_t oled_init_user(oled_rotation_t rotation) { */
-/*     if (is_keyboard_master()) { */
-/*       return rotation; */
-/*     } else { */
-/*       return OLED_ROTATION_270; */
-/*     } */
-/* } */
-
-/* void oled_render_layer_state(void) { */
-/*     switch (get_highest_layer(layer_state)) { */
-/*         case 0: */
-/*             oled_write_ln_P(PSTR("Base"), false); */
-/*             break; */
-/*         case 1: */
-/*             oled_write_ln_P(PSTR("Layer 1"), false); */
-/*             break; */
-/*         case 2: */
-/*             oled_write_ln_P(PSTR("Layer 2"), false); */
-/*             break; */
-/*         case 3: */
-/*             oled_write_ln_P(PSTR("Layer 3"), false); */
-/*             break; */
-/*         default: */
-/*             oled_write_ln_P(PSTR("Undefined"), false); */
-/*             break; */
-/*     } */
-/* } */
 
 void oledkit_render_info_user(void) {
     keyball_oled_render_keyinfo();
     keyball_oled_render_ballinfo();
     keyball_oled_render_layerinfo();
 }
-
-/* bool oled_task_user(void) { */
-/*     if (is_keyboard_master()) { */
-/*         oledkit_render_info_user(); */
-/*     } else { */
-/*         oled_render_layer_state(); */
-/*     } */
-/*     return false; */
-/* } */
 
 #endif
