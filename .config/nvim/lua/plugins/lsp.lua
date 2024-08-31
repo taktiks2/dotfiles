@@ -68,6 +68,7 @@ return {
         "css",
         "prisma",
         "svelte",
+        "commonlisp",
       },
     },
   },
