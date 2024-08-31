@@ -18,6 +18,15 @@ return {
       opts.mapping = cmp.mapping.preset.insert(vim.tbl_extend("force", opts.mapping, {
         ["<CR>"] = cmp.mapping.confirm({ select = false }), -- 'select = false' to only confirm explicitly selected item
       }))
+      cmp.setup.filetype({ "lisp" }, {
+        sources = cmp.config.sources({
+          { name = "nvlime" },
+          { name = "path" },
+          { name = "buffer" },
+          { name = "nvim_lsp" },
+          { name = "treesitter" },
+        }),
+      })
     end,
   },
   {

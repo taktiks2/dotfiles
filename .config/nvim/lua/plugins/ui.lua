@@ -41,11 +41,13 @@ return {
         },
         render = function(props)
           local filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(props.buf), ":t")
+          local filepath = vim.api.nvim_buf_get_name(props.buf)
+          local parent_dir = vim.fn.fnamemodify(filepath, ":h:t")
           if vim.bo[props.buf].modified then
             filename = "[+] " .. filename
           end
           local icon, color = require("nvim-web-devicons").get_icon_color(filename)
-          return { filename, { " " }, { icon, guifg = color } }
+          return { parent_dir .. "/" .. filename, { " " }, { icon, guifg = color } }
         end,
       })
     end,
