@@ -20,11 +20,13 @@ return {
       }))
       cmp.setup.filetype({ "lisp" }, {
         sources = cmp.config.sources({
-          { name = "nvlime" },
-          { name = "path" },
-          { name = "buffer" },
+          { name = "copilot" },
           { name = "nvim_lsp" },
-          { name = "treesitter" },
+          { name = "nvlime" },
+          { name = "cmp_tabnine" },
+          { name = "nvim_lua" },
+          { name = "buffer" },
+          { name = "path" },
         }),
       })
     end,
