@@ -23,6 +23,11 @@ set DYLD_LIBRARY_PATH /opt/homebrew/opt/mysql@8.0/lib $DYLD_LIBRARY_PATH
 set -x ANDROID_SDK_ROOT $HOME/Library/Android/sdk
 set -x JAVA_HOME /Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home
 
+# atac
+set -x ATAC_MAIN_DIR $HOME/.config/atac
+set -x ATAC_THEME $HOME/.config/atac/settings/theme.toml
+set -x ATAC_KEY_BINDINGS $HOME/.config/atac/settings/key.toml
+
 # nodebrew
 set -x PATH $HOME/.nodebrew/current/bin $PATH
 
