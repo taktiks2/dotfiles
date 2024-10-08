@@ -12,7 +12,6 @@ return {
       opts.presets.lsp_doc_border = true
     end,
   },
-
   {
     "akinsho/bufferline.nvim",
     event = "VeryLazy",
@@ -28,7 +27,6 @@ return {
       },
     },
   },
-
   {
     "b0o/incline.nvim",
     event = "BufReadPre",
@@ -50,6 +48,25 @@ return {
           return { parent_dir .. "/" .. filename, { " " }, { icon, guifg = color } }
         end,
       })
+    end,
+  },
+  {
+    "anuvyklack/animation.nvim",
+    requires = {
+      "anuvyklack/middleclass",
+    },
+  },
+  {
+    "anuvyklack/windows.nvim",
+    requires = {
+      "anuvyklack/middleclass",
+      "anuvyklack/animation.nvim",
+    },
+    config = function()
+      vim.o.winwidth = 10
+      vim.o.winminwidth = 10
+      vim.o.equalalways = false
+      require("windows").setup()
     end,
   },
 }

@@ -14,6 +14,23 @@ return {
     end,
   },
   {
+    "pwntester/octo.nvim",
+    config = function()
+      require("octo").setup({ enable_builtin = true })
+      vim.cmd([[hi OctoEditable guibg=none]])
+    end,
+    keys = {
+      { "<leader>O", "<cmd>Octo<CR>", desc = "OCTO" },
+    },
+  },
+  {
+    "ruifm/gitlinker.nvim",
+    requires = "nvim-lua/plenary.nvim",
+    config = function()
+      require("gitlinker").setup()
+    end,
+  },
+  {
     "NachoNievaG/atac.nvim",
     dependencies = { "akinsho/toggleterm.nvim" },
     config = function()
@@ -21,5 +38,8 @@ return {
         dir = "~/.config/atac",
       })
     end,
+    keys = {
+      { "<leader>A", "<cmd>Atac<CR>", desc = "ATAC" },
+    },
   },
 }

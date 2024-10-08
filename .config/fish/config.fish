@@ -28,6 +28,9 @@ set -x ATAC_MAIN_DIR $HOME/.config/atac
 set -x ATAC_THEME $HOME/.config/atac/settings/theme.toml
 set -x ATAC_KEY_BINDINGS $HOME/.config/atac/settings/key.toml
 
+# git delta & gh dash
+set -x GH_PAGER delta
+
 # nodebrew
 set -x PATH $HOME/.nodebrew/current/bin $PATH
 
@@ -51,6 +54,10 @@ function rbenv
 end
 
 alias vim="nvim"
+alias vi="nvim"
+alias v="nvim"
+alias gd="gh dash"
+alias lg="lazygit"
 alias ls="lsd"
 alias la="lsd -a"
 alias ll="lsd -al"
