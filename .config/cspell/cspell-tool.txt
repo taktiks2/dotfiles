@@ -1,1 +1,8 @@
-
+nvim
+astro
+astrojs
+lazyvim
+lazypath
+stdpath
+octo
+neogen
