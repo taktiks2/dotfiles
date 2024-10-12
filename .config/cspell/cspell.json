@@ -11,5 +11,5 @@
     }
   ],
   "dictionaries": ["cspell-tool"],
-  "ignorePaths": ["node_modules", "dist", "build", "/cspell-tool.txt"]
+  "ignorePaths": ["node_modules", "dist", "build", "cspell-tool.txt"]
 }

@@ -1,3 +1,4 @@
+-- 参考 https://github.com/ecosse3/nvim/blob/master/lua/plugins/dap.lua
 return {
   {
     "mxsdev/nvim-dap-vscode-js",

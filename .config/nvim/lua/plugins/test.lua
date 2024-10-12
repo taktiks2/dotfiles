@@ -1,14 +1,5 @@
 return {
   {
-    "microsoft/vscode-js-debug",
-    build = "npm install --legacy-peer-deps && npx gulp vsDebugServerBundle && mv dist out",
-    lazy = true,
-  },
-  {
-    "mxsdev/nvim-dap-vscode-js",
-    lazy = true,
-  },
-  {
     "nvim-neotest/neotest",
     dependencies = {
       "haydenmeade/neotest-jest",

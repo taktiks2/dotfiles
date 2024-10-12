@@ -74,20 +74,27 @@ return {
   },
   {
     "nvimtools/none-ls.nvim",
-    dependencies = { "davidmh/cspell.nvim" },
+    dependencies = { {
+      "davidmh/cspell.nvim",
+    } },
     event = "BufReadPre",
     opts = function()
       local cspell = require("cspell")
       local config = {
-        cspell_config_dir = vim.fn.expand("~/.config/cspell"),
+        cspell_config_dirs = { "~/.config/cspell" },
       }
       local sources = {
-        cspell.diagnostics.with({ config = config }),
+        cspell.diagnostics.with({
+          config = config,
+          diagnostics_postprocess = function(diagnostic)
+            diagnostic.severity = vim.diagnostic.severity["HINT"]
+          end,
+        }),
         cspell.code_actions.with({ config = config }),
       }
       return {
         sources = sources,
-        debounde = 200,
+        debounce = 200,
       }
     end,
   },
