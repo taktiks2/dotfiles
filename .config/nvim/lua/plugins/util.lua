@@ -42,4 +42,12 @@ return {
       { "<leader>A", "<cmd>Atac<CR>", desc = "ATAC" },
     },
   },
+  {
+    "sindrets/diffview.nvim",
+    keys = {
+      { "<leader>gd", "<cmd>DiffviewOpen<CR>", desc = "Diffview" },
+      { "<leader>gD", "<cmd>DiffviewFileHistory<CR>", desc = "DiffviewFileHistory" },
+      { "<leader>gC", "<cmd>DiffviewClose<CR>", desc = "DiffviewClose" },
+    },
+  },
 }
