@@ -65,6 +65,8 @@ return {
     config = function()
       vim.o.winwidth = 40
       vim.o.winminwidth = 40
+      vim.o.winheight = 40
+      vim.o.winminheight = 40
       vim.o.equalalways = false
       vim.keymap.set("n", "<C-w>z", "<cmd>:WindowsMaximize<CR>")
       vim.keymap.set("n", "<C-w>_", "<cmd>:WindowsMaximizeVertically<CR>")
