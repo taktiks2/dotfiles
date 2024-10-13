@@ -63,9 +63,13 @@ return {
       "anuvyklack/animation.nvim",
     },
     config = function()
-      vim.o.winwidth = 10
-      vim.o.winminwidth = 10
+      vim.o.winwidth = 40
+      vim.o.winminwidth = 40
       vim.o.equalalways = false
+      vim.keymap.set("n", "<C-w>z", "<cmd>:WindowsMaximize<CR>")
+      vim.keymap.set("n", "<C-w>_", "<cmd>:WindowsMaximizeVertically<CR>")
+      vim.keymap.set("n", "<C-w>|", "<cmd>:WindowsMaximizeHorizontally<CR>")
+      vim.keymap.set("n", "<C-w>=", "<cmd>:WindowsEqualize<CR>")
       require("windows").setup()
     end,
   },

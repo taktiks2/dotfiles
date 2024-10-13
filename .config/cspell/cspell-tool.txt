@@ -6,3 +6,14 @@ lazypath
 stdpath
 octo
 neogen
+nvlime
+tabnine
+noinsert
+vtsls
+commonlisp
+lspconfig
+keymap
+winwidth
+winminwidth
+cursorline
+taktiks

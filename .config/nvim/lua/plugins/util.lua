@@ -20,7 +20,7 @@ return {
       vim.cmd([[hi OctoEditable guibg=none]])
     end,
     keys = {
-      { "<leader>O", "<cmd>Octo<CR>", desc = "OCTO" },
+      { "<leader>O", "<cmd>Octo<CR>", desc = "Octo" },
     },
   },
   {
@@ -39,7 +39,7 @@ return {
       })
     end,
     keys = {
-      { "<leader>A", "<cmd>Atac<CR>", desc = "ATAC" },
+      { "<leader>A", "<cmd>Atac<CR>", desc = "Atac" },
     },
   },
   {
