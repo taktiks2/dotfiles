@@ -17,3 +17,16 @@ winwidth
 winminwidth
 cursorline
 taktiks
+rgba
+tsconfigs
+noto
+stylesheet
+timestep
+srgb
+chacha
+seedable
+lerp
+verlet
+cbrt
+despawn
+actix
