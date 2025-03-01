@@ -2,7 +2,6 @@
 -- Default keymaps that are always set: https://github.com/LazyVim/LazyVim/blob/main/lua/lazyvim/config/keymaps.lua
 -- Add any additional keymaps here
 local discipline = require("taktiks2.discipline")
-require("taktiks2.cmp_toggle")
 
 discipline.cowboy()
 
@@ -21,4 +20,3 @@ keymap.set("n", "<F1>", "<cmd>:GitBlameToggle<CR>")
 keymap.set("n", "<F2>", "<cmd>:GitBlameOpenCommitURL<CR>")
 keymap.set("n", "<F3>", "<cmd>:MarkdownPreview<CR>")
 keymap.set("n", "<F4>", "<cmd>:MarkdownPreviewStop<CR>")
-keymap.set("n", "<F6>", "<cmd>:CmpToggle<CR>")

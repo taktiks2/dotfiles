@@ -30,3 +30,8 @@ verlet
 cbrt
 despawn
 actix
+egui
+serde
+polyline
+polylines
+deque

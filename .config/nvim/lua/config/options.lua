@@ -11,5 +11,6 @@ opt.title = true
 opt.tabstop = 2
 opt.shiftwidth = 2
 opt.shell = "fish"
+opt.laststatus = 3
 
 vim.g.maplocalleader = ","
