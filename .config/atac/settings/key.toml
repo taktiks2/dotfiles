@@ -34,7 +34,7 @@ move_cursor_right = "Ctrl-l"
 
 [keybindings.generic.text_inputs.text_area_mode.Custom]
 quit_without_saving = "Esc"
-save_and_quit = "Ctrl-s"
+save_and_quit = "Shift-s"
 
 copy = "Ctrl-c"
 paste = "Ctrl-v"
