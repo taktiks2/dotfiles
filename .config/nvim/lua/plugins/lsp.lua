@@ -38,40 +38,6 @@ return {
     },
   },
   {
-    "nvim-treesitter/nvim-treesitter",
-    opts = {
-      ensure_installed = {
-        "bash",
-        "html",
-        "javascript",
-        "json",
-        "lua",
-        "markdown",
-        "markdown_inline",
-        "dockerfile",
-        "query",
-        "regex",
-        "tsx",
-        "typescript",
-        "vim",
-        "yaml",
-        "go",
-        "rust",
-        "prisma",
-        "ninja",
-        "python",
-        "rst",
-        "toml",
-        "fish",
-        "c",
-        "css",
-        "prisma",
-        "svelte",
-        "commonlisp",
-      },
-    },
-  },
-  {
     "nvimtools/none-ls.nvim",
     dependencies = { {
       "davidmh/cspell.nvim",
@@ -95,34 +61,6 @@ return {
         sources = sources,
         debounce = 200,
       }
-    end,
-  },
-  {
-    "hrsh7th/nvim-cmp",
-    event = "InsertEnter",
-    opts = function(_, opts)
-      local cmp = require("cmp")
-      opts.preselect = cmp.PreselectMode.None
-      opts.completion = {
-        completeopt = "menu,menuone,noinsert,noselect",
-      }
-      opts.mapping = cmp.mapping.preset.insert(vim.tbl_extend("force", opts.mapping, {
-        ["<CR>"] = cmp.mapping.confirm({ select = false }), -- 'select = false' to only confirm explicitly selected item
-      }))
-      cmp.register_source("buffer", require("cmp_buffer"))
-      cmp.register_source("path", require("cmp_path"))
-      require("cmp_nvim_lsp").setup()
-      -- for lisp
-      cmp.setup.filetype({ "lisp" }, {
-        sources = cmp.config.sources({
-          { name = "nvim_lsp" },
-          { name = "copilot" },
-          { name = "nvlime" },
-          { name = "nvim_lua" },
-          { name = "buffer" },
-          { name = "path" },
-        }),
-      })
     end,
   },
 }

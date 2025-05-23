@@ -56,23 +56,4 @@ return {
       "anuvyklack/middleclass",
     },
   },
-  -- {
-  --   "anuvyklack/windows.nvim",
-  --   requires = {
-  --     "anuvyklack/middleclass",
-  --     "anuvyklack/animation.nvim",
-  --   },
-  --   config = function()
-  --     vim.o.winwidth = 40
-  --     vim.o.winminwidth = 40
-  --     vim.o.winheight = 12
-  --     vim.o.winminheight = 12
-  --     vim.o.equalalways = false
-  --     vim.keymap.set("n", "<C-w>z", "<cmd>:WindowsMaximize<CR>")
-  --     vim.keymap.set("n", "<C-w>_", "<cmd>:WindowsMaximizeVertically<CR>")
-  --     vim.keymap.set("n", "<C-w>|", "<cmd>:WindowsMaximizeHorizontally<CR>")
-  --     vim.keymap.set("n", "<C-w>=", "<cmd>:WindowsEqualize<CR>")
-  --     require("windows").setup()
-  --   end,
-  -- },
 }
