@@ -35,3 +35,8 @@ serde
 polyline
 polylines
 deque
+sqlx
+chrono
+dioxus
+onclick
+reqwest
