@@ -1,0 +1,14 @@
+{
+  "nativeMCPServers": {
+    "mcphub": {
+      "disabled": false
+    },
+    "neovim": {
+      "disabled_prompts": [],
+      "disabled": false,
+      "disabled_tools": []
+    }
+  },
+  "mcpServers": []
+}
+
