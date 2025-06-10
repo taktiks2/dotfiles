@@ -15,16 +15,21 @@ return {
       -- provider = "claude",
       auto_suggestions_provider = "copilot",
 
-      copilot = {
-        model = "gpt-4o-2024-05-13",
-        max_tokens = 8192,
-      },
-
-      claude = {
-        endpoint = "https://api.anthropic.com",
-        model = "claude-3-5-sonnet-20241022",
-        temperature = 0,
-        max_tokens = 8192,
+      providers = {
+        copilot = {
+          model = "gpt-4o-2024-05-13",
+          extra_request_body = {
+            max_tokens = 8192,
+          },
+        },
+        claude = {
+          endpoint = "https://api.anthropic.com",
+          model = "claude-3-5-sonnet-20241022",
+          extra_request_body = {
+            temperature = 0,
+            max_tokens = 8192,
+          },
+        },
       },
 
       web_search_engine = {
