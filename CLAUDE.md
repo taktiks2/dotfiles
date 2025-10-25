@@ -8,25 +8,37 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Setup and Installation
 
-### 初期セットアップ
+### 🚀 自動インストール（推奨）
 
 ```bash
-# install.shを実行してシンボリックリンクを作成
+# リポジトリをクローン
+git clone <repository-url> ~/dotfiles
+cd ~/dotfiles
+
+# インストールスクリプトを実行（全自動）
 ./install.sh
-
-# 必要なツールのインストール（README.mdを参照）
-brew install neovim fish ripgrep tree-sitter lazygit git-delta
-brew install --cask alacritty
-brew install fisher
-fisher install oh-my-fish/theme-bobthefish
-
-# tmuxプラグインのインストール
-# tmuxを起動後、<Prefix> + I でプラグインをインストール
 ```
 
-### Lazygit設定
+**これだけで完全な開発環境がセットアップされます！**
 
-`config.yml`は`/Users/{UserName}/Library/Application Support/lazygit`にコピーする必要があります（deltaとの連携用）。
+インストールスクリプトは以下を自動実行：
+- Homebrew、必須パッケージの一括インストール
+- PHP/Composer/Laravel環境の構築
+- Rust、Node.js、Ruby環境のセットアップ
+- Fish Shell + Fisher + bobthefishテーマ
+- tmux + TPMのセットアップ
+- シンボリックリンクの作成とバックアップ
+- Neovimプラグインのインストール（オプション）
+
+### インストール後の確認
+
+```bash
+# インストールログの確認
+cat ~/.dotfiles_install_logs/install_*.log
+
+# バックアップの確認（既存設定がある場合）
+ls ~/.dotfiles_backup_*/
+```
 
 ## Architecture
 
@@ -70,14 +82,22 @@ fisher install oh-my-fish/theme-bobthefish
 ### Fish Shell 構成
 
 - **テーマ**: bobthefish (Dracula配色)
-- **PATH設定**: Homebrew、Android SDK、nodebrew、cargo、rbenvなど
+- **PATH設定**: Homebrew、Android SDK、nodebrew、cargo、rbenv、MySQL、Composerなど
 - **主要エイリアス**:
   - `vim/vi/v` → nvim
   - `gd` → gh dash
   - `lg` → lazygit
   - `ls/la/ll` → lsd
   - `sls` → sbcl (Common Lisp REPL with nvlime)
-- **環境変数**: `secret-env.fish`に秘匿情報を管理（gitignore対象）
+- **環境変数**: `secret-env.fish`に秘匿情報を管理（gitignore対象、インストール時に自動生成）
+
+### PHP/Laravel 環境
+
+- **PHP**: Homebrew経由でインストール（最新版）
+- **Composer**: グローバルインストール済み
+- **Laravel Installer**: `composer global require laravel/installer`で自動インストール
+- **MySQL 8.0**: Homebrew経由でインストール、`brew services`で管理
+- **PATH**: `~/.composer/vendor/bin`と`/opt/homebrew/opt/mysql@8.0/bin`が自動設定される
 
 ## Development Workflow
 
@@ -116,6 +136,23 @@ lg
 gd
 ```
 
+### Laravel開発
+
+```bash
+# MySQLを起動
+brew services start mysql@8.0
+
+# 新しいLaravelプロジェクトを作成
+laravel new my-project
+cd my-project
+
+# 開発サーバーを起動
+php artisan serve
+
+# データベースマイグレーション
+php artisan migrate
+```
+
 ## Important Files
 
 ### 秘匿情報の管理
@@ -131,19 +168,34 @@ gd
 
 ## Commonly Used Tools
 
+### 開発ツール
 - **Neovim**: テキストエディタ (LazyVim)
 - **Fish**: メインシェル (bobthefishテーマ)
 - **Alacritty**: ターミナルエミュレータ
+- **tmux**: ターミナルマルチプレクサ
 - **Lazygit**: Git TUI
 - **git-delta**: Git差分表示
+- **gh**: GitHub CLI
 - **gh-dash**: GitHub管理ツール
 - **lsd**: lsの代替
 - **ripgrep**: 高速grep
 - **tree-sitter**: パーサー（Neovim用）
 
+### 言語環境
+- **PHP 8.4+**: Laravel開発
+- **Composer**: PHPパッケージマネージャー
+- **Laravel Installer**: Laravelプロジェクト作成
+- **MySQL 8.0**: データベース
+- **Node.js**: JavaScript（nodebrew管理）
+- **Ruby**: iOS開発等（rbenv管理）
+- **Rust**: システムプログラミング（rustup管理）
+- **Common Lisp**: nvlime + sbcl
+
 ## Notes
 
-- このリポジトリは日本語環境で使用されています
-- 開発環境はmacOS（Homebrew使用）
-- Android SDK、Node.js (nodebrew)、Ruby (rbenv)、Rust (cargo)などの開発環境を含む
-- Common Lisp開発環境（nvlime + sbcl）も設定済み
+- **対象OS**: macOS (Apple Silicon専用)
+- **言語**: 日本語環境
+- **インストール**: `./install.sh`で完全自動化
+- **冪等性**: 何度実行しても安全（既存設定は自動バックアップ）
+- **ログ**: `~/.dotfiles_install_logs/`にインストールログを保存
+- **バックアップ**: `~/.dotfiles_backup_YYYYMMDD_HHMMSS/`に既存設定を自動バックアップ
