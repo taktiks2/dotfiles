@@ -25,6 +25,6 @@ brew install --cask google-chrome
 brew install --cask docker
 brew install neovim
 brew install lazygit
-brew inntall git-delta
+brew install git-delta
 gem install cocoapods
 ```
