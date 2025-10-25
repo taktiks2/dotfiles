@@ -56,4 +56,14 @@ return {
       "anuvyklack/middleclass",
     },
   },
+  {
+    "folke/snacks.nvim",
+    opts = {
+      zen = {
+        win = {
+          width = 0.4,
+        },
+      },
+    },
+  },
 }
