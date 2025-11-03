@@ -154,6 +154,10 @@ return {
             score_offset = 1000,
             opts = {},
           },
+          laravel = {
+            name = "laravel",
+            module = "blink.compat.source",
+          },
         },
       },
     },
