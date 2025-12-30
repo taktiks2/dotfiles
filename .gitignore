@@ -16,3 +16,15 @@ qmk
 **/Battle.net
 **/gh
 secret-env.fish
+
+# Claude Code temporary files
+.claude/history.jsonl
+.claude/debug/
+.claude/session-env/
+.claude/todos/
+.claude/file-history/
+.claude/stats-cache.json
+.claude/statsig/
+.claude/telemetry/
+.claude/shell-snapshots/
+.claude/plans/
