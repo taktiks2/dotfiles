@@ -1,0 +1,55 @@
+{
+  "version": 2,
+  "plugins": {
+    "code-review@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/taktiks2/.claude/plugins/cache/claude-plugins-official/code-review/6d3752c000e2",
+        "version": "6d3752c000e2",
+        "installedAt": "2025-12-20T01:15:01.683Z",
+        "lastUpdated": "2025-12-20T13:55:26.697Z",
+        "isLocal": true
+      }
+    ],
+    "github@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/taktiks2/.claude/plugins/cache/claude-plugins-official/github/6d3752c000e2",
+        "version": "6d3752c000e2",
+        "installedAt": "2025-12-20T01:15:26.099Z",
+        "lastUpdated": "2025-12-20T13:55:26.702Z",
+        "isLocal": true
+      }
+    ],
+    "commit-commands@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/taktiks2/.claude/plugins/cache/claude-plugins-official/commit-commands/6d3752c000e2",
+        "version": "6d3752c000e2",
+        "installedAt": "2025-12-20T01:15:50.759Z",
+        "lastUpdated": "2025-12-20T13:55:26.707Z",
+        "isLocal": true
+      }
+    ],
+    "rust-analyzer-lsp@claude-plugins-official": [
+      {
+        "scope": "user",
+        "installPath": "/Users/taktiks2/.claude/plugins/cache/claude-plugins-official/rust-analyzer-lsp/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2025-12-20T02:37:26.300Z",
+        "lastUpdated": "2025-12-20T02:37:26.300Z",
+        "isLocal": true
+      }
+    ],
+    "zundamon@cc-zundamon-plugins": [
+      {
+        "scope": "user",
+        "installPath": "/Users/taktiks2/.claude/plugins/cache/cc-zundamon-plugins/zundamon/1.0.0",
+        "version": "1.0.0",
+        "installedAt": "2025-12-30T00:42:29.650Z",
+        "lastUpdated": "2025-12-30T00:42:29.650Z",
+        "isLocal": true
+      }
+    ]
+  }
+}

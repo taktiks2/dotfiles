@@ -1,0 +1,18 @@
+{
+  "claude-plugins-official": {
+    "source": {
+      "source": "github",
+      "repo": "anthropics/claude-plugins-official"
+    },
+    "installLocation": "/Users/taktiks2/.claude/plugins/marketplaces/claude-plugins-official",
+    "lastUpdated": "2025-12-30T03:36:10.599Z"
+  },
+  "cc-zundamon-plugins": {
+    "source": {
+      "source": "github",
+      "repo": "yosugi/cc-zundamon-plugins"
+    },
+    "installLocation": "/Users/taktiks2/.claude/plugins/marketplaces/cc-zundamon-plugins",
+    "lastUpdated": "2025-12-30T00:41:55.886Z"
+  }
+}
