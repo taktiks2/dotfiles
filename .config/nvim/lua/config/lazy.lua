@@ -40,6 +40,7 @@ require("lazy").setup({
     { import = "lazyvim.plugins.extras.test.core" },
     { import = "lazyvim.plugins.extras.util.octo" },
     { import = "lazyvim.plugins.extras.lsp.none-ls" },
+    { import = "lazyvim.plugins.extras.formatting.biome" },
     -- import/override with your plugins
     { import = "plugins" },
   },
