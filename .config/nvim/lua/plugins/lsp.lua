@@ -80,6 +80,7 @@ return {
         "prisma-language-server",
         "svelte-language-server",
         "phpactor",
+        "php-debug-adapter",
       },
     },
   },
