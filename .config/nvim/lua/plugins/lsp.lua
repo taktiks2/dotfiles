@@ -10,6 +10,9 @@ return {
         },
       },
       servers = {
+        -- marksman 1.0.0のURIパースバグで起動するたびクラッシュするため無効化
+        -- https://github.com/artempyanykh/marksman/issues/289
+        marksman = { enabled = false },
         emmet_language_server = {
           filetypes = {
             "html",

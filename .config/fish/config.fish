@@ -63,12 +63,14 @@ alias agents="agents.fish"
 alias vim="nvim"
 alias vi="nvim"
 alias v="nvim"
-alias gd="gh dash"
+alias ghd="gh dash"
 alias lg="lazygit"
 alias ls="lsd"
 alias la="lsd -a"
 alias ll="lsd -al"
 alias sls="sbcl --load ~/.local/share/nvim/lazy/nvlime/lisp/start-nvlime.lisp"
+alias wm="workmux"
+workmux completions fish | source
 
 # The next line updates PATH for the Google Cloud SDK.
 if [ -f '/Users/taktiks2/google-cloud-sdk/path.fish.inc' ]

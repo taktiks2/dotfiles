@@ -18,5 +18,11 @@ keymap.set("n", "<Down>", "4<C-w>-")
 
 keymap.set("n", "<F1>", "<cmd>:GitBlameToggle<CR>")
 keymap.set("n", "<F2>", "<cmd>:GitBlameOpenCommitURL<CR>")
-keymap.set("n", "<F3>", "<cmd>:MarkdownPreview<CR>")
-keymap.set("n", "<F4>", "<cmd>:MarkdownPreviewStop<CR>")
+keymap.set("n", "<F3>", function()
+  local file = vim.fn.expand("%:p")
+  if file == "" or vim.bo.filetype ~= "markdown" then
+    vim.notify("Not a markdown file", vim.log.levels.WARN)
+    return
+  end
+  vim.fn.jobstart({ "open", "-a", "Arto", file }, { detach = true })
+end, { desc = "Open in Arto" })

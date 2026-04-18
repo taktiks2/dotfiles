@@ -1,6 +1,9 @@
 return {
   {
     "adalessa/laravel.nvim",
+    cond = function()
+      return vim.fn.filereadable("artisan") == 1
+    end,
     dependencies = {
       "tpope/vim-dotenv",
       "MunifTanjim/nui.nvim",
@@ -110,6 +113,9 @@ return {
     -- Add the blade-nav.nvim plugin which provides Goto File capabilities
     -- for Blade files.
     "ricardoramirezr/blade-nav.nvim",
+    cond = function()
+      return vim.fn.filereadable("artisan") == 1
+    end,
     dependencies = {
       "hrsh7th/nvim-cmp",
     },

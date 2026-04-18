@@ -1,9 +1,12 @@
 prSections:
-- title: My Pull Requests
-  filters: is:open author:@me
-  type: null
 - title: Needs My Review
   filters: is:open review-requested:@me
+  type: null
+- title: My Pull Requests
+  filters: is:open author:@me draft:false
+  type: null
+- title: My Drafts
+  filters: is:open author:@me draft:true
   type: null
 - title: Involved
   filters: is:open involves:@me -author:@me
@@ -21,7 +24,7 @@ repo:
 defaults:
   preview:
     open: true
-    width: 50
+    width: 0.5  # ターミナル幅の50%（fractionで指定）
   prsLimit: 20
   issuesLimit: 20
   view: prs
@@ -55,9 +58,30 @@ defaults:
 keybindings:
   universal: []
   issues: []
-  prs: []
+  prs:
+    # nvim を新規 tmux ウィンドウで開き、PR バッファを表示（チェックアウトしない）
+    # 起動後 popup の gh dash は閉じる
+    - key: o
+      name: Octo PR
+      command: >-
+        tmux new-window -c {{.RepoPath}}
+        -n "pr#{{.PrNumber}}-$(basename {{.RepoName}})"
+        "nvim '+Octo pr edit {{.PrNumber}}'"
+        ; tmux display-popup -C
+    # PR をチェックアウトしてからレビュー開始
+    # 既存の pending レビューがあれば自動で resume に切り替わる
+    # 起動後 popup の gh dash は閉じる
+    - key: O
+      name: Checkout & Review
+      command: >-
+        tmux new-window -c {{.RepoPath}}
+        -n "review#{{.PrNumber}}-$(basename {{.RepoName}})"
+        "~/.config/gh-dash/bin/octo-review.sh {{.RepoName}} {{.PrNumber}}"
+        ; tmux display-popup -C
   branches: []
-repoPaths: {}
+# リポジトリ名 → ローカルパスのマッピング（カスタムキーで {{.RepoPath}} に展開される）
+repoPaths:
+  taktiks2/*: /Users/taktiks2/dev/*
 theme:
   ui:
     sectionsShowCount: true

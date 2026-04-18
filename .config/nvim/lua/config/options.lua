@@ -13,4 +13,4 @@ opt.shiftwidth = 2
 opt.shell = "fish"
 opt.laststatus = 3
 
-vim.g.maplocalleader = ","
+vim.g.maplocalleader = ";"

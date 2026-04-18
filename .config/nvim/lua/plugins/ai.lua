@@ -1,6 +1,7 @@
 return {
   {
     "yetone/avante.nvim",
+    enabled = false,
     event = "VeryLazy",
     dependencies = {
       "stevearc/dressing.nvim",
@@ -128,32 +129,8 @@ return {
     dependencies = { "saghen/blink.compat" },
     opts = {
       sources = {
-        default = { "avante_commands", "avante_mentions", "avante_files" },
-        compat = {
-          "avante_commands",
-          "avante_mentions",
-          "avante_files",
-        },
-        -- LSP score_offset is typically 60
+        -- avante無効化に合わせて avante_* ソースを除外
         providers = {
-          avante_commands = {
-            name = "avante_commands",
-            module = "blink.compat.source",
-            score_offset = 90,
-            opts = {},
-          },
-          avante_files = {
-            name = "avante_files",
-            module = "blink.compat.source",
-            score_offset = 100,
-            opts = {},
-          },
-          avante_mentions = {
-            name = "avante_mentions",
-            module = "blink.compat.source",
-            score_offset = 1000,
-            opts = {},
-          },
           laravel = {
             name = "laravel",
             module = "blink.compat.source",
