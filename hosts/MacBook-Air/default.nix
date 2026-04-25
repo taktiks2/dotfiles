@@ -1,6 +1,10 @@
 { pkgs, username, hostname, ... }:
 
 {
+  imports = [
+    ../../modules/macos-defaults.nix
+  ];
+
   # Determinate Nix がインストール済みのため、nix-darwin による Nix 自体の管理は無効化する。
   # https://determinate.systems/posts/nix-darwin/
   nix.enable = false;

@@ -248,12 +248,56 @@ dotfiles/
 
 ---
 
-### 累計成果（Step 1 + Step 2 合算）
+### Step 3: macOS システム設定の宣言化（2026-04-25 完了）
+
+#### 作成ファイル
+| ファイル | 内容 |
+|---|---|
+| `modules/macos-defaults.nix` (新規, 119行) | `system.defaults.*` 設定モジュール |
+| `hosts/MacBook-Air/default.nix` (更新) | `imports = [ ../../modules/macos-defaults.nix ]` 追加 |
+
+#### 設計方針
+- **ACTIVE**: 現状の macOS 設定をそのままコード化 → 適用しても挙動変化なし（非破壊）
+- **OPT-IN**: 開発者向けに有効と思われる候補をコメント形式で同梱 → 必要な行のみ uncomment で有効化
+
+#### ACTIVE 項目（現状を Nix に固定）
+| ドメイン | キー | 値 |
+|---|---|---|
+| `dock` | `autohide` | `true` |
+| `dock` | `tilesize` | `44` |
+| `finder` | `ShowStatusBar` | `true` |
+| `finder` | `FXPreferredViewStyle` | `"Nlsv"` (List) |
+| `NSGlobalDomain` | `AppleInterfaceStyle` | `"Dark"` |
+| `screencapture` | `location` | `"~/Pictures/screenshot"` |
+| `trackpad` | `Clicking` | `false` |
+
+#### OPT-IN 候補（コメントアウト形式で同梱）
+- Dock: `show-recents`, `mru-spaces`, `minimize-to-application`, `launchanim`
+- Finder: `AppleShowAllExtensions`, `FXEnableExtensionChangeWarning`, `ShowPathbar`, `_FXShowPosixPathInTitle`, `AppleShowAllFiles`
+- Global: 自動補正系5つ（Capitalization / Period / Dash / Quote / Spelling）、`KeyRepeat = 2`, `InitialKeyRepeat = 15`, `NSDocumentSaveNewDocumentsToCloud`
+- Screencapture: `disable-shadow`, `type = "png"`
+- Trackpad: `TrackpadThreeFingerDrag`
+- Security: `LSQuarantine`, `startup.chime`
+
+#### ハマりどころと対処
+| 現象 | 原因 | 対処 |
+|---|---|---|
+| `system.activationScripts.postUserActivation` がエラー | 新しい nix-darwin で削除済（全アクティベーションが root で行われるよう変更） | カスタムスクリプトを削除。nix-darwin が `activateSettings -u` を自動実行するため不要 |
+
+#### 検証結果
+- `darwin-rebuild switch` 中に `user defaults...` / `restarting Dock...` ログを確認
+- `defaults read` で全 ACTIVE 項目が宣言通りに反映を確認
+- 世代: `system-1 → 2 → 3` と積み上がり、ロールバック可能
+
+---
+
+### 累計成果（Step 1 + Step 2 + Step 3 合算）
 
 - **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
-- **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `docs/` の 4 ディレクトリ体制
+- **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
 - **Fish PATH 統合完了**: 既存 `config.fish` を壊さず Nix を最優先化
-- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可
+- **macOS システム設定を宣言化**（ACTIVE 7項目 + OPT-IN 多数）
+- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-3）
 - **既存 brew / 言語環境（PHP/MySQL/Ruby/Node）への副作用ゼロ**
 
 ### 次のステップ候補（Step 3 以降）
@@ -261,7 +305,7 @@ dotfiles/
 | Step | 内容 | 優先度 |
 |---|---|---|
 | Step 2 follow-up | `brew uninstall` 31本 + `install.sh` クリーンアップ | 中（数日経過後） |
-| Step 3 | `system.defaults.*` で macOS GUI 設定（Dock / Finder / キーボード等）を宣言化 | 高（純増） |
+| Step 3 follow-up | OPT-IN 項目から好みのものを uncomment して有効化 | 任意 |
 | Step 4 | `nix-homebrew` 導入し cask 13 本を `homebrew.casks` で宣言化 | 高 |
 | Step 5 | `xdg.configFile` 経由で `.config/*` の symlink ロジックを home-manager に移譲 | 中 |
 | Step 6 | 新規プロジェクト用に `nix-direnv` セットアップ + devShell サンプル | 低（任意） |
@@ -269,4 +313,4 @@ dotfiles/
 
 ---
 
-*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 (2026-04-25) → Step 2 (2026-04-25)。*
+*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 (2026-04-25)。*
