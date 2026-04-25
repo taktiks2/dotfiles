@@ -484,3 +484,158 @@ direnv allow                       # .envrc を承認
 ---
 
 *このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 → Step 4 → Step 4b → Step 5 → Step 6 (2026-04-25)。*
+
+---
+
+## 11. 現状アセスメント（2026-04-25 時点・追記）
+
+Step 1〜6 完了後の **「いま何ができて、どう使えばよいか」** を実測ベースで整理する。
+
+### 11.1 現状スナップショット
+
+| 項目 | 実測値 |
+|---|---|
+| Nix バージョン | 2.34.6 (Determinate) |
+| 現在の system 世代 | `darwin-system-26.05.06648f4`（`/run/current-system` 実体） |
+| ユーザプロファイル | `/etc/profiles/per-user/taktiks2/bin/` に **84 バイナリ**（31 パッケージから派生） |
+| Homebrew 管理対象 | tap 12 / formula 27 / cask 13 = **52 件すべて宣言済** |
+| dotfiles repo 構造 | `flake.nix` / `hosts/MacBook-Air/` / `home/taktiks2.nix` / `modules/{macos-defaults,homebrew}.nix` / `templates/default/` / `docs/` |
+| direnv | `/etc/profiles/per-user/taktiks2/bin/direnv` 配置済、Fish hook も `config.fish` に組込み済 |
+| ロールバック | `darwin-rebuild --rollback` で常時可能（root 権限要） |
+
+### 11.2 いま「できること」
+
+#### A. システム再現（最大の勝ち筋）
+- **`darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` 一発で**、
+  31 個の CLI パッケージ + 52 件の brew(tap/formula/cask) + 7 項目の macOS 設定 + 2 件の symlink がすべて宣言通りに収束する。
+- 別マシンへ複製する場合の最短手順:
+  1. Determinate Nix インストール（`curl -fsSL https://install.determinate.systems/nix | sh -s -- install`）
+  2. `git clone … ~/dotfiles`
+  3. `sudo /nix/var/nix/profiles/default/bin/nix run nix-darwin/master#darwin-rebuild -- switch --flake ~/dotfiles#MacBook-Air`
+  4. 以後は `darwin-rebuild switch --flake ~/dotfiles` のみ
+- **PHP / MySQL / rbenv / nodebrew は当面 brew 経由のまま**残るため、`install.sh` のブートストラップ部分との二重防御で運用可能。
+
+#### B. 宣言的な日常運用
+| やりたいこと | 操作 |
+|---|---|
+| CLI ツール追加 | `home/taktiks2.nix` の `home.packages` に 1 行追加 → `darwin-rebuild switch` |
+| GUI アプリ追加 | `modules/homebrew.nix` の `casks` に 1 行追加 → `darwin-rebuild switch` |
+| Homebrew formula 追加 | 同モジュール `brews` に 1 行追加 → switch |
+| macOS 設定変更 | `modules/macos-defaults.nix` で OPT-IN コメントを uncomment → switch |
+| 設定ファイルの内容変更 | `~/.config/...` を直接編集（symlink で repo に反映される） |
+| ロールバック | `sudo darwin-rebuild --rollback` |
+| 履歴確認 | `sudo darwin-rebuild --list-generations` |
+
+#### C. プロジェクト単位の隔離環境
+- 任意のプロジェクトで `nix flake init -t ~/dotfiles` → `direnv allow` で **`cd` するだけで devShell が自動有効化**。
+- 言語ランタイムをグローバルに入れずに、プロジェクトごとに固定バージョンで固定可能。
+- nix-direnv によるキャッシュで、2 回目以降の `cd` は瞬時。
+
+### 11.3 まだ「できないこと / 未着手」
+
+| 項目 | 状況 | 重要度 |
+|---|---|---|
+| brew 側 31 本の `uninstall`（重複解消） | 未実施。Nix と brew の二重インストール状態 | 中（数日安定運用後に実施） |
+| `homebrew.onActivation.cleanup = "uninstall"` への切替 | 上記完了後 | 中 |
+| `install.sh` の縮小 | 588 行のまま。Nix 部分とブートストラップ部分を分離する余地 | 中 |
+| `.config/*` 個別の `xdg.configFile` 化 | **意図的に見送り**。`~/.config` 全体 symlink を維持 | — |
+| `tbls / joshuto / clisp / fisher` の Nix 化 | LATER 分類のまま brew | 低 |
+| `cachix` / Determinate Cache の追加 | 未設定。aarch64-darwin の重量ビルド時に効く | 低（必要時） |
+| 第二マシンでの再現テスト | 機会次第 | 低 |
+
+### 11.4 推奨開発フロー（日常運用）
+
+#### 朝のルーチン（必要に応じて）
+```bash
+# 月1回くらい: flake input を更新
+cd ~/dotfiles
+nix flake update                                   # nixpkgs / nix-darwin / home-manager を更新
+sudo darwin-rebuild switch --flake .#MacBook-Air   # 適用
+# 何かおかしければ即座に
+sudo darwin-rebuild --rollback
+```
+
+#### 新しいツールを試したい
+```bash
+# ① 試用だけしたい（インストールしない）
+nix shell nixpkgs#hyperfine          # 一時的に hyperfine が PATH に入る
+hyperfine --version
+exit                                  # シェルを抜けると消える
+
+# ② 気に入ったので常駐させる
+$EDITOR ~/dotfiles/home/taktiks2.nix # home.packages に hyperfine を追加
+sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
+git -C ~/dotfiles commit -am "add hyperfine"
+```
+
+#### 新しい GUI アプリ（cask）を入れたい
+```bash
+$EDITOR ~/dotfiles/modules/homebrew.nix   # casks に "raycast" を追加
+sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
+# brew bundle が走り、未宣言の cask は cleanup = "none" で残るが、新規はインストール
+```
+
+#### macOS の挙動を変えたい
+```bash
+$EDITOR ~/dotfiles/modules/macos-defaults.nix
+#   → OPT-IN セクションのコメントを外す（例: KeyRepeat = 2;）
+sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
+# Dock / Finder の再起動が走り即反映。GUI 操作不要。
+```
+
+#### 新規プロジェクトを始める
+```bash
+mkdir ~/work/new-project && cd $_
+nix flake init -t ~/dotfiles      # devShell テンプレを投入
+$EDITOR flake.nix                  # packages = [ ... ] に必要な言語ランタイムを追加
+direnv allow                       # 以後 cd するだけで自動的に devShell に入る
+```
+
+#### よくあるトラブルシュート
+
+| 症状 | 対処 |
+|---|---|
+| `darwin-rebuild` が見つからない | 新シェル起動。または `/run/current-system/sw/bin/darwin-rebuild` で直叩き |
+| `switch` が失敗する | エラー読む → `sudo darwin-rebuild --rollback` → 修正 → 再度 switch |
+| brew コマンドが Nix 版に上書きされて困る | Fish なら `command /opt/homebrew/bin/<cmd>` で明示指定可 |
+| flake input を巻き戻したい | `flake.lock` を `git checkout` → switch |
+| ストアが肥大した | `nix-collect-garbage -d`（古い世代も削除） |
+
+### 11.5 役割分担の再確認（実装後の現実）
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ Nix (home-manager)            … CLI 31本 + direnv          │
+│   /etc/profiles/per-user/taktiks2/bin/                     │
+├────────────────────────────────────────────────────────────┤
+│ Homebrew (nix-darwin で宣言)  … cask 13 + formula 27       │
+│   /opt/homebrew/                                           │
+│   └ PHP/MySQL/rbenv/nodebrew はここに残置（意図的）        │
+├────────────────────────────────────────────────────────────┤
+│ macOS system.defaults          … Dock/Finder/Trackpad 等   │
+├────────────────────────────────────────────────────────────┤
+│ home-manager activation        … ~/.config と lazygit の   │
+│                                  symlink を冪等に保証      │
+├────────────────────────────────────────────────────────────┤
+│ direnv + nix-direnv            … プロジェクト単位の隔離環境 │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 11.6 完成度評価
+
+| 観点 | 評価 | コメント |
+|---|---|---|
+| 再現性 | ★★★★☆ | brew 側の 31 本残存と install.sh が残るため満点ではない |
+| 宣言性 | ★★★★★ | 「インストールされているもの」がほぼ全て git で追跡可能 |
+| ロールバック性 | ★★★★★ | nix-darwin の世代管理が完全に効く |
+| 既存環境との共存 | ★★★★★ | PHP/MySQL/Ruby が完全に従来通り |
+| 学習コスト | ★★★☆☆ | flake/home-manager の最小限の DSL のみ要習得 |
+| 日常運用負荷 | ★★★★☆ | switch が 1 コマンドで完結。flake update は週次〜月次で十分 |
+
+### 11.7 結論（短く）
+
+- **本リポジトリの Nix 統合は実用ステージに入っている**。あとは brew 側の重複削除（Step 2 follow-up）と install.sh のスリム化が残務。
+- **日常は `$EDITOR home/taktiks2.nix → switch → commit` の 3 ステップ**で完結する。
+- **新規プロジェクトには迷わず `nix flake init -t ~/dotfiles`** を使い、グローバル汚染を避けるべし。
+- 緊急時は `sudo darwin-rebuild --rollback` の存在を覚えていれば良い。これが最大のセーフティネット。
+
