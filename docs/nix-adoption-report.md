@@ -291,26 +291,101 @@ dotfiles/
 
 ---
 
-### 累計成果（Step 1 + Step 2 + Step 3 合算）
+### Step 4: Homebrew cask の宣言化（2026-04-25 完了）
+
+#### 設計判断
+- **`nix-homebrew` は採用見送り**: brew 自体の所有権移管が必要で侵襲度が高い。既存 `/opt/homebrew` を維持する方針。
+- nix-darwin 標準の `homebrew` モジュールを利用。`brew bundle` 相当の冪等同期。
+- **`onActivation.cleanup = "none"`**: 未宣言パッケージを削除しない（Step 2 で Nix 化したが brew 側に残っている 31 本の誤削除を防止）。
+- `autoUpdate = false` / `upgrade = false`: switch のたびに brew 全体を更新しない。
+
+#### 作成ファイル
+| ファイル | 内容 |
+|---|---|
+| `modules/homebrew.nix` (新規, 50行) | nix-darwin `homebrew` モジュール設定 |
+| `hosts/MacBook-Air/default.nix` (更新) | imports に追加 |
+
+#### 宣言した cask（13本）
+```
+arto, bruno, copilot-cli, devtoys, font-hack-nerd-font,
+font-hackgen-nerd, ghostty, godot, ngrok, utm,
+visual-studio-code, warp, zulu@17
+```
+
+#### 宣言した tap（2 つ）
+- `arto-app/tap` (arto 配布元)
+- `ngrok/ngrok` (ngrok 配布元)
+- ※ `homebrew/cask` 標準配下のものは tap 不要
+
+#### 検証結果
+- `darwin-rebuild switch` のログに以下を確認:
+  ```
+  Homebrew bundle...
+  Using arto-app/tap / Using ngrok/ngrok
+  Using arto / Using bruno / ... / Using zulu@17
+  `brew bundle` complete! 15 Brewfile dependencies now installed.
+  ```
+- 全 13 cask + 2 tap が `Using`（既存を認識、変更なし）= **no-op で宣言完了**
+- 副作用: なし
+
+#### 今後の展開
+- 新規 cask 追加は `modules/homebrew.nix` に 1 行追加 + switch のみで完結
+- `cleanup = "uninstall"` への切替は Step 2 follow-up（brew formula 31本の uninstall）と同時実施予定
+- brew formula（KEEP 22 本）の宣言化は Step 4b として後続
+
+---
+
+### Step 4b: brew formula と tap の完全宣言化（2026-04-25 完了）
+
+#### 追加宣言
+- **brew formula 27 本**（`docs/brew-triage.md` の KEEP + LATER 全て）
+  - 言語ランタイム: composer, luarocks, nodebrew, python@3.10, rbenv
+  - DB: mysql, mysql@8.0, postgresql@14
+  - 重量ビルド: bundletool, clisp, openapi-generator, qemu
+  - ベンダー CLI: azure-cli, docker, fastlane, gemini-cli, supabase
+  - Fish: fisher
+  - 第三者 tap formula: carlocab/personal/unrar, heroku/brew/heroku, julien-cpsn/atac/atac, osx-cross/avr/avr-gcc@9, qmk/qmk/qmk, raine/workmux/workmux
+  - LATER: joshuto, rogue, tbls
+- **tap 12 個**（cask + formula 用すべて）
+
+#### 検証結果
+```
+Homebrew bundle...
+Using arto-app/tap / Using carlocab/personal / ... (全 12 tap)
+Using composer / Using luarocks / ... (全 27 formula)
+Using arto / Using bruno / ... (全 13 cask)
+`brew bundle` complete! 52 Brewfile dependencies now installed.
+```
+- 全 52 件が `Using` = no-op で宣言完了
+- brew 状態の **完全な宣言化**を達成
+
+#### 効果
+- 新規マシンでの brew パッケージ復元が `darwin-rebuild switch` 一発で完結
+- 何が手で入って何が宣言で入っているかの混乱が解消
+- `cleanup = "uninstall"` への切替準備完了（Step 2 follow-up と同期で実施）
+
+---
+
+### 累計成果（Step 1 + Step 2 + Step 3 + Step 4 + Step 4b 合算）
 
 - **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
 - **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
 - **Fish PATH 統合完了**: 既存 `config.fish` を壊さず Nix を最優先化
 - **macOS システム設定を宣言化**（ACTIVE 7項目 + OPT-IN 多数）
-- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-3）
-- **既存 brew / 言語環境（PHP/MySQL/Ruby/Node）への副作用ゼロ**
+- **Homebrew 完全宣言化**: tap 12 + formula 27 + cask 13 = 計 52 件
+- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-5）
+- **既存環境への副作用ゼロ**: PHP / MySQL / Ruby / Node 含め全て従来通り動作
 
 ### 次のステップ候補（Step 3 以降）
 
 | Step | 内容 | 優先度 |
 |---|---|---|
-| Step 2 follow-up | `brew uninstall` 31本 + `install.sh` クリーンアップ | 中（数日経過後） |
+| Step 2 follow-up | `brew uninstall` 31本 + `install.sh` クリーンアップ + `cleanup = "uninstall"` 化 | 中（数日経過後） |
 | Step 3 follow-up | OPT-IN 項目から好みのものを uncomment して有効化 | 任意 |
-| Step 4 | `nix-homebrew` 導入し cask 13 本を `homebrew.casks` で宣言化 | 高 |
 | Step 5 | `xdg.configFile` 経由で `.config/*` の symlink ロジックを home-manager に移譲 | 中 |
 | Step 6 | 新規プロジェクト用に `nix-direnv` セットアップ + devShell サンプル | 低（任意） |
 | 第二陣 MOVE | `tbls / joshuto` 等の追加移行 | 低 |
 
 ---
 
-*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 (2026-04-25)。*
+*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 → Step 4 → Step 4b (2026-04-25)。*

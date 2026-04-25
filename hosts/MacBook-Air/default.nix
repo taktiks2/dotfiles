@@ -3,6 +3,7 @@
 {
   imports = [
     ../../modules/macos-defaults.nix
+    ../../modules/homebrew.nix
   ];
 
   # Determinate Nix がインストール済みのため、nix-darwin による Nix 自体の管理は無効化する。
