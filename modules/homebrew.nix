@@ -15,7 +15,9 @@
     onActivation = {
       autoUpdate = false; # 切替のたびに brew update を走らせない
       upgrade = false;    # 既存パッケージの自動アップグレードもしない
-      cleanup = "none";   # 未宣言パッケージを削除しない（保守的）
+      # Step 2 follow-up (2026-04-25 以降): 全 KEEP/cask/tap が宣言済となったため
+      # 未宣言の brew パッケージは uninstall + autoremove で自動掃除する。
+      cleanup = "uninstall";
     };
 
     # 第三者 tap。homebrew/cask 標準配下のものは tap 不要。

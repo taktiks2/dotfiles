@@ -459,7 +459,60 @@ direnv allow                       # .envrc を承認
 
 ---
 
-### 累計成果（Step 1 + Step 2 + Step 3 + Step 4 + Step 4b + Step 5 + Step 6 合算）
+### Step 7 (Part A): brew uninstall 31本 + cleanup="uninstall" 化（2026-04-25 完了）
+
+#### 事前検証
+- 削除候補 30 本（jq は brew leaf ではなかったため対象外）に対し `brew uses --installed` で被参照を確認 → KEEP 27 本との衝突なし
+- `brew autoremove --dry-run` で孤児ゼロ確認
+- `bash` の衝突確認: `/bin/bash` (system, 不変) / `/etc/profiles/per-user/...bash` (Nix) / `/opt/homebrew/bin/bash` (削除予定) → 安全
+
+#### 実装
+`modules/homebrew.nix` で `cleanup = "none"` → `cleanup = "uninstall"` に変更。次の `darwin-rebuild switch` で brew bundle が宣言外パッケージを自動削除。
+
+#### 検証結果
+- ✅ `brew leaves` 57 本 → **27 本**に減少（KEEP セットと完全一致）
+- ✅ 30 本全て削除確認
+- ✅ Nix 版 14 種（rg/lsd/jq/lazygit/nvim/direnv/tmux/fzf/bat/gh/delta/deno/uv/sbcl）が `/etc/profiles/per-user/taktiks2/bin/` で動作
+- ✅ Fish の type -p で正しく Nix 経路に解決
+- ✅ 世代: system-9
+- ✅ 既存 PHP/MySQL/Ruby/Node 環境への副作用なし
+
+---
+
+### Step 7 (Part B): install.sh 重複処理の削除（2026-04-25 完了）
+
+#### 削除した関数（Nix が代替）
+| 関数 | 行数 | 代替 |
+|---|---|---|
+| `install_brew_packages` | 約42行 | `modules/homebrew.nix` の `homebrew.brews` 宣言 |
+| `install_brew_casks` | 約40行 | `modules/homebrew.nix` の `homebrew.casks` 宣言 |
+| `setup_symlinks` | 約33行 | `home/taktiks2.nix` の `home.activation.dotfilesSymlinks` |
+
+#### 追加した関数
+- **`bootstrap_nix`** (約30行)
+  - Determinate Nix を未インストールならインストール
+  - 初回ブートストラップは `sudo nix run nix-darwin/master#darwin-rebuild`
+  - 通常 switch は `sudo /run/current-system/sw/bin/darwin-rebuild switch`
+
+#### 保持した関数（brew install を超えた post-config）
+`setup_php_environment` (Laravel installer) / `install_rust` (rustup) / `setup_nodejs` (nodebrew install latest) / `setup_ruby` (rbenv install) / `setup_fish` (Fisher + bobthefish + chsh + secret-env テンプレ) / `setup_tmux` (TPM clone) / `setup_neovim` (`:Lazy install`)
+
+#### main() の新フロー
+```
+check_system → install_homebrew → bootstrap_nix
+   → setup_php_environment → install_rust → setup_nodejs → setup_ruby
+   → setup_fish → setup_tmux → setup_neovim → final_check
+```
+
+#### 結果
+- 行数: **588 → 501** （約 15% 削減）
+- bash 構文チェック: ✅ パス
+- 関数数: 16 (旧: 18)
+- 「Nix 入れる → switch」が `bootstrap_nix` ひとつにまとまり、レポート初期目標「100行未満が射程」への基盤完成
+
+---
+
+### 累計成果（Step 1〜7 全て完了）
 
 - **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
 - **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
@@ -468,22 +521,24 @@ direnv allow                       # .envrc を承認
 - **Homebrew 完全宣言化**: tap 12 + formula 27 + cask 13 = 計 52 件
 - **dotfiles symlink を home-manager 管理化**: install.sh と二重防御
 - **direnv + nix-direnv 統合 + devShell テンプレート提供**: `nix flake init -t ~/dotfiles` で投入可能
-- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-8）
+- **brew leaves が 57 → 27 本に整理**: cleanup="uninstall" で自動同期
+- **install.sh が 588 → 501 行に削減**: 重複処理削除 + Nix bootstrap 統合
+- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-9）
 - **既存環境への副作用ゼロ**: PHP / MySQL / Ruby / Node 含め全て従来通り動作
 
 ### 次のステップ候補（Step 3 以降）
 
 | Step | 内容 | 優先度 |
 |---|---|---|
-| Step 2 follow-up | `brew uninstall` 31本 + `install.sh` クリーンアップ + `cleanup = "uninstall"` 化 | 中（数日経過後） |
 | Step 3 follow-up | OPT-IN 項目から好みのものを uncomment して有効化 | 任意 |
+| install.sh 後続クリーンアップ | post-config 関数群 (setup_fish/setup_nodejs/setup_ruby 等) を home-manager activation に移譲 | 任意 |
 | Step 5 | `xdg.configFile` 経由で `.config/*` の symlink ロジックを home-manager に移譲 | 中 |
 | Step 6 | 新規プロジェクト用に `nix-direnv` セットアップ + devShell サンプル | 低（任意） |
 | 第二陣 MOVE | `tbls / joshuto` 等の追加移行 | 低 |
 
 ---
 
-*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 → Step 4 → Step 4b → Step 5 → Step 6 (2026-04-25)。*
+*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → 2 → 3 → 4 → 4b → 5 → 6 → 7 (2026-04-25)。全 7 ステップ完了。*
 
 ---
 

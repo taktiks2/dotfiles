@@ -156,90 +156,37 @@ install_homebrew() {
 }
 
 ################################################################################
-# Homebrewパッケージのインストール
+# Nix + nix-darwin ブートストラップ
+#
+# brew formula / cask / tap および CLI ツール群は flake.nix に宣言済のため、
+# `darwin-rebuild switch` 一発で全て同期される。
+# 詳細は docs/nix-adoption-report.md を参照。
 ################################################################################
 
-install_brew_packages() {
-  step "Homebrewパッケージのインストール"
+bootstrap_nix() {
+  step "Nix + nix-darwin のブートストラップ"
 
-  local packages=(
-    # 必須ツール
-    "neovim"
-    "fish"
-    "ripgrep"
-    "tree-sitter"
-    "lazygit"
-    "lazydocker"
-    "git-delta"
-    "lsd"
-    "tmux"
-    "gh"
-
-    # PHP環境
-    "php"
-    "composer"
-    "mysql@8.0"
-
-    # その他の開発ツール
-    "node"
-    "nodebrew"
-    "rbenv"
-    "ruby-build"
-  )
-
-  for package in "${packages[@]}"; do
-    if brew list "$package" &>/dev/null; then
-      info "$package は既にインストール済み"
-    else
-      info "$package をインストール中..."
-      brew install "$package" 2>&1 | tee -a "$LOG_FILE"
-      if [[ $? -eq 0 ]]; then
-        success "$package インストール完了"
-      else
-        error "$package インストール失敗"
-      fi
-    fi
-  done
-}
-
-install_brew_casks() {
-  step "Homebrewアプリケーション(Cask)のインストール"
-
-  local casks=(
-    "alacritty"
-    "font-hack-nerd-font"
-    "visual-studio-code"
-    "google-chrome"
-    "docker"
-    "postman"
-    "dbeaver-community"
-    "slack"
-  )
-
-  # フォントタップの追加
-  if ! brew tap | grep -q "homebrew/cask-fonts"; then
-    info "homebrew/cask-fontsをタップ中..."
-    brew tap homebrew/cask-fonts
+  # Determinate Nix のインストール
+  if ! command_exists nix; then
+    info "Determinate Nix をインストール中..."
+    curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix | sh -s -- install --determinate
+    success "Determinate Nix インストール完了"
+    info "新しいシェルセッションで PATH を再読み込みしてください"
+  else
+    success "Nix 既にインストール済み"
   fi
 
-  for cask in "${casks[@]}"; do
-    if brew list --cask "$cask" &>/dev/null; then
-      info "$cask は既にインストール済み"
-    else
-      info "$cask をインストール中..."
-      if [[ "$cask" == "alacritty" ]]; then
-        brew install --cask --no-quarantine "$cask" 2>&1 | tee -a "$LOG_FILE"
-      else
-        brew install --cask "$cask" 2>&1 | tee -a "$LOG_FILE"
-      fi
+  # darwin-rebuild がまだ無い場合（初回ブートストラップ）
+  if ! command_exists darwin-rebuild && [ ! -x "/run/current-system/sw/bin/darwin-rebuild" ]; then
+    info "初回 darwin-rebuild ブートストラップ中..."
+    sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake "$DOTFILES_DIR#MacBook-Air"
+    success "初回ブートストラップ完了"
+  fi
 
-      if [[ $? -eq 0 ]]; then
-        success "$cask インストール完了"
-      else
-        warning "$cask インストールスキップ（既存または失敗）"
-      fi
-    fi
-  done
+  # 通常の switch（flake 内容に同期）
+  info "darwin-rebuild switch 実行中..."
+  sudo /run/current-system/sw/bin/darwin-rebuild switch --flake "$DOTFILES_DIR#MacBook-Air"
+  success "システム同期完了"
 }
 
 ################################################################################
@@ -436,42 +383,10 @@ setup_tmux() {
 }
 
 ################################################################################
-# シンボリックリンクの作成
+# シンボリックリンクの作成 — home-manager の `home.activation.dotfilesSymlinks`
+# が `~/.config` および lazygit config の symlink を冪等管理するため、本セクションは廃止。
+# 詳細は home/taktiks2.nix を参照。
 ################################################################################
-
-setup_symlinks() {
-  step "シンボリックリンクのセットアップ"
-
-  # .configディレクトリ
-  if [[ -L "$HOME/.config" ]] && [[ "$(readlink "$HOME/.config")" == "$DOTFILES_DIR/.config" ]]; then
-    success ".config は既にリンク済み"
-  else
-    if [[ -d "$HOME/.config" ]] && [[ ! -L "$HOME/.config" ]]; then
-      warning "$HOME/.config が既に存在します"
-      if confirm "既存の .config をバックアップしてリンクを作成しますか？"; then
-        mkdir -p "$BACKUP_DIR"
-        mv "$HOME/.config" "$BACKUP_DIR/config"
-        create_symlink "$DOTFILES_DIR/.config" "$HOME/.config"
-      else
-        info ".config のリンク作成をスキップしました"
-      fi
-    else
-      create_symlink "$DOTFILES_DIR/.config" "$HOME/.config"
-    fi
-  fi
-
-  # lazygit設定
-  local lazygit_config_dir="$HOME/Library/Application Support/lazygit"
-  mkdir -p "$lazygit_config_dir"
-
-  if [[ -f "$DOTFILES_DIR/config.yml" ]]; then
-    if [[ -f "$lazygit_config_dir/config.yml" ]] && ! diff -q "$DOTFILES_DIR/config.yml" "$lazygit_config_dir/config.yml" &>/dev/null; then
-      backup_if_exists "$lazygit_config_dir/config.yml"
-    fi
-    cp "$DOTFILES_DIR/config.yml" "$lazygit_config_dir/config.yml"
-    success "lazygit設定をコピー完了"
-  fi
-}
 
 ################################################################################
 # Neovimのセットアップ
@@ -568,17 +483,15 @@ main() {
 
   # 各ステップの実行
   check_system
-  install_homebrew
-  install_brew_packages
-  install_brew_casks
-  setup_php_environment
-  install_rust
-  setup_nodejs
-  setup_ruby
-  setup_fish
-  setup_tmux
-  setup_symlinks
-  setup_neovim
+  install_homebrew    # nix-darwin の homebrew モジュールが /opt/homebrew を参照するため必須
+  bootstrap_nix       # Nix + nix-darwin で brew formula/cask/tap, CLI, macOS 設定, symlink を一括同期
+  setup_php_environment  # post-config: composer global require laravel/installer
+  install_rust           # post-config: rustup toolchain
+  setup_nodejs           # post-config: nodebrew install latest
+  setup_ruby             # post-config: rbenv install $version
+  setup_fish             # post-config: Fisher + bobthefish + chsh + secret-env テンプレ
+  setup_tmux             # post-config: TPM clone
+  setup_neovim           # post-config: :Lazy install
   final_check
 
   success "全ての処理が完了しました！"
