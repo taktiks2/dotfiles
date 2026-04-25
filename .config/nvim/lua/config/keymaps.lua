@@ -26,3 +26,8 @@ keymap.set("n", "<F3>", function()
   end
   vim.fn.jobstart({ "open", "-a", "Arto", file }, { detach = true })
 end, { desc = "Open in Arto" })
+
+keymap.set("n", "<F4>", function()
+  require("lazy").load({ plugins = { "render-markdown.nvim" } })
+  require("render-markdown").toggle()
+end, { desc = "Toggle Render Markdown" })

@@ -28,3 +28,29 @@ secret-env.fish
 .claude/telemetry/
 .claude/shell-snapshots/
 .claude/plans/
+.claude/projects/
+.claude/backups/
+.claude/cache/
+.claude/chrome/
+.claude/homunculus/
+.claude/metrics/
+.claude/paste-cache/
+.claude/powerline/
+.claude/sessions/
+.claude/tasks/
+.claude/mcp-needs-auth-cache.json
+.claude/settings.json.bak
+
+# Claude Code plugin runtime/cache
+.claude/plugins/cache/
+.claude/plugins/marketplaces/
+.claude/plugins/blocklist.json
+.claude/plugins/install-counts-cache.json
+.claude/plugins/installed_plugins.json
+.claude/plugins/known_marketplaces.json
+
+# Editor / app local backups
+*.bak
+
+# yaru local database
+.config/yaru/
