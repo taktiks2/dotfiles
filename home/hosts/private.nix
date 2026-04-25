@@ -87,4 +87,17 @@
 
   # home-manager 自身の管理を有効化。
   programs.home-manager.enable = true;
+
+  # Step 6: direnv + nix-direnv（プロジェクト単位の devShell 自動有効化）
+  # Fish 用のフックは config.fish で手動 source する（programs.fish を使わないため）。
+  # 注: direnv 2.37.1 のテストが aarch64-darwin sandbox で zsh test が hang するため
+  #     `doCheck = false` で回避（出来上がるバイナリ自体は変わらない）。
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+    enableBashIntegration = true;
+    enableZshIntegration = true;
+    enableFishIntegration = false; # 手動フック側で対応
+    package = pkgs.direnv.overrideAttrs (_: { doCheck = false; });
+  };
 }

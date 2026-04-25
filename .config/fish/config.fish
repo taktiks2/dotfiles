@@ -84,3 +84,9 @@ for nix_path in /etc/profiles/per-user/$USER/bin /run/current-system/sw/bin /nix
         set -gx PATH $nix_path $PATH
     end
 end
+
+# direnv (with nix-direnv): プロジェクト単位で .envrc を自動 source。
+# direnv 本体は home-manager (programs.direnv) で導入される。
+if command -q direnv
+    direnv hook fish | source
+end

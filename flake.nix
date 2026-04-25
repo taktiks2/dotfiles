@@ -37,5 +37,13 @@
           }
         ];
       };
+
+      # `nix flake init -t ~/dotfiles` でプロジェクトに devShell を投入できる。
+      templates = {
+        default = {
+          path = ./templates/default;
+          description = "Generic devShell template with direnv";
+        };
+      };
     };
 }

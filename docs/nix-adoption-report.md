@@ -418,7 +418,48 @@ WARN: /Users/taktiks2/Library/Application Support/lazygit/config.yml が予期�
 
 ---
 
-### 累計成果（Step 1 + Step 2 + Step 3 + Step 4 + Step 4b + Step 5 合算）
+### Step 6: direnv + nix-direnv + devShell テンプレート（2026-04-25 完了）
+
+#### 作成・変更
+| ファイル | 内容 |
+|---|---|
+| `home/taktiks2.nix` (更新) | `programs.direnv` 有効化（`enableFishIntegration = false`） |
+| `.config/fish/config.fish` (更新) | `direnv hook fish | source` を追加 |
+| `templates/default/flake.nix` (新規) | 汎用 devShell テンプレ |
+| `templates/default/.envrc` (新規) | `use flake` |
+| `templates/default/.gitignore` (新規) | `.direnv/`, `result*` |
+| `flake.nix` (更新) | `templates.default` 出力を追加 |
+| `.gitignore` (更新) | `.config/direnv/`, `.direnv/`, `result*` を除外 |
+
+#### 設計判断
+- **Fish 統合は手動フック**: `programs.fish` を有効化していないため、home-manager の自動統合は使わず `config.fish` に hook を直書き
+- **devShell テンプレートを `templates/default` で提供**: `nix flake init -t ~/dotfiles` で任意プロジェクトに投入可能
+- **`flake-utils.eachDefaultSystem`** を採用: aarch64-darwin / x86_64-darwin / x86_64-linux 等を一発カバー
+
+#### ハマりどころと対処
+| 現象 | 原因 | 対処 |
+|---|---|---|
+| `nix build` が direnv のテストフェーズで hang（`zsh ./test/direnv-test.zsh` 無限待ち） | direnv 2.37.1 の zsh test が aarch64-darwin sandbox で interactive 動作期待 | `programs.direnv.package = pkgs.direnv.overrideAttrs (_: { doCheck = false; })` でテストスキップ |
+| 複数 build 重複によるロック競合 | デバッグ中の builds を kill しきれず残存 | 全プロセス kill 後に単独実行 |
+
+#### 検証結果
+- ✅ `direnv 2.37.1` 配置: `/etc/profiles/per-user/taktiks2/bin/direnv`
+- ✅ Fish hook ロード: `functions __direnv_export_eval` が ACTIVE
+- ✅ `~/.config/direnv/lib/` に nix-direnv stdlib 配置
+- ✅ `nix flake init -t ~/dotfiles` で template 3ファイル正常展開（flake.nix, .envrc, .gitignore）
+- ✅ `.config/direnv/` は gitignore で除外済（dotfiles repo を汚染しない）
+
+#### 使用方法（プロジェクト側）
+```bash
+mkdir my-project && cd my-project
+nix flake init -t ~/dotfiles      # 汎用 devShell テンプレを投入
+direnv allow                       # .envrc を承認
+# 以後、cd するだけで自動的に devShell が有効化
+```
+
+---
+
+### 累計成果（Step 1 + Step 2 + Step 3 + Step 4 + Step 4b + Step 5 + Step 6 合算）
 
 - **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
 - **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
@@ -426,7 +467,8 @@ WARN: /Users/taktiks2/Library/Application Support/lazygit/config.yml が予期�
 - **macOS システム設定を宣言化**（ACTIVE 7項目 + OPT-IN 多数）
 - **Homebrew 完全宣言化**: tap 12 + formula 27 + cask 13 = 計 52 件
 - **dotfiles symlink を home-manager 管理化**: install.sh と二重防御
-- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-6）
+- **direnv + nix-direnv 統合 + devShell テンプレート提供**: `nix flake init -t ~/dotfiles` で投入可能
+- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-8）
 - **既存環境への副作用ゼロ**: PHP / MySQL / Ruby / Node 含め全て従来通り動作
 
 ### 次のステップ候補（Step 3 以降）
@@ -441,4 +483,4 @@ WARN: /Users/taktiks2/Library/Application Support/lazygit/config.yml が予期�
 
 ---
 
-*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 → Step 4 → Step 4b → Step 5 (2026-04-25)。*
+*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 → Step 4 → Step 4b → Step 5 → Step 6 (2026-04-25)。*

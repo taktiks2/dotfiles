@@ -54,3 +54,9 @@ secret-env.fish
 
 # yaru local database
 .config/yaru/
+
+# Nix / direnv 生成物
+.config/direnv/
+.direnv/
+result
+result-*
