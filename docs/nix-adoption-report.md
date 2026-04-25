@@ -161,4 +161,112 @@ dotfiles/
 
 ---
 
-*このレポートは Claude Code (Opus 4.7) による調査に基づく。エコシステム動向は 2026 年 4 月時点。*
+## 10. 実施履歴
+
+### Step 1: flake 雛形 + 最小ブートストラップ（2026-04-25 完了）
+
+#### 作成ファイル
+| ファイル | 行数 | 役割 |
+|---|---|---|
+| `flake.nix` | 36 | inputs (nixpkgs unstable / nix-darwin / home-manager) と `darwinConfigurations.MacBook-Air` |
+| `flake.lock` | 自動 | nixpkgs 2026-04-23, nix-darwin 2026-04-01, home-manager 2026-04-25 |
+| `hosts/MacBook-Air/default.nix` | 29 | nix-darwin システムモジュール |
+| `home/taktiks2.nix` | 16 | home-manager ユーザモジュール（CLIツール3本） |
+
+#### 実施内容
+1. `flake.nix` で aarch64-darwin / `darwinConfigurations.MacBook-Air` を定義
+2. ホスト側で **Determinate Nix と共存**するため `nix.enable = false` を設定
+3. `system.primaryUser = "taktiks2"` および `users.users.taktiks2.home = "/Users/taktiks2"` を宣言
+4. home-manager を nix-darwin モジュールとして組み込み（`useGlobalPkgs / useUserPackages = true`）
+5. 試験パッケージ `ripgrep / lsd / jq` の 3 本のみ追加
+6. `nix flake check` パス → `nix build` 成功
+7. `sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake .#MacBook-Air` でブートストラップ
+8. home-manager 修復のため `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` を再実行
+
+#### ハマりどころと対処
+| 現象 | 原因 | 対処 |
+|---|---|---|
+| `home.homeDirectory` が `null` でビルド失敗 | nix-darwin の `users.users.<name>.home` 未定義 | ホスト側に `users.users.taktiks2 = { name; home; }` を追加し、home-manager 側からは `home.homeDirectory` 指定を削除 |
+| `~/.nix-profile` が dangling symlink | `useUserPackages = true` ではパッケージは `/etc/profiles/per-user/<user>/bin/` に配置される（仕様）。`~/.nix-profile` リンクは無害な遺物 | 無視可。実体は `/etc/profiles/per-user/taktiks2/bin/` |
+| `sudo nix run` 起動時に `$HOME ('/Users/taktiks2') is not owned by you` 警告 | sudo が HOME 環境変数を保持しつつ Nix 内部で root 文脈と衝突 | `darwin-rebuild` 単体（`sudo /run/current-system/sw/bin/darwin-rebuild switch ...`）で再実行すれば解消 |
+| 一見 brew 版が引かれる | 既存シェルセッションが switch 前から起動されており PATH 未更新 | 新シェル起動 or Step 2 の Fish PATH 統合で恒久解決 |
+
+#### 検証結果
+- `/run/current-system` → 新システムを指す
+- `/etc/profiles/per-user/taktiks2/bin/{rg, lsd, jq}` → Nix 版確認（`rg 15.1.0` vs brew `14.1.0`）
+- `darwin-rebuild` コマンド利用可能（`/run/current-system/sw/bin/`）
+- 既存 brew / `.config/*` / `install.sh` への副作用なし
+
+---
+
+### Step 2: Fish PATH 統合 + brew 31本の Nix 移行（2026-04-25 完了）
+
+#### Step 2a: Fish PATH 統合
+- 編集: `.config/fish/config.fish` 末尾に Nix 経路の**再プリペンド**ブロックを追加
+  ```fish
+  for nix_path in /etc/profiles/per-user/$USER/bin /run/current-system/sw/bin /nix/var/nix/profiles/default/bin
+      if test -d $nix_path; and not contains $nix_path $PATH
+          set -gx PATH $nix_path $PATH
+      end
+  end
+  ```
+- 既存の `set PATH /opt/homebrew/bin $PATH` 等の後に追加することで、Nix が brew より優先される
+- 検証: 新 Fish セッションで `which rg/lsd/jq/darwin-rebuild` が Nix 版を返す
+
+#### Step 2b: brew leaves 仕分け
+- 作成: `docs/brew-triage.md`
+- `brew leaves` の **57 本**を `MOVE / KEEP / LATER` に三分類
+- MOVE: 31 本（純粋 CLI、aarch64-darwin キャッシュ確度高）
+- KEEP: 言語ランタイム・DB サービス・第三者 tap・ベンダー CLI など 22 本
+- LATER: `tbls / joshuto / clisp / fisher` の 4 本
+
+#### Step 2c: home/taktiks2.nix 拡張（3本 → 31本）
+
+カテゴリ別追加：
+
+| カテゴリ | パッケージ |
+|---|---|
+| 検索 / ファイル | `ripgrep, fd, fzf, bat, lsd, tree, broot, fswatch` |
+| Git / 開発フロー | `gh, delta, git-filter-repo, lazygit, lazydocker, cocogitto` |
+| エディタ / マルチプレクサ | `neovim, tmux` |
+| JSON / テキスト | `jq, gnused` |
+| ネットワーク / シェル | `wget, bash, bats` |
+| ビジュアル / システム | `btop, graphviz, television` |
+| 言語ランタイム / ビルド | `zig, deno, uv, sbcl, cargo-binstall` |
+| AI / その他 | `aichat, just` |
+
+#### Step 2d: 適用と検証
+- `nix build` 成功（全パッケージがバイナリキャッシュからフェッチ、ローカルビルドゼロ）
+- `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` 適用
+- 31/31 本が `/etc/profiles/per-user/taktiks2/bin/` で解決を確認
+
+#### 注意事項
+1. **`sed` が GNU sed に置換**される（Nix の `gnused` パッケージが `sed` を直接提供）。BSD 専用フラグ依存スクリプトに注意
+2. **`bash`** は `/run/current-system/sw/bin/` 配下に配置（システムレベル）。`#!/bin/bash` シバンは絶対パスのため影響なし
+3. **brew 側のパッケージは未削除**。Nix 版安定動作確認後（数日後）に `brew uninstall` 実施推奨
+4. パッケージ名 ≠ バイナリ名: `television → tv`, `cocogitto → cog`, `graphviz → dot/neato`, `gnused → sed`
+
+---
+
+### 累計成果（Step 1 + Step 2 合算）
+
+- **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
+- **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `docs/` の 4 ディレクトリ体制
+- **Fish PATH 統合完了**: 既存 `config.fish` を壊さず Nix を最優先化
+- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可
+- **既存 brew / 言語環境（PHP/MySQL/Ruby/Node）への副作用ゼロ**
+
+### 次のステップ候補（Step 3 以降）
+
+| Step | 内容 | 優先度 |
+|---|---|---|
+| Step 2 follow-up | `brew uninstall` 31本 + `install.sh` クリーンアップ | 中（数日経過後） |
+| Step 3 | `system.defaults.*` で macOS GUI 設定（Dock / Finder / キーボード等）を宣言化 | 高（純増） |
+| Step 4 | `nix-homebrew` 導入し cask 13 本を `homebrew.casks` で宣言化 | 高 |
+| Step 5 | `xdg.configFile` 経由で `.config/*` の symlink ロジックを home-manager に移譲 | 中 |
+| Step 6 | 新規プロジェクト用に `nix-direnv` セットアップ + devShell サンプル | 低（任意） |
+| 第二陣 MOVE | `tbls / joshuto` 等の追加移行 | 低 |
+
+---
+
+*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 (2026-04-25) → Step 2 (2026-04-25)。*

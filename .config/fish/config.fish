@@ -76,3 +76,11 @@ workmux completions fish | source
 if [ -f '/Users/taktiks2/google-cloud-sdk/path.fish.inc' ]
     . '/Users/taktiks2/google-cloud-sdk/path.fish.inc'
 end
+
+# Nix profiles — must be prepended LAST so they win over brew/composer/rbenv.
+# Order: user (home-manager) → system (nix-darwin) → default (Determinate Nix).
+for nix_path in /etc/profiles/per-user/$USER/bin /run/current-system/sw/bin /nix/var/nix/profiles/default/bin
+    if test -d $nix_path; and not contains $nix_path $PATH
+        set -gx PATH $nix_path $PATH
+    end
+end
