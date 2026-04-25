@@ -366,14 +366,67 @@ Using arto / Using bruno / ... (全 13 cask)
 
 ---
 
-### 累計成果（Step 1 + Step 2 + Step 3 + Step 4 + Step 4b 合算）
+### Step 5: dotfiles symlink の home-manager 移譲（2026-04-25 完了）
+
+#### 重要な発見（方針転換）
+当初想定: `xdg.configFile` で `.config/*` を**個別に** symlink 管理
+実際の状態: **`~/.config` 自体が単一 symlink** (`~/.config -> ~/dotfiles/.config`) で運用中
+
+→ 個別管理化は逆に複雑化を招く（home-manager の `xdg.configFile.*` 機構と単一 symlink アーキテクチャの衝突）。
+→ **既存アーキテクチャを尊重**し、install.sh の `setup_symlinks` 相当を home-manager の `home.activation` で冪等に保証する方針に変更。
+
+#### 管理対象 symlink（2 件）
+1. `~/.config` → `~/dotfiles/.config` （ディレクトリ全体）
+2. `~/Library/Application Support/lazygit/config.yml` → `~/dotfiles/config.yml`
+
+#### 実装
+`home/taktiks2.nix` に `home.activation.dotfilesSymlinks` を追加：
+- `lib.hm.dag.entryAfter [ "writeBoundary" ]` で home-manager のリンク生成後に実行
+- ヘルパ関数 `ensure_symlink` で 3 状態を判別:
+  - 既に正しい symlink → no-op
+  - 別の何か（通常ファイル等）が存在 → WARN を出してスキップ（破壊回避）
+  - 何も無い → 親ディレクトリ作成 + symlink 生成
+
+#### 副次的発見: lazygit config の schema drift
+- `~/dotfiles/config.yml` (repo): 旧 schema `paging:`
+- `~/Library/Application Support/lazygit/config.yml` (live): 新 schema `pagers:`
+- → live が auto-migrate された結果、内容が乖離していた
+- → activation は正しく WARN を出しスキップ（防御的設計が機能）
+- → repo 側の更新を別タスクとして識別
+
+#### 検証結果（switch ログ）
+```
+Activating dotfilesSymlinks
+WARN: /Users/taktiks2/Library/Application Support/lazygit/config.yml が予期しない状態のためスキップ（手動対応要）
+```
+- `.config` symlink: 既に正しい → 無音通過 ✅
+- lazygit: WARN 通り保護的スキップ ✅
+- 既存環境への破壊: ゼロ
+
+#### install.sh への影響
+- 当面は install.sh `setup_symlinks` も並存させる（二重防御 / 冪等）
+- 将来の install.sh クリーンアップで該当箇所を削除可能
+
+#### Step 5 follow-up: lazygit schema 修復と activation 改良（同日）
+1. `~/dotfiles/config.yml` を旧 schema (`paging:`) → 新 schema (`pagers:`) へ更新
+2. live ファイル削除 → switch でも別プロセスが空ファイルを再生成し WARN 継続
+3. `ensure_symlink` を改良: **空ファイル (`-f && ! -s`) は安全に置換**するロジック追加
+4. 再 switch で `replaced empty file with symlink: ... -> ~/dotfiles/config.yml` を確認
+5. ✅ 完全 symlink 化達成（`lrwxr-xr-x ... config.yml -> /Users/taktiks2/dotfiles/config.yml`）
+
+学び: ファイルロック / 自動再生成は外部プロセスで頻繁に起こるため、activation スクリプトは **「空ファイルは安全に置換可能」というヒューリスティック**を持つと堅牢になる。
+
+---
+
+### 累計成果（Step 1 + Step 2 + Step 3 + Step 4 + Step 4b + Step 5 合算）
 
 - **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
 - **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
 - **Fish PATH 統合完了**: 既存 `config.fish` を壊さず Nix を最優先化
 - **macOS システム設定を宣言化**（ACTIVE 7項目 + OPT-IN 多数）
 - **Homebrew 完全宣言化**: tap 12 + formula 27 + cask 13 = 計 52 件
-- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-5）
+- **dotfiles symlink を home-manager 管理化**: install.sh と二重防御
+- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-6）
 - **既存環境への副作用ゼロ**: PHP / MySQL / Ruby / Node 含め全て従来通り動作
 
 ### 次のステップ候補（Step 3 以降）
@@ -388,4 +441,4 @@ Using arto / Using bruno / ... (全 13 cask)
 
 ---
 
-*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 → Step 4 → Step 4b (2026-04-25)。*
+*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → Step 2 → Step 3 → Step 4 → Step 4b → Step 5 (2026-04-25)。*
