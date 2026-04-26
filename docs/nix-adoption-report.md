@@ -577,184 +577,197 @@ check_system → install_homebrew → bootstrap_nix
 
 ---
 
-### 累計成果（Step 1〜7 + 全 follow-up 完了）
+### 累計成果（Step 1〜7 + 全 follow-up 完了時点）
 
-- **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
-- **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
-- **Fish PATH 統合完了**: 既存 `config.fish` を壊さず Nix を最優先化
-- **macOS システム設定を宣言化**（ACTIVE 7項目 + OPT-IN 多数）
-- **Homebrew 完全宣言化**: tap 12 + formula 27 + cask 13 = 計 52 件
-- **dotfiles symlink を home-manager 管理化**: install.sh と二重防御
+- **CLI ツール 33 本を Nix 化**（第一陣 31 + 第二陣 tbls/joshuto = 33）
+- **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/MacBook-Air/` / `home/taktiks2.nix` / `modules/{macos-defaults,homebrew}.nix` / `templates/default/` / `docs/`
+- **Fish PATH 統合完了**: 既存 `config.fish` を壊さず Nix を最優先化（行 82–84）
+- **macOS システム設定を宣言化**（ACTIVE 7 項目 + OPT-IN 多数 / 拡張子・隠しファイル表示は working-tree で uncomment 中・未 switch）
+- **Homebrew 完全宣言化**: tap 12 + formula 25 + cask 13 = 計 50 件（第二陣で tbls/joshuto を Nix 移行のため formula は 27→25）
+- **`cleanup = "uninstall"` 化済**: 未宣言の brew パッケージを switch 時に自動削除
+- **dotfiles symlink を home-manager 管理化**: `home.activation.dotfilesSymlinks` で冪等保証
+- **post-config の home.activation 移譲**: TPM / secret-env / Fisher / bobthefish / Laravel installer を `bootstrapSideEffects` で初回のみ実行
 - **direnv + nix-direnv 統合 + devShell テンプレート提供**: `nix flake init -t ~/dotfiles` で投入可能
-- **brew leaves が 57 → 25 本に整理**: cleanup="uninstall" で自動同期
+- **brew leaves が 57 → 25 本に整理**
 - **install.sh が 588 → 456 行に削減**（-22.4%）: 重複処理削除 + Nix bootstrap 統合 + post-config 6 件を home.activation 化
-- **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-9）
+- **ロールバック可能性確保**: nix-darwin の世代管理が完全動作
 - **既存環境への副作用ゼロ**: PHP / MySQL / Ruby / Node 含め全て従来通り動作
 
-### 次のステップ候補（Step 3 以降）
+---
 
-| Step | 内容 | 優先度 |
-|---|---|---|
-| Step 3 follow-up | OPT-IN 項目から好みのものを uncomment して有効化 | 任意 |
-| Step 5 | `xdg.configFile` 経由で `.config/*` の symlink ロジックを home-manager に移譲 | 中 |
-| Step 6 | 新規プロジェクト用に `nix-direnv` セットアップ + devShell サンプル | 低（任意） |
-| 第二陣 MOVE | `tbls / joshuto` 等の追加移行 | 低 |
+*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → 2 → 3 → 4 → 4b → 5 → 6 → 7 → 7 follow-up（2026-04-25）。レポートは 2026-04-26 時点の実測値で再構成。*
 
 ---
 
-*このレポートは Claude Code (Opus 4.7) による調査・実装記録。エコシステム動向は 2026 年 4 月時点。実施: Step 1 → 2 → 3 → 4 → 4b → 5 → 6 → 7 (2026-04-25)。全 7 ステップ完了。*
+## 11. 現状アセスメント（2026-04-26 再構成）
 
----
+Step 1〜7 + 全 follow-up 完了時点での **「いま実機がどう構成されているか / どう使えばよいか」** を実測値で再整理した版。前版（2026-04-25 追記）は Step 7 直前のスナップショットで世代・パッケージ数・brew uninstall ステータスがズレていたため、本節で完全に置き換える。
 
-## 11. 現状アセスメント（2026-04-25 時点・追記）
+### 11.1 実測スナップショット（2026-04-26）
 
-Step 1〜6 完了後の **「いま何ができて、どう使えばよいか」** を実測ベースで整理する。
-
-### 11.1 現状スナップショット
-
-| 項目 | 実測値 |
-|---|---|
-| Nix バージョン | 2.34.6 (Determinate) |
-| 現在の system 世代 | `darwin-system-26.05.06648f4`（`/run/current-system` 実体） |
-| ユーザプロファイル | `/etc/profiles/per-user/taktiks2/bin/` に **84 バイナリ**（31 パッケージから派生） |
-| Homebrew 管理対象 | tap 12 / formula 27 / cask 13 = **52 件すべて宣言済** |
-| dotfiles repo 構造 | `flake.nix` / `hosts/MacBook-Air/` / `home/taktiks2.nix` / `modules/{macos-defaults,homebrew}.nix` / `templates/default/` / `docs/` |
-| direnv | `/etc/profiles/per-user/taktiks2/bin/direnv` 配置済、Fish hook も `config.fish` に組込み済 |
-| ロールバック | `darwin-rebuild --rollback` で常時可能（root 権限要） |
-
-### 11.2 いま「できること」
-
-#### A. システム再現（最大の勝ち筋）
-- **`darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` 一発で**、
-  31 個の CLI パッケージ + 52 件の brew(tap/formula/cask) + 7 項目の macOS 設定 + 2 件の symlink がすべて宣言通りに収束する。
-- 別マシンへ複製する場合の最短手順:
-  1. Determinate Nix インストール（`curl -fsSL https://install.determinate.systems/nix | sh -s -- install`）
-  2. `git clone … ~/dotfiles`
-  3. `sudo /nix/var/nix/profiles/default/bin/nix run nix-darwin/master#darwin-rebuild -- switch --flake ~/dotfiles#MacBook-Air`
-  4. 以後は `darwin-rebuild switch --flake ~/dotfiles` のみ
-- **PHP / MySQL / rbenv / nodebrew は当面 brew 経由のまま**残るため、`install.sh` のブートストラップ部分との二重防御で運用可能。
-
-#### B. 宣言的な日常運用
-| やりたいこと | 操作 |
-|---|---|
-| CLI ツール追加 | `home/taktiks2.nix` の `home.packages` に 1 行追加 → `darwin-rebuild switch` |
-| GUI アプリ追加 | `modules/homebrew.nix` の `casks` に 1 行追加 → `darwin-rebuild switch` |
-| Homebrew formula 追加 | 同モジュール `brews` に 1 行追加 → switch |
-| macOS 設定変更 | `modules/macos-defaults.nix` で OPT-IN コメントを uncomment → switch |
-| 設定ファイルの内容変更 | `~/.config/...` を直接編集（symlink で repo に反映される） |
-| ロールバック | `sudo darwin-rebuild --rollback` |
-| 履歴確認 | `sudo darwin-rebuild --list-generations` |
-
-#### C. プロジェクト単位の隔離環境
-- 任意のプロジェクトで `nix flake init -t ~/dotfiles` → `direnv allow` で **`cd` するだけで devShell が自動有効化**。
-- 言語ランタイムをグローバルに入れずに、プロジェクトごとに固定バージョンで固定可能。
-- nix-direnv によるキャッシュで、2 回目以降の `cd` は瞬時。
-
-### 11.3 まだ「できないこと / 未着手」
-
-| 項目 | 状況 | 重要度 |
+| 項目 | 実測値 | 確認方法 |
 |---|---|---|
-| brew 側 31 本の `uninstall`（重複解消） | 未実施。Nix と brew の二重インストール状態 | 中（数日安定運用後に実施） |
-| `homebrew.onActivation.cleanup = "uninstall"` への切替 | 上記完了後 | 中 |
-| `install.sh` の縮小 | 588 行のまま。Nix 部分とブートストラップ部分を分離する余地 | 中 |
-| `.config/*` 個別の `xdg.configFile` 化 | **意図的に見送り**。`~/.config` 全体 symlink を維持 | — |
-| `tbls / joshuto / clisp / fisher` の Nix 化 | LATER 分類のまま brew | 低 |
-| `cachix` / Determinate Cache の追加 | 未設定。aarch64-darwin の重量ビルド時に効く | 低（必要時） |
-| 第二マシンでの再現テスト | 機会次第 | 低 |
+| Nix バージョン | **2.34.6**（Determinate Nix） | `nix --version` |
+| 現在の system 世代 | **system-11**（`darwin-system-26.05.06648f4`） | `ls /nix/var/nix/profiles/system` |
+| 過去世代数 | system-1 〜 system-11（11 世代積み上がり） | `/nix/var/nix/profiles/system-*-link` |
+| ユーザプロファイルのバイナリ数 | **86 バイナリ / 33 パッケージ** | `ls /etc/profiles/per-user/taktiks2/bin \| wc -l` |
+| Nix flake inputs (lock) | nixpkgs 2026-04-23 / nix-darwin 2026-04-01 / home-manager 2026-04-25 | `flake.lock` |
+| Homebrew leaves | **25 本** | `brew leaves \| wc -l` |
+| Homebrew 全 formula（dep 含む） | 159 本 | `brew list --formula \| wc -l` |
+| Homebrew tap | **12** / cask **13** | `brew tap` / `brew list --cask` |
+| 宣言ファイル状態 | tap 12 / formula 25 / cask 13（`modules/homebrew.nix`） | `awk` 抽出 |
+| `cleanup` 設定 | **`"uninstall"`**（未宣言は switch 時に自動削除） | `modules/homebrew.nix:20` |
+| install.sh | **456 行** / 関数 16 個 | `wc -l install.sh` |
+| `~/.config` symlink | `~/dotfiles/.config` 健全 | `ls -la ~/.config` |
+| lazygit symlink | `~/dotfiles/config.yml` 健全 | `ls -la "~/Library/Application Support/lazygit/config.yml"` |
+| direnv | `/etc/profiles/per-user/taktiks2/bin/direnv` 配置済 + Fish hook 動作中 | `which direnv` / `config.fish:91` |
+| home.activation | `dotfilesSymlinks` + `bootstrapSideEffects`（5 件のサイドエフェクト管理） | `home/taktiks2.nix:68,94` |
+| ロールバック | `sudo darwin-rebuild --rollback` で system-10 へ戻し可能 | — |
 
-### 11.4 推奨開発フロー（日常運用）
+### 11.2 リポジトリ状態（git）
 
-#### 朝のルーチン（必要に応じて）
+| 項目 | 値 |
+|---|---|
+| カレントブランチ | **`feat/nix`**（main から **10 commits 先行・未マージ**） |
+| 含まれるコミット | Step 1 → 2 → 3 → 4 → 4b → 5 → 6 → 7 → Step 7 follow-up x2 |
+| 未コミット差分 | `modules/macos-defaults.nix`（後述） |
+
+#### 未コミット / 未 switch の作業差分（要処理）
+
+working tree で 3 項目が OPT-IN コメントを外した状態になっているが、`darwin-rebuild switch` が走っていないため **`defaults read` では未反映**（domain pair が存在しない状態）：
+
+- `finder.AppleShowAllExtensions = true`
+- `finder.AppleShowAllFiles = true`
+- `NSGlobalDomain.AppleShowAllExtensions = true`
+
+→ **対応 2 択**: ① そのまま `switch` してから commit する（採用するなら ACTIVE に昇格）／ ② `git checkout -- modules/macos-defaults.nix` で破棄する。
+
+### 11.3 役割分担の現実（実装後）
+
+```
+┌────────────────────────────────────────────────────────────┐
+│ Nix (home-manager)             … CLI 33本 + direnv         │
+│   /etc/profiles/per-user/taktiks2/bin/  (86 binaries)      │
+├────────────────────────────────────────────────────────────┤
+│ Homebrew (nix-darwin で宣言)   … cask 13 + formula 25      │
+│   /opt/homebrew/                                           │
+│   ├ PHP/MySQL/rbenv/nodebrew/postgres/python はここ        │
+│   ├ qmk/atac/heroku/avr-gcc 等の第三者 tap formula         │
+│   └ rogue (Nix 版なし・嗜好で残置)                         │
+│   cleanup = "uninstall" により未宣言は switch で自動削除   │
+├────────────────────────────────────────────────────────────┤
+│ macOS system.defaults          … Dock/Finder/Trackpad 等   │
+│   ACTIVE 7 + OPT-IN 多数（uncomment で発動）               │
+├────────────────────────────────────────────────────────────┤
+│ home-manager activation        … 冪等な側付け処理           │
+│   ├ dotfilesSymlinks: ~/.config と lazygit の symlink      │
+│   └ bootstrapSideEffects:                                  │
+│        TPM / secret-env / Fisher / bobthefish / Laravel    │
+├────────────────────────────────────────────────────────────┤
+│ direnv + nix-direnv            … プロジェクト単位の隔離     │
+│   templates/default で `nix flake init -t ~/dotfiles`      │
+└────────────────────────────────────────────────────────────┘
+```
+
+### 11.4 残作業 / 未着手
+
+| 項目 | 状況 | 優先度 |
+|---|---|---|
+| `modules/macos-defaults.nix` の working-tree 差分処理 | switch して commit するか revert するか未決定 | **高** |
+| `feat/nix` ブランチを main にマージ | PR 未作成。10 commits 蓄積中 | **高** |
+| `modules/homebrew.nix` 冒頭コメントの整合 | 旧 `cleanup="none"` の文面が残存（実体は `uninstall`）。section header も `（27 本）`が残る（実数 25） | 中 |
+| `.config/*` 個別の `xdg.configFile` 化 | **意図的に見送り**（`~/.config` 全体 symlink 運用を維持） | — |
+| `clisp` の廃止判断 | sbcl で代替可、好みで残置 | 低 |
+| `cachix` / Determinate Cache の有効化 | 未設定。aarch64-darwin の重量ビルド時に効く | 低（必要時） |
+| 第二マシンでの再現テスト | 未実施（機会次第） | 低 |
+
+### 11.5 日常運用フロー
+
+#### 月次メンテ
 ```bash
-# 月1回くらい: flake input を更新
 cd ~/dotfiles
-nix flake update                                   # nixpkgs / nix-darwin / home-manager を更新
+nix flake update                                   # inputs を全更新
 sudo darwin-rebuild switch --flake .#MacBook-Air   # 適用
-# 何かおかしければ即座に
+# 何か壊れたら即時:
 sudo darwin-rebuild --rollback
 ```
 
-#### 新しいツールを試したい
+#### 新しい CLI を試す → 採用する
 ```bash
-# ① 試用だけしたい（インストールしない）
-nix shell nixpkgs#hyperfine          # 一時的に hyperfine が PATH に入る
+# ① 試用（PATH に一時導入）
+nix shell nixpkgs#hyperfine
 hyperfine --version
-exit                                  # シェルを抜けると消える
+exit
 
-# ② 気に入ったので常駐させる
-$EDITOR ~/dotfiles/home/taktiks2.nix # home.packages に hyperfine を追加
+# ② 採用（常駐化）
+$EDITOR ~/dotfiles/home/taktiks2.nix      # home.packages に hyperfine を追加
 sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
 git -C ~/dotfiles commit -am "add hyperfine"
 ```
 
-#### 新しい GUI アプリ（cask）を入れたい
+#### GUI アプリ（cask）追加
 ```bash
-$EDITOR ~/dotfiles/modules/homebrew.nix   # casks に "raycast" を追加
+$EDITOR ~/dotfiles/modules/homebrew.nix   # casks に追記
 sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
-# brew bundle が走り、未宣言の cask は cleanup = "none" で残るが、新規はインストール
+```
+※ `cleanup="uninstall"` のため、宣言から外した cask は次の switch で削除される。
+
+#### macOS 設定の変更
+```bash
+$EDITOR ~/dotfiles/modules/macos-defaults.nix   # OPT-IN を uncomment
+sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
+# Dock/Finder の再起動が走り即反映。
 ```
 
-#### macOS の挙動を変えたい
-```bash
-$EDITOR ~/dotfiles/modules/macos-defaults.nix
-#   → OPT-IN セクションのコメントを外す（例: KeyRepeat = 2;）
-sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
-# Dock / Finder の再起動が走り即反映。GUI 操作不要。
-```
-
-#### 新規プロジェクトを始める
+#### 新規プロジェクトの devShell
 ```bash
 mkdir ~/work/new-project && cd $_
-nix flake init -t ~/dotfiles      # devShell テンプレを投入
-$EDITOR flake.nix                  # packages = [ ... ] に必要な言語ランタイムを追加
-direnv allow                       # 以後 cd するだけで自動的に devShell に入る
+nix flake init -t ~/dotfiles      # templates/default を展開
+$EDITOR flake.nix                  # packages に必要なランタイムを追加
+direnv allow                       # 以後 cd で自動有効化
 ```
 
-#### よくあるトラブルシュート
+#### 別マシンへの再現
+```bash
+# 1) Determinate Nix
+curl -fsSL https://install.determinate.systems/nix | sh -s -- install
+# 2) リポジトリ
+git clone <repo> ~/dotfiles
+cd ~/dotfiles
+# 3) 初回 bootstrap（install.sh の bootstrap_nix が同等処理を実施）
+sudo /nix/var/nix/profiles/default/bin/nix run nix-darwin/master#darwin-rebuild -- \
+  switch --flake ~/dotfiles#MacBook-Air
+# 4) 以後の更新
+sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
+```
+
+### 11.6 トラブルシュート
 
 | 症状 | 対処 |
 |---|---|
 | `darwin-rebuild` が見つからない | 新シェル起動。または `/run/current-system/sw/bin/darwin-rebuild` で直叩き |
-| `switch` が失敗する | エラー読む → `sudo darwin-rebuild --rollback` → 修正 → 再度 switch |
-| brew コマンドが Nix 版に上書きされて困る | Fish なら `command /opt/homebrew/bin/<cmd>` で明示指定可 |
+| `switch` が失敗する | エラー読む → `sudo darwin-rebuild --rollback` → 修正 → 再 switch |
+| brew 版を強制したいコマンドがある | `command /opt/homebrew/bin/<cmd>` で明示指定 |
 | flake input を巻き戻したい | `flake.lock` を `git checkout` → switch |
-| ストアが肥大した | `nix-collect-garbage -d`（古い世代も削除） |
+| ストアが肥大 | `nix-collect-garbage -d`（古い世代も削除） |
+| symlink activation が WARN を出す | `home.activation.dotfilesSymlinks` が「予期しない実体」を保護スキップしている。手動で内容確認後、必要なら repo 側へ移植 → live を削除 → 再 switch |
 
-### 11.5 役割分担の再確認（実装後の現実）
-
-```
-┌────────────────────────────────────────────────────────────┐
-│ Nix (home-manager)            … CLI 31本 + direnv          │
-│   /etc/profiles/per-user/taktiks2/bin/                     │
-├────────────────────────────────────────────────────────────┤
-│ Homebrew (nix-darwin で宣言)  … cask 13 + formula 27       │
-│   /opt/homebrew/                                           │
-│   └ PHP/MySQL/rbenv/nodebrew はここに残置（意図的）        │
-├────────────────────────────────────────────────────────────┤
-│ macOS system.defaults          … Dock/Finder/Trackpad 等   │
-├────────────────────────────────────────────────────────────┤
-│ home-manager activation        … ~/.config と lazygit の   │
-│                                  symlink を冪等に保証      │
-├────────────────────────────────────────────────────────────┤
-│ direnv + nix-direnv            … プロジェクト単位の隔離環境 │
-└────────────────────────────────────────────────────────────┘
-```
-
-### 11.6 完成度評価
+### 11.7 完成度評価
 
 | 観点 | 評価 | コメント |
 |---|---|---|
-| 再現性 | ★★★★☆ | brew 側の 31 本残存と install.sh が残るため満点ではない |
-| 宣言性 | ★★★★★ | 「インストールされているもの」がほぼ全て git で追跡可能 |
-| ロールバック性 | ★★★★★ | nix-darwin の世代管理が完全に効く |
-| 既存環境との共存 | ★★★★★ | PHP/MySQL/Ruby が完全に従来通り |
-| 学習コスト | ★★★☆☆ | flake/home-manager の最小限の DSL のみ要習得 |
-| 日常運用負荷 | ★★★★☆ | switch が 1 コマンドで完結。flake update は週次〜月次で十分 |
+| 再現性 | ★★★★★ | tap/formula/cask が `cleanup="uninstall"` で完全同期。install.sh は post-config の orchestration だけ |
+| 宣言性 | ★★★★★ | brew/Nix/macOS/symlink/post-config 全てが git 配下 |
+| ロールバック性 | ★★★★★ | system-1〜11 の世代が残存、`--rollback` 即時 |
+| 既存環境との共存 | ★★★★★ | PHP/MySQL/Ruby/Node が brew 経由で従来通り |
+| 学習コスト | ★★★☆☆ | flake / home-manager の最小限 DSL を学べば十分 |
+| 日常運用負荷 | ★★★★☆ | switch 1 コマンドで完結。月次の `flake update` が定型作業 |
+| **ドキュメント整合性** | ★★★★☆ | 本再構成で改善。`modules/homebrew.nix` 冒頭コメントは未追従 |
 
-### 11.7 結論（短く）
+### 11.8 結論
 
-- **本リポジトリの Nix 統合は実用ステージに入っている**。あとは brew 側の重複削除（Step 2 follow-up）と install.sh のスリム化が残務。
-- **日常は `$EDITOR home/taktiks2.nix → switch → commit` の 3 ステップ**で完結する。
-- **新規プロジェクトには迷わず `nix flake init -t ~/dotfiles`** を使い、グローバル汚染を避けるべし。
-- 緊急時は `sudo darwin-rebuild --rollback` の存在を覚えていれば良い。これが最大のセーフティネット。
-
+- **Nix 統合は実用フェーズに到達**。Step 1〜7 は完了し、`feat/nix` ブランチを main にマージするだけ。
+- **日常は `$EDITOR home/taktiks2.nix → switch → commit` の 3 ステップ**で完結。
+- **新規プロジェクトには `nix flake init -t ~/dotfiles`**。グローバル汚染を避ける標準フロー。
+- **緊急時は `sudo darwin-rebuild --rollback`**。最大のセーフティネット。
+- 直近の処理候補は **(1) `macos-defaults.nix` の working-tree 差分を確定 → (2) `modules/homebrew.nix` 冒頭コメントの追従 → (3) `feat/nix` を main にマージ** の 3 つ。

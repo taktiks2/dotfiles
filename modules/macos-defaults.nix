@@ -41,7 +41,7 @@
       FXPreferredViewStyle = "Nlsv";
 
       # OPT-IN: 全てのファイル拡張子を表示
-      # AppleShowAllExtensions = true;
+      AppleShowAllExtensions = true;
 
       # OPT-IN: 拡張子変更時の警告を無効化
       # FXEnableExtensionChangeWarning = false;
@@ -53,7 +53,7 @@
       # _FXShowPosixPathInTitle = true;
 
       # OPT-IN: 隠しファイルをデフォルト表示
-      # AppleShowAllFiles = true;
+      AppleShowAllFiles = true;
     };
 
     ## ---------- グローバル（NSGlobalDomain） ----------
@@ -62,7 +62,7 @@
       AppleInterfaceStyle = "Dark";
 
       # OPT-IN: 全てのファイル拡張子を表示（Finder と整合）
-      # AppleShowAllExtensions = true;
+      AppleShowAllExtensions = true;
 
       # OPT-IN: 自動大文字化を無効（コード入力で邪魔）
       # NSAutomaticCapitalizationEnabled = false;
