@@ -55,7 +55,17 @@
 | tbls | `tbls` | DB スキーマドキュメント生成 |
 | joshuto | `joshuto` | ranger 風ファイラ |
 
-**MOVED 累計: 33 本**
+## 第三陣 MOVED（監査フォローアップ Phase 3 で追加・1 本）
+
+| Formula | Nix 名 | 備考 |
+|---|---|---|
+| fisher | `programs.fish.plugins` | Fish plugin manager。bobthefish/z/bass を Nix 直接管理に切替 |
+
+※ Phase 3 で fisher を削除した際、brew autoremove が連鎖的に **fish 本体も削除**した。
+fish 本体は `home-manager.programs.fish.enable = true` + `nix-darwin.programs.fish.enable = true` に
+より Nix 経由で再供給。`/run/current-system/sw/bin/fish` を Alacritty/Ghostty 設定に書き換え。
+
+**MOVED 累計: 33 本（CLI）+ Fish plugin manager 1 本 = 34 本相当**
 
 ---
 
@@ -93,7 +103,7 @@
 - `docker`（CLI; Docker Desktop は cask）
 
 ### Fish / その他
-- `fisher` — Fish プラグインマネージャ。home.activation で初期化を委譲
+- ~~`fisher`~~ — 監査フォローアップ Phase 3 で削除。`fishPlugins.{bobthefish,z,bass}` を `programs.fish.plugins` で Nix 直接管理
 - `rogue` — 古典ローグライク。Nix パッケージなし、嗜好で残置
 
 ---
@@ -103,15 +113,14 @@
 | Formula | 状態 |
 |---|---|
 | `clisp` | sbcl で代替可能なら廃止候補 |
-| `fisher` | `programs.fish.plugins` 宣言移行と同時に再検討 |
 | `rogue` | Nix 化は不可、好みで残置 |
 
 ---
 
-## 現在の brew 状態（2026-04-26 時点）
+## 現在の brew 状態（監査フォローアップ Phase 3 後・2026-04-26 時点）
 
 ```
-brew leaves : 25 本（KEEP 22 + DEFERRED 3）
+brew leaves : 24 本（KEEP 22 + DEFERRED 2）
 brew tap    : 12
 brew cask   : 13
 ```

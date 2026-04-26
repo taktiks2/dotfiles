@@ -771,3 +771,120 @@ sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
 - **新規プロジェクトには `nix flake init -t ~/dotfiles`**。グローバル汚染を避ける標準フロー。
 - **緊急時は `sudo darwin-rebuild --rollback`**。最大のセーフティネット。
 - 直近の処理候補は **(1) `macos-defaults.nix` の working-tree 差分を確定 → (2) `modules/homebrew.nix` 冒頭コメントの追従 → (3) `feat/nix` を main にマージ** の 3 つ。
+
+---
+
+## 12. 監査フォローアップ（2026-04-26 完了）
+
+Step 1〜7 完了後、レポートと実コードを 2026 年のベストプラクティスに照合し、5 件の改善を実施。
+
+### 12.1 Determinate nix-darwin module 採用（Phase 1）
+
+**変更前**: `nix.enable = false` を `hosts/MacBook-Air/default.nix` に手書き
+**変更後**: `determinate.darwinModules.default` + `determinateNix.enable = true`
+
+```nix
+# flake.nix
+inputs.determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
+modules = [
+  determinate.darwinModules.default
+  ({ ... }: { determinateNix.enable = true; })
+  ./hosts/${hostname}
+  ...
+];
+```
+
+`/etc/nix/nix.custom.conf` 経由で GC スケジュールや `extra-substituters` を将来宣言可能になる。
+既存 `/etc/nix/nix.custom.conf` (Determinate `nix-installer` 設置) との衝突は `*.before-nix-darwin` で退避して解消。Determinate 3.18.1 が解決された。
+
+### 12.2 `nixpkgs.config.allowUnfreePredicate` 予防 allowlist（Phase 2）
+
+`flake.nix` に空 allowlist を追加。将来 `vscode` 等を Nix 化する際の編集ポイントを明示。
+
+```nix
+({ lib, ... }: {
+  nixpkgs.config.allowUnfreePredicate = pkg:
+    builtins.elem (lib.getName pkg) [];
+})
+```
+
+### 12.3 Fish 本格宣言化（Phase 3）
+
+最大の作業。`~/.config -> ~/dotfiles/.config` 単一 symlink を解体し、`programs.fish` を full に有効化。
+
+#### 12.3.1 アーキテクチャ転換
+
+| 項目 | Before | After |
+|---|---|---|
+| `~/.config` | 単一 symlink → `~/dotfiles/.config` | 個別 symlink 12 + 実 dir (fish, runtime state) |
+| Fish 設定 | `~/dotfiles/.config/fish/config.fish` 手書き | `programs.fish.{shellInit, interactiveShellInit, shellAliases}` |
+| Fish plugins | Fisher (curl パイプ for bobthefish/z/bass) | `programs.fish.plugins = [ fishPlugins.{bobthefish,z,bass} ]` |
+| Fish 本体 | brew formula `fish` | Nix `home-manager.programs.fish.enable` |
+| `/etc/shells` | 未登録 | `environment.shells = [ pkgs.fish ]` で登録 |
+| Terminal config | `/opt/homebrew/bin/fish` ハードコード | `/run/current-system/sw/bin/fish`（Nix 安定経路） |
+| Fisher | brew formula | **削除**（plugins は Nix 直接管理） |
+
+#### 12.3.2 ~/.config 解体手順
+
+1. `mv ~/.config ~/.config.symlink-backup` で旧 symlink 退避
+2. `mkdir ~/.config` 後、git tracked 12 dir を個別 symlink (alacritty/atac/btop/ccstatusline/cspell/gh-dash/ghostty/git/mcphub/nvim/tmux/workmux)
+3. dotfiles repo に紛れ込んでいた untracked runtime state 10 dir (Battle.net/broot/configstore/direnv/gh/github-copilot/gtk-2.0/wireshark/yarn/yaru) を `~/dotfiles/.config/<dir>` から `~/.config/<dir>` へ物理移動 → repo 作業ツリーが浄化
+4. `secret-env.fish` (実 GITHUB_PERSONAL_ACCESS_TOKEN 含む) を `~/.config/fish/secret-env.fish` に配置（mode 600、dotfiles repo 外）
+
+#### 12.3.3 ハマりどころ
+
+| 現象 | 原因 | 対処 |
+|---|---|---|
+| `ln -s` 後に `~/.config/ccstatusline/ccstatusline -> dotfiles dir` という入れ子 symlink が発生 | バックグラウンドの ccstatusline plugin プロセスがディレクトリを先に新規作成し、`ln -s` がターゲット内にリンクを作る挙動になった | 入れ子削除 → 新規 settings.json 退避 → symlink 再作成 |
+| `darwin-rebuild switch` 時に brew が `fisher` を uninstall する際、依存先の `fish` 本体も連鎖削除 | `cleanup="uninstall"` + brew autoremove の挙動 | `home-manager.programs.fish.enable = true` で Nix 版 fish を確保。Alacritty/Ghostty config を `/run/current-system/sw/bin/fish` に切替 |
+| `/etc/shells` に Nix fish が登録されない | `programs.fish.enable = true` (system level) は登録しない仕様 | `environment.shells = [ pkgs.fish ]` を nix-darwin に追加 |
+
+#### 12.3.4 削除した orphan ファイル（21 ファイル）
+
+```
+.config/fish/config.fish              (programs.fish.{shell,interactive}Init に移植)
+.config/fish/fish_plugins             (Nix の plugins 宣言で代替)
+.config/fish/fish_variables           (起動時 cache、再生成される)
+.config/fish/functions/*.fish (16)    (fishPlugins で再生成)
+.config/fish/conf.d/multi-agent-shogun.fish (shellAliases に移植)
+.config/fish/conf.d/z.fish            (fishPlugins.z で代替)
+```
+
+`feat/nix` ブランチ通算で **23 files / -2973 lines** のクリーンアップ。
+
+#### 12.3.5 検証結果（新 fish プロセスにて）
+
+| 項目 | 結果 |
+|---|---|
+| fish 4.6.0 (Nix 版) 起動 | ✅ |
+| bobthefish プロンプト関数 (`fish_prompt`) 定義 | ✅ |
+| z plugin (autojump) `function z` | ✅ |
+| bass plugin `function bass` | ✅ |
+| 12 alias (lg/vim/ls/css/csm 等) | ✅ |
+| PATH 順序: rbenv shims → Nix → brew → Android SDK → ... | ✅ |
+| 言語ランタイム: php / node / rbenv / composer | ✅ |
+| Nix CLI: rg / jq / lazygit / direnv | ✅ |
+| `secret-env.fish` 読み込み（GITHUB_PERSONAL_ACCESS_TOKEN 解決） | ✅ |
+| direnv hook (`__direnv_export_eval`) 注入 | ✅ |
+| workmux completions ロード | ✅ |
+| rbenv shim 関数定義 | ✅ |
+
+### 12.4 細部整合（Phase 4 / 5）
+
+- `home/taktiks2.nix` の direnv `overrideAttrs` に upstream tracking コメント追記
+- `modules/homebrew.nix` 冒頭コメントを `cleanup="uninstall"` 実体に追従、formula セクション header を 25→24 本に修正
+
+### 12.5 累計成果（Step 1〜7 + 監査フォローアップ完了時点）
+
+- **CLI ツール 33 本 + Fish plugin manager 1 本 = 34 本相当を Nix 化**
+- **Fish 本体・全 plugin・config が Nix 完全宣言化**（Fisher 撤廃）
+- **`~/.config` を git tracked 12 dir + home-manager 管理 fish + 実 dir runtime state に三層化**
+- **dotfiles repo から 21 fish 関連ファイル + 10 untracked dir を排除**
+- **Determinate nix-darwin module 採用**で `nix.custom.conf` ベースの宣言可能化
+- **`/etc/shells` に Nix fish を登録** → chsh で fish へ切替可能
+- **`brew leaves` が 25 → 24 本に減少**
+- **Alacritty / Ghostty が Nix 安定経路 (`/run/current-system/sw/bin/fish`) を参照**
+
+---
+
+*監査フォローアップ実施日: 2026-04-26（同日中の Phase 1→2→3→4→5 一括完了）。検証は実マシン上で fish 4.6.0 直接起動による動作確認で実施。*
