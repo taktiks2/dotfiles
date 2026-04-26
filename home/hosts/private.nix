@@ -1,6 +1,27 @@
 { pkgs, lib, config, username, dotfilesRoot, ... }:
 
+# Phase 18 (modular split): per-tool の programs.* 設定は home/programs/*.nix へ抜き出し。
+# 本ファイルには「複数ツールに跨るプラットフォーム設定」のみを残す:
+#   - stateVersion / sops（メタ）
+#   - sessionPath / sessionVariables（PATH と環境変数）
+#   - home.packages（Nix CLI バンドル）
+#   - xdg.configFile（mkOutOfStoreSymlink による live link）
+#   - home.activation.bootstrapSideEffects（idempotent な bootstrap）
+# tool 固有の programs.* 設定は ./programs/<tool>.nix を参照。
+
 {
+  imports = [
+    ./programs/direnv.nix
+    ./programs/git.nix         # programs.git + programs.delta + migrateLegacyGitconfig
+    ./programs/lazygit.nix
+    ./programs/btop.nix
+    ./programs/gh-dash.nix
+    ./programs/terminal.nix    # programs.alacritty + programs.ghostty
+    ./programs/cli.nix         # programs.bat + programs.fzf + programs.lsd
+    ./programs/tmux.nix
+    ./programs/fish.nix
+  ];
+
   # home.username / home.homeDirectory は nix-darwin の users.users.<name> から自動解決されるため指定しない。
 
   # 初回設定値。home-manager のメジャー仕様変更があっても挙動を維持するための固定値。
@@ -9,6 +30,9 @@
   #   発生したら `System Settings > Privacy & Security > App Management` で
   #   ターミナル / `darwin-rebuild` を許可リストに追加して再実行。
   home.stateVersion = "25.05";
+
+  # home-manager 自身の管理を有効化。
+  programs.home-manager.enable = true;
 
   # Phase 13: sops-nix によるシークレット管理。
   # 以下を全て満たす時のみ有効化（移行前 build や設定不備での暴発を防ぐ）:
@@ -64,11 +88,10 @@
 
   # Step 2 第一陣: brew leaves 57 本のうち、移行確度が高い 31 本を Nix 化。
   # 仕分け根拠は docs/brew-triage.md を参照。
+  # 設定が programs.* で管理されている CLI（bat / fzf / lsd / lazygit / btop / delta 等）は
+  # ./programs/<tool>.nix の `enable` で配布されるため、本リストには含まない。
   home.packages = with pkgs; [
     # 検索 / ファイル操作
-    # fzf は programs.fzf.enable で fish/bash/zsh integration 込みで配布
-    # bat は programs.bat.enable で配布
-    # lsd は programs.lsd.enable で配布
     ripgrep
     fd
     tree
@@ -77,15 +100,12 @@
 
     # Git / GitHub / 開発フロー
     gh
-    # delta は programs.git.delta.enable で git 連携付きで配布
     git-filter-repo
-    # lazygit は programs.lazygit.enable で fish wrapper (cd-on-quit) 付きで配布
     lazydocker
     cocogitto
 
     # エディタ / マルチプレクサ
     neovim
-    # tmux は Phase 8 で programs.tmux.enable に移行（plugins 込みで Nix 提供）
 
     # JSON / テキスト
     jq
@@ -97,7 +117,6 @@
     bats               # brew: bats-core
 
     # ビジュアル / システム
-    # btop は programs.btop.enable で配布
     graphviz
     television
 
@@ -111,6 +130,9 @@
     # AI / その他
     aichat
     just
+    nh         # darwin-rebuild の Rust 再実装 (`nh darwin switch ~/dotfiles -H MacBook-Air`)。
+               # diff 表示・confirm prompt・nix-output-monitor 統合を提供。
+               # Determinate Nix 環境でも darwin-rebuild を呼ぶ wrapper として動作する想定。
 
     # 第二陣 (Step 7 follow-up): brew LATER から Nix へ移行
     tbls       # DB スキーマドキュメント生成
@@ -130,8 +152,7 @@
   #                 git pull を忘れるとリンク先が古い。Pure 派は `source = ./.config/<name>`
   #                 で nix store inclusion し、再現性を取る。
   # 本リポジトリは「日常 1 マシン運用 + 編集快適性優先」として live を選択。
-  # 引っ越し / 多 host 化が進んだら store inclusion に切替検討。
-  # fish は programs.fish が直接管理するため除外。
+  # 引っ越し / 多 host 化が進んだら store inclusion に切替検討。詳細は docs/config-management-strategy.md。
   xdg.configFile = let
     configRoot = "${dotfilesRoot}/.config";
     link = name: {
@@ -157,6 +178,7 @@
   # Step 7 follow-up: install.sh の post-config 関数のうち、idempotent で
   # bootstrap 専用ではないものを home.activation に移譲。
   # Phase 8: TPM clone は撤廃。tmux plugins は programs.tmux.plugins で Nix 配布。
+  # 注: programs.git / .gitconfig 移行用 activation は ./programs/git.nix 側で定義。
   home.activation.bootstrapSideEffects = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # secret-env.fish が無ければテンプレを作成（gitignore 相当、機密のため dotfiles repo 外に配置）
     SECRET_ENV="$HOME/.config/fish/secret-env.fish"
@@ -178,469 +200,4 @@ EOF
     # Phase 10: Laravel Installer の自動 install (composer global) は撤廃。
     # 代わりに `nix flake init -t ~/dotfiles#laravel` で per-project devShell へ。
   '';
-
-  # home-manager 自身の管理を有効化。
-  programs.home-manager.enable = true;
-
-  # Step 6: direnv + nix-direnv（プロジェクト単位の devShell 自動有効化）
-  # NOTE: direnv の `doCheck = false` overlay は flake.nix 側に残置している。
-  #   nixpkgs#82606 (macOS sandbox 内の fish/zsh test SIGKILL) は 2026-04 時点で未解消。
-  #   upstream fix が landing したら flake.nix の overlay と本コメントを同時撤廃する。
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;
-    # HM 25.11 から enable*Integration は programs.<shell>.enable と連動して
-    # 自動有効化される read-only オプションになったため、明示指定を撤廃。
-    # bash / zsh / fish は既に programs.* で管理されているため自動 hook される。
-  };
-
-  # Phase 17: home-manager の専用モジュールがあるツールを programs.* へ移行。
-  # 以下は元 .config/<name> または ~/.gitconfig / ~/Library/.../lazygit からの 1:1 移植。
-
-  programs.git = {
-    enable = true;
-
-    # 旧 .config/git/ignore (4 行) を Nix 化。
-    ignores = [
-      ".worktree"
-      ".DS_Store"
-      "**/.claude/settings.local.json"
-    ];
-
-    # 旧 ~/.gitconfig 内容を 1:1 移植。HM 25.11 で userName/userEmail/extraConfig は
-    # settings に統合された (settings.user.name / settings.user.email / settings.<section>.<key>)。
-    # delta 関連は programs.delta が interactive.diffFilter / pager.* / [delta] navigate
-    # 等を自動で注入するため重複定義しない。
-    settings = {
-      user.name             = "taktiks2";
-      user.email            = "deathproof.lee@gmail.com";
-      init.defaultBranch    = "main";
-      core.editor           = "nvim";
-      merge.conflictstyle   = "diff3";
-      diff.colorMoved       = "default";
-    };
-  };
-
-  # delta 本体（HM 25.11 で programs.git.delta から programs.delta へ昇格）。
-  programs.delta = {
-    enable = true;
-    enableGitIntegration = true;  # 25.11 以降は明示指定が必要
-    options = {
-      navigate     = true;
-      side-by-side = true;
-      line-numbers = true;
-    };
-  };
-
-  # 旧 ~/.gitconfig が残っていると XDG 側 (~/.config/git/config) より優先されるため、
-  # 一度だけリネームして HM に主導権を渡す。idempotent。
-  home.activation.migrateLegacyGitconfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
-    if [ -f "$HOME/.gitconfig" ] && [ ! -L "$HOME/.gitconfig" ]; then
-      $DRY_RUN_CMD mv "$HOME/.gitconfig" "$HOME/.gitconfig.pre-hm.bak"
-      echo "moved legacy ~/.gitconfig to ~/.gitconfig.pre-hm.bak (programs.git took over via ~/.config/git/config)"
-    fi
-  '';
-
-  programs.lazygit = {
-    enable = true;
-    # 旧 ~/Library/Application Support/lazygit/config.yml の YAML を attrset 化。
-    # 出力先は HM が macOS パスを自動判定する（xdg.enable=false なので AppSupport 側）。
-    settings = {
-      git.pagers = [
-        {
-          colorArg = "always";
-          pager    = "delta --dark --paging=never";
-        }
-      ];
-    };
-  };
-
-  programs.btop = {
-    enable = true;
-    # 旧 .config/btop/btop.conf からの移植。
-    # NOTE: HM が書き出す btop.conf は store 内 read-only symlink なので、
-    #       btop の終了時オートセーブが失敗しないよう save_config_on_exit を無効化。
-    settings = {
-      color_theme           = "tokyo-night";
-      theme_background      = true;
-      truecolor             = true;
-      force_tty             = false;
-      presets               = "cpu:1:default,proc:0:default cpu:0:default,mem:0:default,net:0:default cpu:0:block,net:0:tty";
-      vim_keys              = true;
-      rounded_corners       = true;
-      terminal_sync         = true;
-      graph_symbol          = "braille";
-      graph_symbol_cpu      = "default";
-      graph_symbol_mem      = "default";
-      graph_symbol_net      = "default";
-      graph_symbol_proc     = "default";
-      shown_boxes           = "cpu mem net proc";
-      update_ms             = 2000;
-      proc_sorting          = "cpu lazy";
-      proc_reversed         = false;
-      proc_tree             = false;
-      proc_colors           = true;
-      proc_gradient         = true;
-      proc_per_core         = false;
-      proc_mem_bytes        = true;
-      proc_cpu_graphs       = true;
-      proc_info_smaps       = false;
-      proc_left             = false;
-      proc_filter_kernel    = false;
-      proc_aggregate        = false;
-      keep_dead_proc_usage  = false;
-      cpu_graph_upper       = "Auto";
-      cpu_graph_lower       = "Auto";
-      cpu_invert_lower      = true;
-      cpu_single_graph      = false;
-      cpu_bottom            = false;
-      show_uptime           = true;
-      show_cpu_watts        = true;
-      check_temp            = true;
-      cpu_sensor            = "Auto";
-      show_coretemp         = true;
-      cpu_core_map          = "";
-      temp_scale            = "celsius";
-      base_10_sizes         = false;
-      show_cpu_freq         = true;
-      clock_format          = "%X";
-      background_update     = true;
-      custom_cpu_name       = "";
-      disks_filter          = "";
-      mem_graphs            = true;
-      mem_below_net         = false;
-      zfs_arc_cached        = true;
-      show_swap             = true;
-      swap_disk             = true;
-      show_disks            = false;
-      only_physical         = true;
-      use_fstab             = true;
-      zfs_hide_datasets     = false;
-      disk_free_priv        = false;
-      show_io_stat          = true;
-      io_mode               = false;
-      io_graph_combined     = false;
-      io_graph_speeds       = "";
-      net_download          = 100;
-      net_upload            = 100;
-      net_auto              = true;
-      net_sync              = true;
-      net_iface             = "";
-      base_10_bitrate       = "Auto";
-      show_battery          = true;
-      selected_battery      = "Auto";
-      show_battery_watts    = true;
-      log_level             = "WARNING";
-      save_config_on_exit   = false;  # 書き出し先が read-only のため無効化（旧設定 true から変更）
-    };
-  };
-
-  programs.gh-dash = {
-    enable = true;
-    # 旧 .config/gh-dash/config.yml の YAML を attrset 化。
-    # keybindings.prs から ~/.config/gh-dash/bin/octo-review.sh を呼ぶため、
-    # bin/ は xdg.configFile で個別 live link 済（上の xdg.configFile 参照）。
-    settings = {
-      prSections = [
-        { title = "Needs My Review";  filters = "is:open review-requested:@me"; type = null; }
-        { title = "My Pull Requests"; filters = "is:open author:@me draft:false"; type = null; }
-        { title = "My Drafts";        filters = "is:open author:@me draft:true";  type = null; }
-        { title = "Involved";         filters = "is:open involves:@me -author:@me"; type = null; }
-      ];
-      issuesSections = [
-        { title = "My Issues"; filters = "is:open author:@me"; }
-        { title = "Assigned"; filters = "is:open assignee:@me"; }
-        { title = "Involved"; filters = "is:open involves:@me -author:@me"; }
-      ];
-      repo = {
-        branchesRefetchIntervalSeconds = 30;
-        prsRefetchIntervalSeconds      = 60;
-      };
-      defaults = {
-        preview = { open = true; width = 0.5; };
-        prsLimit    = 20;
-        issuesLimit = 20;
-        view        = "prs";
-        layout = {
-          prs = {
-            updatedAt = { width = 5; };
-            repo      = { width = 20; };
-            author    = { width = 15; };
-            assignees = { width = 20; hidden = true; };
-            base      = { width = 15; hidden = true; };
-            lines     = { width = 15; };
-          };
-          issues = {
-            updatedAt = { width = 5; };
-            repo      = { width = 15; };
-            creator   = { width = 10; };
-            assignees = { width = 20; hidden = true; };
-          };
-        };
-        refetchIntervalMinutes = 30;
-      };
-      keybindings = {
-        universal = [];
-        issues    = [];
-        prs = [
-          {
-            key     = "o";
-            name    = "Octo PR";
-            command = "tmux new-window -c {{.RepoPath}} -n \"pr#{{.PrNumber}}-$(basename {{.RepoName}})\" \"nvim '+Octo pr edit {{.PrNumber}}'\" ; tmux display-popup -C";
-          }
-          {
-            key     = "O";
-            name    = "Checkout & Review";
-            command = "tmux new-window -c {{.RepoPath}} -n \"review#{{.PrNumber}}-$(basename {{.RepoName}})\" \"~/.config/gh-dash/bin/octo-review.sh {{.RepoName}} {{.PrNumber}}\" ; tmux display-popup -C";
-          }
-        ];
-        branches = [];
-      };
-      repoPaths = {
-        "taktiks2/*" = "/Users/taktiks2/dev/*";
-      };
-      theme = {
-        ui = {
-          sectionsShowCount = true;
-          table = { showSeparator = true; compact = false; };
-        };
-      };
-      pager       = { diff = "delta"; };
-      confirmQuit = false;
-    };
-  };
-
-  programs.alacritty = {
-    enable  = true;
-    package = null;  # alacritty は modules/homebrew.nix の cask 経由でインストールされるため Nix package は不要
-    # 旧 .config/alacritty/alacritty.toml （Shift+Return キーバインドのみ）。
-    settings = {
-      keyboard.bindings = [
-        {
-          key   = "Return";
-          mods  = "Shift";
-          # ESC (0x1B) + CR を送出。Nix は \u エスケープ非対応のため JSON 経由で ESC を組み立てる。
-          chars = (builtins.fromJSON ''"\u001b"'') + "\r";
-        }
-      ];
-    };
-  };
-
-  programs.ghostty = {
-    enable  = true;
-    package = null;  # ghostty は modules/homebrew.nix の cask 経由でインストールされるため Nix package は不要（macOS の ghostty は .app 配布）
-    # 旧 .config/ghostty/config からの移植。
-    settings = {
-      command       = "/run/current-system/sw/bin/fish";
-      font-family   = "HackGen Console NF";
-      font-size     = 10;
-      font-thicken  = true;
-      theme         = "TokyoNight Night";
-    };
-  };
-
-  # ---- 設定なしで enable のみ（既存ユーザ設定はゼロ、デフォルトで OK なもの） ----
-
-  programs.bat.enable = true;
-
-  programs.fzf = {
-    enable = true;
-    # programs.fish.enable と連動して enableFishIntegration は自動 true（HM 25.11 仕様）。
-    # bash / zsh も同様。Ctrl-T (file)、Ctrl-R (history)、Alt-C (cd) のキーバインドが入る。
-  };
-
-  programs.lsd = {
-    enable = true;
-    # HM 25.11 で旧 enableAliases は廃止され、enableFishIntegration（programs.fish 連動で自動 true）
-    # が `ls / la = lsd -A / ll = lsd -lA` を inject する。
-    # 既存の programs.fish.shellAliases (la = "lsd -a", ll = "lsd -al") と衝突するため、
-    # behavior 維持のため Fish integration を明示的に無効化。
-    enableFishIntegration = false;
-    enableBashIntegration = false;
-    enableZshIntegration  = false;
-  };
-
-  # Phase 8: tmux 完全宣言化。TPM 撤廃、plugins は Nix 経由で配布。
-  # tmux.conf は HM が programs.tmux 設定から生成するため、~/dotfiles/.config/tmux/ 側は不要。
-  programs.tmux = {
-    enable = true;
-    prefix = "C-s";
-    keyMode = "vi";
-    terminal = "tmux-256color";
-    mouse = true;
-    baseIndex = 1;
-    focusEvents = true;
-    escapeTime = 0;
-
-    plugins = with pkgs.tmuxPlugins; [
-      sensible
-      copycat
-      pain-control
-      yank
-      resurrect
-      continuum
-      logging
-      {
-        plugin = tokyo-night-tmux;
-        extraConfig = ''
-          set -g @theme_left_separator '${""}'
-          set -g @theme_right_separator '${""}'
-          set -g @theme_enable_icons '0'
-        '';
-      }
-    ];
-
-    extraConfig = ''
-      # ペインのインデックスも 1 から（programs.tmux.baseIndex は window のみ）
-      setw -g pane-base-index 1
-
-      # ghostty (TERM=xterm-ghostty) の RGB / 装飾系ケイパビリティ
-      set -as terminal-features ",xterm-ghostty*:RGB:usstyle:hyperlinks:ccolour:cstyle:strikethrough:overline"
-      # 旧 Tc フラグでのフォールバック
-      set -ag terminal-overrides ",xterm-ghostty:Tc"
-      set -ag terminal-overrides ",*256col*:Tc"
-
-      # シェルのデフォルトを fish に。nix-darwin が公開する system fish を参照。
-      # tmux on macOS は default-command を reattach-to-user-namespace -l /bin/zsh
-      # に焼き付けてくる（default-shell より優先される）ので、ここで上書きする。
-      set-option -g default-shell /run/current-system/sw/bin/fish
-      set-option -g default-command /run/current-system/sw/bin/fish
-      set-environment -g PATH "/etc/profiles/per-user/${username}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin"
-
-      # gh dash をポップアップで開く（prefix + g）
-      bind g display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "gh dash"
-
-      # workmux dashboard をポップアップで開く（prefix + W）
-      bind W display-popup -E -w 50% -h 100% -d "#{pane_current_path}" "workmux dashboard"
-
-      # workmux 連動キー
-      bind i run-shell "workmux last-done"
-      bind e run-shell "workmux sidebar"
-      bind -n M-j run-shell "workmux sidebar next"
-      bind -n M-k run-shell "workmux sidebar prev"
-      bind -n M-1 run-shell "workmux sidebar jump 1"
-      bind -n M-2 run-shell "workmux sidebar jump 2"
-      bind -n M-3 run-shell "workmux sidebar jump 3"
-      bind -n M-4 run-shell "workmux sidebar jump 4"
-      bind -n M-5 run-shell "workmux sidebar jump 5"
-      bind -n M-6 run-shell "workmux sidebar jump 6"
-      bind -n M-7 run-shell "workmux sidebar jump 7"
-      bind -n M-8 run-shell "workmux sidebar jump 8"
-      bind -n M-9 run-shell "workmux sidebar jump 9"
-
-      # btop / lazydocker をポップアップで開く
-      bind b display-popup -E -w 90% -h 90% "btop"
-      bind C display-popup -E -w 90% -h 90% "lazydocker"
-    '';
-  };
-
-  # Phase 3: Fish 本格宣言化
-  programs.fish = {
-    enable = true;
-
-    plugins = [
-      { name = "bobthefish"; src = pkgs.fishPlugins.bobthefish.src; }
-      { name = "z";          src = pkgs.fishPlugins.z.src; }
-      { name = "bass";       src = pkgs.fishPlugins.bass.src; }
-    ];
-
-    # rbenv は brew 管理の binary を呼びつつ、sh-rehash / sh-shell だけ source 評価する。
-    # 旧 interactiveShellInit 内のインライン関数定義から宣言形へ移譲。
-    # 依存: `modules/homebrew.nix` の `brews = [... "rbenv" ...]` (brew 経由で `rbenv` バイナリを供給)。
-    functions = {
-      rbenv = ''
-        set command $argv[1]
-        set -e argv[1]
-        switch "$command"
-            case rehash shell
-                rbenv "sh-$command" $argv | source
-            case '*'
-                command rbenv "$command" $argv
-        end
-      '';
-    };
-
-    shellAliases = {
-      vim = "nvim";
-      vi = "nvim";
-      v = "nvim";
-      ghd = "gh dash";
-      # lg は programs.lazygit が fish wrapper (LAZYGIT_NEW_DIR_FILE 連携) を提供するため alias は削除
-      ls = "lsd";
-      la = "lsd -a";
-      ll = "lsd -al";
-      sls = "sbcl --load ~/.local/share/nvim/lazy/nvlime/lisp/start-nvlime.lisp";
-      wm = "workmux";
-      agents = "agents.fish";
-      # 旧 conf.d/multi-agent-shogun.fish から移植
-      css = "tmux attach-session -t shogun";
-      csm = "tmux attach-session -t multiagent";
-    };
-
-    # Phase 9: PATH と環境変数は home.sessionPath / home.sessionVariables に移譲済。
-    # shellInit には bobthefish theme と Nix profile 最優先化だけを残す。
-    shellInit = ''
-      # bobthefish theme（plugin が読まれる前に評価される必要があるため shellInit）
-      set -g theme_color_scheme dracula
-      set -g theme_display_git yes
-      set -g theme_display_git_default_branch yes
-      set -g theme_display_node yes
-      set -g theme_display_date no
-      set -g theme_powerline_fonts yes
-      set -g theme_nerd_fonts yes
-      set -g theme_newline_cursor yes
-      set -g theme_newline_prompt '> '
-
-      # Nix profiles を最先頭に再 prepend（= 最優先）
-      for nix_path in /etc/profiles/per-user/$USER/bin /run/current-system/sw/bin /nix/var/nix/profiles/default/bin
-        if test -d $nix_path; and not contains $nix_path $PATH
-          set -gx PATH $nix_path $PATH
-        end
-      end
-    '';
-
-    # 対話シェル限定の初期化
-    interactiveShellInit = ''
-      # Phase 13: sops-nix で復号された secrets を環境変数に展開。
-      # `home/taktiks2.nix` の sops.secrets 配下に登録した KEY を順次読み込む。
-      # SAFETY:
-      #   - `set -gx` は変数名を validate しないため、`sops.secrets.PATH = {}` のような
-      #     設定ミスで対話シェル毎回 $PATH が破壊されうる。以下で多段防御:
-      #       a. シェル環境を破壊しうる予約名は contains で skip
-      #       b. POSIX 環境変数識別子のみ通す regex フィルタ
-      if test -d ~/.config/sops-nix/secrets
-          for f in ~/.config/sops-nix/secrets/*
-              set -l key (basename $f)
-              if contains -- $key PATH HOME USER SHELL PWD OLDPWD IFS LD_PRELOAD DYLD_LIBRARY_PATH DYLD_INSERT_LIBRARIES
-                  continue
-              end
-              if not string match -rq '^[A-Za-z_][A-Za-z0-9_]*$' -- $key
-                  continue
-              end
-              if test -r $f
-                  set -gx $key (cat $f)
-              end
-          end
-      end
-
-      # 後方互換: 旧来の secret-env.fish も sops 移行が完了するまで併用可能。
-      if test -f ~/.config/fish/secret-env.fish
-          source ~/.config/fish/secret-env.fish
-      end
-
-      # rbenv 初期化 (PATH/RBENV_SHELL は home.sessionPath / sessionVariables へ移譲済)
-      # rehash は新規 shim 同期のための副作用なので interactive 起動時に 1 回だけ。
-      command -q rbenv; and command rbenv rehash 2>/dev/null
-
-      # workmux completions
-      if command -q workmux
-          workmux completions fish | source
-      end
-
-      # Google Cloud SDK (homeDirectory 経由で username に依存しない)
-      if test -f $HOME/google-cloud-sdk/path.fish.inc
-          . $HOME/google-cloud-sdk/path.fish.inc
-      end
-    '';
-  };
 }
