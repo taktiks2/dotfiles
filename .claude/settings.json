@@ -87,12 +87,21 @@
       "Bash(gh issue edit:*)",
       "Bash(git checkout:*)",
       "Bash(git add:*)",
-      "Bash(git push:*)",
-      "Bash(git checkout:*)",
-      "Bash(git remote set-url:*)",
+      "Bash(git push origin:*)",
+      "Bash(git push --set-upstream:*)",
       "Bash(git pull:*)",
-      "Bash(git reset:*)",
+      "Bash(git remote set-url:*)",
+      "Bash(git reset --soft:*)",
+      "Bash(git reset --mixed:*)",
       "Bash(git cherry-pick:*)",
+      "Bash(nix:*)",
+      "Bash(nix-env:*)",
+      "Bash(home-manager:*)",
+      "Bash(darwin-rebuild:*)",
+      "Bash(jq:*)",
+      "Bash(yq:*)",
+      "Bash(fd:*)",
+      "Bash(bat:*)",
       "mcp__github__create_pull_request",
       "mcp__github__get_issue",
       "mcp__github__add_issue_comment",
@@ -100,11 +109,45 @@
       "mcp__devinwiki__read_wiki_contents",
       "mcp__devinwiki__ask_question"
     ],
-    "deny": [],
+    "deny": [
+      "Read(./.env)",
+      "Read(./.env.*)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/secrets/**)",
+      "Read(**/*.pem)",
+      "Read(**/*credentials*)",
+      "Read(**/.aws/credentials)",
+      "Read(**/.ssh/id_*)",
+      "Read(~/.config/fish/secret-env.fish)",
+      "Bash(rm -rf:*)",
+      "Bash(rm -fr:*)",
+      "Bash(sudo:*)",
+      "Bash(git push --force:*)",
+      "Bash(git push -f:*)",
+      "Bash(git push --force-with-lease:*)",
+      "Bash(git reset --hard origin/*)",
+      "Bash(git reset --hard:*)",
+      "Bash(git clean -fd:*)",
+      "Bash(git clean -ffd:*)",
+      "Bash(git checkout -- :*)",
+      "Bash(git restore . :*)",
+      "Bash(brew uninstall:*)"
+    ],
     "defaultMode": "auto",
     "preferredNotifChannel": "terminal_bell"
   },
-  "model": "opus[1m]",
+  "model": "claude-opus-4-7[1m]",
+  "effortLevel": "xhigh",
+  "env": {
+    "EDITOR": "nvim",
+    "VISUAL": "nvim",
+    "PAGER": "less",
+    "LANG": "ja_JP.UTF-8"
+  },
+  "outputStyle": "default",
+  "cleanupPeriodDays": 30,
+  "includeCoAuthoredBy": true,
   "hooks": {
     "Notification": [
       {
@@ -169,7 +212,7 @@
   },
   "statusLine": {
     "type": "command",
-    "command": "npx -y ccstatusline@latest",
+    "command": "ccstatusline",
     "padding": 0
   },
   "enabledPlugins": {
@@ -191,8 +234,7 @@
       }
     }
   },
-  "effortLevel": "medium",
-  "skipDangerousModePermissionPrompt": true,
+  "skipDangerousModePermissionPrompt": false,
   "skipAutoPermissionPrompt": true,
   "theme": "dark-daltonized",
   "showTurnDuration": false,

@@ -1,0 +1,79 @@
+{ pkgs, username, ... }:
+
+# Phase 8: tmux 完全宣言化。TPM 撤廃、plugins は Nix 経由で配布。
+# tmux.conf は HM が programs.tmux 設定から生成するため、~/dotfiles/.config/tmux/ 側は不要。
+# Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し。username は specialArgs から受け取る。
+
+{
+  programs.tmux = {
+    enable = true;
+    prefix = "C-s";
+    keyMode = "vi";
+    terminal = "tmux-256color";
+    mouse = true;
+    baseIndex = 1;
+    focusEvents = true;
+    escapeTime = 0;
+
+    plugins = with pkgs.tmuxPlugins; [
+      sensible
+      copycat
+      pain-control
+      yank
+      resurrect
+      continuum
+      logging
+      {
+        plugin = tokyo-night-tmux;
+        extraConfig = ''
+          set -g @theme_left_separator '${""}'
+          set -g @theme_right_separator '${""}'
+          set -g @theme_enable_icons '0'
+        '';
+      }
+    ];
+
+    extraConfig = ''
+      # ペインのインデックスも 1 から（programs.tmux.baseIndex は window のみ）
+      setw -g pane-base-index 1
+
+      # ghostty (TERM=xterm-ghostty) の RGB / 装飾系ケイパビリティ
+      set -as terminal-features ",xterm-ghostty*:RGB:usstyle:hyperlinks:ccolour:cstyle:strikethrough:overline"
+      # 旧 Tc フラグでのフォールバック
+      set -ag terminal-overrides ",xterm-ghostty:Tc"
+      set -ag terminal-overrides ",*256col*:Tc"
+
+      # シェルのデフォルトを fish に。nix-darwin が公開する system fish を参照。
+      # tmux on macOS は default-command を reattach-to-user-namespace -l /bin/zsh
+      # に焼き付けてくる（default-shell より優先される）ので、ここで上書きする。
+      set-option -g default-shell /run/current-system/sw/bin/fish
+      set-option -g default-command /run/current-system/sw/bin/fish
+      set-environment -g PATH "/etc/profiles/per-user/${username}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin"
+
+      # gh dash をポップアップで開く（prefix + g）
+      bind g display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "gh dash"
+
+      # workmux dashboard をポップアップで開く（prefix + W）
+      bind W display-popup -E -w 50% -h 100% -d "#{pane_current_path}" "workmux dashboard"
+
+      # workmux 連動キー
+      bind i run-shell "workmux last-done"
+      bind e run-shell "workmux sidebar"
+      bind -n M-j run-shell "workmux sidebar next"
+      bind -n M-k run-shell "workmux sidebar prev"
+      bind -n M-1 run-shell "workmux sidebar jump 1"
+      bind -n M-2 run-shell "workmux sidebar jump 2"
+      bind -n M-3 run-shell "workmux sidebar jump 3"
+      bind -n M-4 run-shell "workmux sidebar jump 4"
+      bind -n M-5 run-shell "workmux sidebar jump 5"
+      bind -n M-6 run-shell "workmux sidebar jump 6"
+      bind -n M-7 run-shell "workmux sidebar jump 7"
+      bind -n M-8 run-shell "workmux sidebar jump 8"
+      bind -n M-9 run-shell "workmux sidebar jump 9"
+
+      # btop / lazydocker をポップアップで開く
+      bind b display-popup -E -w 90% -h 90% "btop"
+      bind C display-popup -E -w 90% -h 90% "lazydocker"
+    '';
+  };
+}

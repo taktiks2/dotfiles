@@ -1,0 +1,10 @@
+# Claude Code project-local overrides (個人トークン等を含み得る)
+.claude/settings.local.json
+.claude/.credentials.json
+
+# Claude Code runtime / cache
+.claude/cache/
+.claude/file-history/
+.claude/sessions/
+.claude/todos/
+.claude/projects/

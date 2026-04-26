@@ -49,8 +49,31 @@ secret-env.fish
 .claude/plugins/installed_plugins.json
 .claude/plugins/known_marketplaces.json
 
+# Claude Code: 個人トークンを含む可能性のある local 設定
+.claude/settings.local.json
+.claude/.credentials.json
+
+# Claude Code: 永続メモリは個別管理 (memory/ は別途 git で扱う場合は除外しない)
+# .claude/skills/, .claude/agents/, .claude/commands/, CLAUDE.md は追跡対象
+# (gitignore 上の明示は不要だが、誤って追加しないよう ! 例外も書かない)
+
 # Editor / app local backups
 *.bak
 
 # yaru local database
 .config/yaru/
+
+# Nix / direnv 生成物
+.config/direnv/
+.direnv/
+result
+result-*
+
+# Phase 13: sops-nix
+# secrets/ ディレクトリの中身は基本的に AGE 暗号化済 yaml のみ git tracked。
+# 平文の sops 一時ファイルや age 鍵は除外（sops エディタが書く一時ファイル名のパターン）。
+secrets/*.unsafe
+secrets/*.dec.*
+# AGE 鍵の Darwin 推奨保存先は ~/Library/Application Support/sops/age/keys.txt （リポジトリ外）
+# のため本来 .gitignore は不要だが、誤って `cp` した場合の保険として残置。
+.config/sops/age/keys.txt

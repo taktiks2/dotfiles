@@ -1,201 +1,142 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+このファイルは Claude Code (claude.ai/code) がこのリポジトリを操作する際のガイドです。
+ユーザー向けの全体像は `README.md`、設計の経緯は `docs/` 配下を参照してください。
 
 ## Repository Overview
 
-このリポジトリは個人用のdotfiles管理リポジトリです。Neovim、Fish shell、Alacritty、Git、Lazygitなどの設定ファイルを管理しています。
-
-## Setup and Installation
-
-### 🚀 自動インストール（推奨）
-
-```bash
-# リポジトリをクローン
-git clone <repository-url> ~/dotfiles
-cd ~/dotfiles
-
-# インストールスクリプトを実行（全自動）
-./install.sh
-```
-
-**これだけで完全な開発環境がセットアップされます！**
-
-インストールスクリプトは以下を自動実行：
-- Homebrew、必須パッケージの一括インストール
-- PHP/Composer/Laravel環境の構築
-- Rust、Node.js、Ruby環境のセットアップ
-- Fish Shell + Fisher + bobthefishテーマ
-- tmux + TPMのセットアップ
-- シンボリックリンクの作成とバックアップ
-- Neovimプラグインのインストール（オプション）
-
-### インストール後の確認
-
-```bash
-# インストールログの確認
-cat ~/.dotfiles_install_logs/install_*.log
-
-# バックアップの確認（既存設定がある場合）
-ls ~/.dotfiles_backup_*/
-```
+macOS (Apple Silicon) 用の個人 dotfiles。
+**Nix (flake + nix-darwin + home-manager + Determinate Nix)** で
+開発環境を宣言的に管理しています。`darwin-rebuild switch` 一発で
+CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期されます。
 
 ## Architecture
 
-### ディレクトリ構造
+完全宣言化された 6 層構造（Phase 6–16 で post-config を最小化済）:
+
+| レイヤ | 実体 | 場所 |
+|---|---|---|
+| Nix (home-manager) | CLI 33 本 + Fish 4.2 + plugins + tmux | `home/taktiks2.nix` |
+| Homebrew (nix-darwin で宣言) | formula 24 + cask 13 + tap 12 | `modules/homebrew.nix` |
+| macOS `system.defaults` | Dock / Finder / Trackpad / NSGlobalDomain 等 | `modules/macos-defaults.nix` |
+| `xdg.configFile` (live link) | `~/.config/<tool>` → dotfiles repo を `mkOutOfStoreSymlink` | `home/taktiks2.nix` |
+| sops-nix | AGE 暗号化 `secrets/secrets.yaml` を `~/.config/sops-nix/secrets/` に復号 | `home/taktiks2.nix` の `sops` |
+| direnv + nix-direnv | プロジェクト単位 devShell の自動有効化 | `templates/` |
+
+### 主要ファイル
 
 ```
-.
-├── .config/
-│   ├── fish/          # Fish shell設定
-│   │   ├── config.fish       # メイン設定ファイル
-│   │   └── secret-env.fish   # 秘匿情報（gitignore対象）
-│   ├── nvim/          # Neovim (LazyVim)設定
-│   │   ├── init.lua          # エントリーポイント
-│   │   ├── lua/
-│   │   │   ├── config/       # LazyVim設定（keymaps, options, etc.）
-│   │   │   └── plugins/      # カスタムプラグイン設定
-│   │   └── lazy-lock.json    # プラグインバージョン管理
-│   ├── git/           # Git設定
-│   ├── alacritty/     # Alacrittyターミナル設定
-│   ├── atac/          # ATAC (APIクライアント)設定
-│   └── cspell/        # スペルチェック設定
-├── config.yml         # Lazygit設定（deltaとの連携）
-└── install.sh         # セットアップスクリプト
+flake.nix                       # inputs / mkDarwin factory / devShell templates
+hosts/MacBook-Air/default.nix   # networking / system.primaryUser / programs.fish / fish 再署名 activation
+home/taktiks2.nix               # home.packages / programs.{fish,tmux,direnv} / xdg.configFile / sops / activation
+modules/homebrew.nix            # taps / brews / casks (cleanup = "uninstall")
+modules/macos-defaults.nix      # system.defaults.* (ACTIVE / OPT-IN)
+templates/                      # nix flake init -t 用 devShell (default / laravel / node / ruby / claude-project)
+.config/<tool>/                 # mkOutOfStoreSymlink で ~/.config/<tool> に live link される設定
 ```
 
-### Neovim (LazyVim) 構成
-
-- **ベース**: LazyVimディストリビューションを使用
-- **プラグイン管理**: lazy.nvim
-- **言語サポート**: TypeScript, Rust, Go, Python, PHP, Vue, Astro, Docker, Markdownなど
-- **主要機能**:
-  - LSP、linting (ESLint)、formatting (Prettier)
-  - GitHub Copilot連携
-  - DAP (デバッグ)、テストサポート
-  - cspellによるスペルチェック（none-ls経由）
-- **カスタム設定**:
-  - `lua/config/`: キーマップ、オプション、自動コマンド
-  - `lua/plugins/`: プラグイン固有の設定（LSP、UI、コーディング、AIなど）
-  - `lua/taktiks2/discipline.lua`: カスタムユーティリティ
-
-### Fish Shell 構成
-
-- **テーマ**: bobthefish (Dracula配色)
-- **PATH設定**: Homebrew、Android SDK、nodebrew、cargo、rbenv、MySQL、Composerなど
-- **主要エイリアス**:
-  - `vim/vi/v` → nvim
-  - `gd` → gh dash
-  - `lg` → lazygit
-  - `ls/la/ll` → lsd
-  - `sls` → sbcl (Common Lisp REPL with nvlime)
-- **環境変数**: `secret-env.fish`に秘匿情報を管理（gitignore対象、インストール時に自動生成）
-
-### PHP/Laravel 環境
-
-- **PHP**: Homebrew経由でインストール（最新版）
-- **Composer**: グローバルインストール済み
-- **Laravel Installer**: `composer global require laravel/installer`で自動インストール
-- **MySQL 8.0**: Homebrew経由でインストール、`brew services`で管理
-- **PATH**: `~/.composer/vendor/bin`と`/opt/homebrew/opt/mysql@8.0/bin`が自動設定される
-
-## Development Workflow
-
-### Neovim設定の編集
+## Setup
 
 ```bash
-# Neovim設定ファイルを編集
-nvim ~/.config/nvim/lua/config/keymaps.lua
-nvim ~/.config/nvim/lua/plugins/lsp.lua
+# 1. Determinate Nix
+curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
+  | sh -s -- install --determinate
 
-# LazyVim プラグインマネージャーを開く
-nvim
-:Lazy
-
-# Masonでツールを管理
-:Mason
+# 2. clone & bootstrap
+git clone git@github.com:taktiks2/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+./install.sh
 ```
 
-### Fish設定の編集
+`install.sh` (190 行) は **薄い orchestration** に縮小済み:
+
+1. macOS / Apple Silicon / Xcode CLT チェック
+2. Homebrew 本体投入（nix-darwin の homebrew モジュールが `/opt/homebrew` を参照）
+3. Determinate Nix install + 初回 `darwin-rebuild switch`
+4. fish の chsh
+5. Nix 管理境界外の最小 bootstrap (nodebrew + npm global 4 本: `claude` / `ccstatusline` / `ccusage` / `diffity`)
+
+## Daily Operations
+
+| 何を | 編集ファイル | 適用 |
+|---|---|---|
+| Nix CLI | `home/taktiks2.nix` の `home.packages` | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
+| brew formula / cask | `modules/homebrew.nix` の `brews` / `casks` / `taps` | 同上 |
+| macOS 設定 | `modules/macos-defaults.nix` | 同上 |
+| Fish 設定 | `home/taktiks2.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases, plugins}` | 同上 |
+| tmux 設定 | `home/taktiks2.nix` の `programs.tmux.*` | 同上 |
+| 月次更新 | `nix flake update` → `darwin-rebuild switch` | — |
+
+### 直接編集してはいけないファイル
+
+- `~/.config/fish/config.fish` — home-manager 生成 symlink。`programs.fish` セクションを編集
+- `~/.config/tmux/tmux.conf` — `programs.tmux` から生成される
+- `/etc/profiles/per-user/taktiks2/bin/*` — Nix store の symlink
+
+## Secrets
+
+二系統:
+
+- **推奨**: `secrets/secrets.yaml` を sops-nix で AGE 暗号化、git tracked。
+  AGE 鍵は `~/Library/Application Support/sops/age/keys.txt`
+  （Mic92/sops-nix README 推奨パス）。手順: `docs/sops-migration.md`
+- **互換**: `~/.config/fish/secret-env.fish`（dotfiles repo 外、
+  `home.activation.bootstrapSideEffects` がテンプレ生成。sops 移行完了後は撤廃予定）
+
+`programs.fish.interactiveShellInit` が起動時に `~/.config/sops-nix/secrets/<KEY>`
+を環境変数へ展開する（`PATH` / `HOME` 等の予約名は skip、識別子の regex で防御）。
+
+## Templates / devShells
 
 ```bash
-# Fish設定を編集
-nvim ~/.config/fish/config.fish
+mkdir my-project && cd my-project
 
-# 設定を再読み込み
-source ~/.config/fish/config.fish
+nix flake init -t ~/dotfiles            # 汎用 (templates/default)
+nix flake init -t ~/dotfiles#laravel    # PHP 8.4 + Composer
+nix flake init -t ~/dotfiles#node       # Node.js 22 + corepack
+nix flake init -t ~/dotfiles#ruby       # Ruby 3.3 + bundler
+
+direnv allow                            # 以後 cd で自動有効化
 ```
 
-### Git操作
+`templates/claude-project/` は `cp -r` 用の Claude Code スケルトン
+（CLAUDE.md / .mcp.json / .claude/{settings.json, agents/code-reviewer.md, skills/project-plan/SKILL.md} / .gitignore 同梱）。
 
-```bash
-# Lazygitを使用（推奨）
-lg
+## Common Aliases
 
-# またはgh dashでGitHub管理
-gd
+`home/taktiks2.nix` の `programs.fish.shellAliases`:
+
+```fish
+vim, vi, v   → nvim
+ghd          → gh dash
+lg           → lazygit
+ls, la, ll   → lsd, lsd -a, lsd -al
+sls          → sbcl --load ~/.local/share/nvim/lazy/nvlime/lisp/start-nvlime.lisp
+wm           → workmux
+agents       → agents.fish
+css          → tmux attach-session -t shogun
+csm          → tmux attach-session -t multiagent
 ```
 
-### Laravel開発
+## Troubleshooting
 
-```bash
-# MySQLを起動
-brew services start mysql@8.0
+- 緊急ロールバック: `sudo darwin-rebuild --rollback`
+- インストールログ: `~/.dotfiles_install_logs/install_*.log`
+- `~/.config/<name>` が既に別 symlink/実体だと HM が `*.hm-backup` で退避（要手動確認）
+- fish 4.2.x の SIGKILL 問題は `hosts/MacBook-Air/default.nix` の
+  `system.activationScripts.postActivation` で ad-hoc 再署名済（自動）
 
-# 新しいLaravelプロジェクトを作成
-laravel new my-project
-cd my-project
+## CI
 
-# 開発サーバーを起動
-php artisan serve
-
-# データベースマイグレーション
-php artisan migrate
-```
-
-## Important Files
-
-### 秘匿情報の管理
-
-- `.config/fish/secret-env.fish`: アクセストークンなどの秘匿情報を含む環境変数
-- `.config/git/ignore`: Gitグローバルignore設定
-- これらのファイルは`.gitignore`に含まれています
-
-### プラグイン管理
-
-- `.config/nvim/lazy-lock.json`: Neovimプラグインのバージョンロック
-- `.config/nvim/lazyvim.json`: LazyVim設定
-
-## Commonly Used Tools
-
-### 開発ツール
-- **Neovim**: テキストエディタ (LazyVim)
-- **Fish**: メインシェル (bobthefishテーマ)
-- **Alacritty**: ターミナルエミュレータ
-- **tmux**: ターミナルマルチプレクサ
-- **Lazygit**: Git TUI
-- **git-delta**: Git差分表示
-- **gh**: GitHub CLI
-- **gh-dash**: GitHub管理ツール
-- **lsd**: lsの代替
-- **ripgrep**: 高速grep
-- **tree-sitter**: パーサー（Neovim用）
-
-### 言語環境
-- **PHP 8.4+**: Laravel開発
-- **Composer**: PHPパッケージマネージャー
-- **Laravel Installer**: Laravelプロジェクト作成
-- **MySQL 8.0**: データベース
-- **Node.js**: JavaScript（nodebrew管理）
-- **Ruby**: iOS開発等（rbenv管理）
-- **Rust**: システムプログラミング（rustup管理）
-- **Common Lisp**: nvlime + sbcl
+- `.github/workflows/nix-check.yml` — push / PR ごとに `flake-checker` + `nix flake check` + `darwin-rebuild build` (macos-14)
+- `.github/workflows/update-flake-lock.yml` — 毎月 1 日に `flake.lock` 更新 PR を自動生成
 
 ## Notes
 
-- **対象OS**: macOS (Apple Silicon専用)
-- **言語**: 日本語環境
-- **インストール**: `./install.sh`で完全自動化
-- **冪等性**: 何度実行しても安全（既存設定は自動バックアップ）
-- **ログ**: `~/.dotfiles_install_logs/`にインストールログを保存
-- **バックアップ**: `~/.dotfiles_backup_YYYYMMDD_HHMMSS/`に既存設定を自動バックアップ
+- 対象 OS: macOS (Apple Silicon 専用)
+- 言語: 日本語環境
+- nixpkgs channel: `nixpkgs-25.11-darwin` (stable)
+- 詳細: `docs/nix-adoption-report.md`（導入レポート Step 1–7） /
+  `docs/nix-bestpractice-followup.md`（監査フォローアップ Phase 6–16） /
+  `docs/brew-triage.md`（formula 仕分け表） /
+  `docs/sops-migration.md`（sops-nix 移行手順）

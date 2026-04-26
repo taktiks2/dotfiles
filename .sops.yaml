@@ -1,0 +1,23 @@
+# sops-nix 暗号化ルール
+#
+# Darwin の AGE 鍵は Apple File System Programming Guide に従い
+# `~/Library/Application Support/sops/age/keys.txt` に置く（Mic92/sops-nix README 準拠）。
+#
+# 使い方:
+#   1. AGE 鍵を生成:
+#        mkdir -p "$HOME/Library/Application Support/sops/age"
+#        nix run nixpkgs#age -- -k > "$HOME/Library/Application Support/sops/age/keys.txt"
+#        chmod 600 "$HOME/Library/Application Support/sops/age/keys.txt"
+#   2. 公開鍵を取得:
+#        nix run nixpkgs#age -- -y "$HOME/Library/Application Support/sops/age/keys.txt"
+#   3. 下の AGE_PUBLIC_KEY_PLACEHOLDER を実際の公開鍵に置換
+#   4. 編集: sops secrets/secrets.yaml
+#
+# 別端末で復号する場合は keys.txt を安全な手段でその端末にも配置する（GitHub には絶対上げない）。
+keys:
+  - &user_key AGE_PUBLIC_KEY_PLACEHOLDER
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    age:
+      - *user_key

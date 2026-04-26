@@ -1,0 +1,42 @@
+name: update-flake-lock
+
+# 月次で flake.lock を更新する PR を自動生成する。
+# nixpkgs / nix-darwin / home-manager / determinate / sops-nix の lastModified が
+# 古いままだと CVE 取り込み遅延 / 上流バグ未追従の原因になるため、
+# DeterminateSystems の公式 Action でメンテナンスを自動化する。
+# https://github.com/DeterminateSystems/update-flake-lock
+#
+# 動作確認: 生成された PR は nix-check workflow を pull_request トリガで通すため、
+#           ビルドが通った状態でレビューできる。
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 毎月 1 日 09:00 JST (= 00:00 UTC)
+    - cron: "0 0 1 * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  update-lock:
+    name: Update flake.lock
+    # `nix flake update` は ref を bump するだけで darwin 依存の評価は行わないため、
+    # 安価な Linux ランナーで十分。生成された PR が pull_request トリガで
+    # nix-check.yml (macos-14) を発火させ、そこで実機ビルドが検証される。
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Determinate Nix
+        uses: DeterminateSystems/determinate-nix-action@main
+
+      - name: Update flake.lock
+        uses: DeterminateSystems/update-flake-lock@main
+        with:
+          pr-title: "chore(nix): flake.lock 月次更新"
+          pr-labels: |
+            dependencies
+            nix
+          commit-msg: "chore(nix): flake.lock 月次更新"
