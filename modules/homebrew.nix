@@ -36,9 +36,9 @@
       "supabase/tap"      # supabase
     ];
 
-    # ---------- brew formula（25 本） ----------
+    # ---------- brew formula（24 本） ----------
     # docs/brew-triage.md の KEEP + LATER に該当。Nix 化が困難または非推奨なもの。
-    # （Step 7 follow-up で tbls/joshuto を Nix 移行、本フォローアップで fisher を削除予定）
+    # （Step 7 follow-up で tbls/joshuto を Nix 移行、本フォローアップで fisher を削除）
     brews = [
       # 言語ランタイム / バージョンマネージャ
       "composer"
@@ -64,9 +64,6 @@
       "fastlane"
       "gemini-cli"
       "supabase"
-
-      # Fish プラグインマネージャ
-      "fisher"
 
       # 第三者 tap formula（tap/repo/name 形式）
       "carlocab/personal/unrar"

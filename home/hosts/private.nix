@@ -61,10 +61,9 @@
     joshuto    # ranger 風ファイラ
   ];
 
-  # Step 5: dotfiles リポジトリへの symlink を home-manager で冪等管理。
-  # install.sh の setup_symlinks と同じ作業を flake 側でも保証する（二重防御）。
-  # 注意: ~/.config 全体を repo への symlink で運用しているため、
-  #       home-manager の `xdg.configFile.*` 機構は使わず、トップレベル symlink を維持する。
+  # Phase 3: ~/.config 単一 symlink を解体し、git tracked な個別ディレクトリだけ symlink する。
+  # fish ディレクトリは home-manager (programs.fish) 管理のため symlink 対象から除外。
+  # untracked な runtime state (gh, github-copilot, yarn, broot, ...) は実 ~/.config に物理移動済。
   home.activation.dotfilesSymlinks = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     ensure_symlink() {
       local target="$1"
@@ -85,7 +84,10 @@
       fi
     }
 
-    ensure_symlink "$HOME/dotfiles/.config" "$HOME/.config"
+    # git tracked ディレクトリのみ。fish は除外（home-manager が直接管理）。
+    for d in alacritty atac btop ccstatusline cspell gh-dash ghostty git mcphub nvim tmux workmux; do
+      ensure_symlink "$HOME/dotfiles/.config/$d" "$HOME/.config/$d"
+    done
     ensure_symlink "$HOME/dotfiles/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
   '';
 
@@ -99,13 +101,12 @@
       echo "TPM cloned to $TPM_DIR (run 'Ctrl+s + I' inside tmux to install plugins)"
     fi
 
-    # secret-env.fish が無ければテンプレを作成（gitignore 対象なので個人マシンごとに実体ファイル必要）
-    SECRET_ENV="$HOME/dotfiles/.config/fish/secret-env.fish"
+    # secret-env.fish が無ければテンプレを作成（gitignore 相当、機密のため dotfiles repo 外に配置）
+    SECRET_ENV="$HOME/.config/fish/secret-env.fish"
     if [ ! -f "$SECRET_ENV" ]; then
       $DRY_RUN_CMD mkdir -p "$(dirname "$SECRET_ENV")"
       cat > "$SECRET_ENV" <<'EOF'
-# 秘匿情報用の環境変数
-# このファイルは .gitignore に含まれています
+# 秘匿情報用の環境変数（dotfiles repo 外に配置）
 #
 # 例:
 # set -x GITHUB_TOKEN "your_token_here"
@@ -114,18 +115,8 @@ EOF
       echo "secret-env.fish template created at $SECRET_ENV"
     fi
 
-    # Fisher (Fish プラグインマネージャ) の初回インストール
-    # 注: fish 本体は brew formula 'fisher' の依存として既に配置されている。
-    if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ] && command -v fish >/dev/null 2>&1; then
-      $DRY_RUN_CMD fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
-      echo "Fisher installed"
-    fi
-
-    # bobthefish テーマ（インストール済か functions ディレクトリで判定）
-    if [ -f "$HOME/.config/fish/functions/fisher.fish" ] && ! [ -f "$HOME/.config/fish/functions/fish_prompt.fish" ]; then
-      $DRY_RUN_CMD fish -c "fisher install oh-my-fish/theme-bobthefish"
-      echo "bobthefish theme installed"
-    fi
+    # Phase 3: Fisher / bobthefish の curl パイプは廃止。
+    # bobthefish/z/bass は programs.fish.plugins により Nix で宣言管理される。
 
     # Laravel Installer（composer がある場合のみ・初回のみ）
     if command -v composer >/dev/null 2>&1 && [ ! -x "$HOME/.composer/vendor/bin/laravel" ]; then
@@ -137,7 +128,6 @@ EOF
   programs.home-manager.enable = true;
 
   # Step 6: direnv + nix-direnv（プロジェクト単位の devShell 自動有効化）
-  # Fish 用のフックは config.fish で手動 source する（programs.fish を使わないため）。
   # 注: direnv 2.37.1 のテストが aarch64-darwin sandbox で zsh test が hang するため
   #     `doCheck = false` で回避（出来上がるバイナリ自体は変わらない）。
   #     overrideAttrs によりバイナリキャッシュは無効化されローカルビルドになる。
@@ -148,7 +138,116 @@ EOF
     nix-direnv.enable = true;
     enableBashIntegration = true;
     enableZshIntegration = true;
-    enableFishIntegration = false; # 手動フック側で対応
+    enableFishIntegration = true; # Phase 3: programs.fish 有効化に伴い自動 hook
     package = pkgs.direnv.overrideAttrs (_: { doCheck = false; });
+  };
+
+  # Phase 3: Fish 本格宣言化
+  programs.fish = {
+    enable = true;
+
+    plugins = [
+      { name = "bobthefish"; src = pkgs.fishPlugins.bobthefish.src; }
+      { name = "z";          src = pkgs.fishPlugins.z.src; }
+      { name = "bass";       src = pkgs.fishPlugins.bass.src; }
+    ];
+
+    shellAliases = {
+      vim = "nvim";
+      vi = "nvim";
+      v = "nvim";
+      ghd = "gh dash";
+      lg = "lazygit";
+      ls = "lsd";
+      la = "lsd -a";
+      ll = "lsd -al";
+      sls = "sbcl --load ~/.local/share/nvim/lazy/nvlime/lisp/start-nvlime.lisp";
+      wm = "workmux";
+      agents = "agents.fish";
+      # 旧 conf.d/multi-agent-shogun.fish から移植
+      css = "tmux attach-session -t shogun";
+      csm = "tmux attach-session -t multiagent";
+    };
+
+    # bobthefish theme & PATH（plugin が読まれる前に評価される必要があるため shellInit に置く）
+    shellInit = ''
+      set -g theme_color_scheme dracula
+      set -g theme_display_git yes
+      set -g theme_display_git_default_branch yes
+      set -g theme_display_node yes
+      set -g theme_display_date no
+      set -g theme_powerline_fonts yes
+      set -g theme_nerd_fonts yes
+      set -g theme_newline_cursor yes
+      set -g theme_newline_prompt '> '
+
+      set -x VIRTUAL_ENV_DISABLE_PROMPT 1
+      set -x LANG en_US.UTF-8
+
+      # PATH 構築（後で Nix 系を再 prepend して最優先化）
+      set PATH /opt/homebrew/bin $PATH
+      set PATH $HOME/Library/Android/sdk/cmdline-tools $PATH
+      set PATH $HOME/Library/Android/sdk/emulator $PATH
+      set PATH $HOME/Library/Android/sdk/tools $PATH
+      set PATH $HOME/Library/Android/sdk/tools/bin $PATH
+      set PATH $HOME/Library/Android/sdk/platform-tools $PATH
+      set PATH $HOME/bin $PATH
+      set PATH $HOME/.nodebrew/current/bin $PATH
+      set PATH /opt/homebrew/opt/mysql@8.0/bin $PATH
+      set PATH $HOME/.composer/vendor/bin $PATH
+      set PATH $HOME/.cargo/bin $PATH
+      set DYLD_LIBRARY_PATH /opt/homebrew/opt/mysql@8.0/lib $DYLD_LIBRARY_PATH
+      set -x ANDROID_SDK_ROOT $HOME/Library/Android/sdk
+      set -x JAVA_HOME /Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home
+
+      # atac
+      set -x ATAC_MAIN_DIR $HOME/.config/atac
+      set -x ATAC_THEME $HOME/.config/atac/settings/theme.toml
+      set -x ATAC_KEY_BINDINGS $HOME/.config/atac/settings/key.toml
+
+      # git delta & gh dash
+      set -x GH_PAGER delta
+
+      # Nix profiles を最後に prepend (= 最優先)
+      for nix_path in /etc/profiles/per-user/$USER/bin /run/current-system/sw/bin /nix/var/nix/profiles/default/bin
+        if test -d $nix_path; and not contains $nix_path $PATH
+          set -gx PATH $nix_path $PATH
+        end
+      end
+    '';
+
+    # 対話シェル限定の初期化
+    interactiveShellInit = ''
+      # 秘匿情報読み込み
+      if test -f ~/.config/fish/secret-env.fish
+          source ~/.config/fish/secret-env.fish
+      end
+
+      # rbenv shim
+      set -gx PATH '/Users/taktiks2/.rbenv/shims' $PATH
+      set -gx RBENV_SHELL fish
+      command rbenv rehash 2>/dev/null
+
+      function rbenv
+          set command $argv[1]
+          set -e argv[1]
+          switch "$command"
+              case rehash shell
+                  rbenv "sh-$command" $argv | source
+              case '*'
+                  command rbenv "$command" $argv
+          end
+      end
+
+      # workmux completions
+      if command -q workmux
+          workmux completions fish | source
+      end
+
+      # Google Cloud SDK
+      if test -f /Users/taktiks2/google-cloud-sdk/path.fish.inc
+          . /Users/taktiks2/google-cloud-sdk/path.fish.inc
+      end
+    '';
   };
 }
