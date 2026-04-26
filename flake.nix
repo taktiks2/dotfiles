@@ -109,6 +109,14 @@
           path = ./templates/ruby;
           description = "Ruby 3.3 + Bundler devShell";
         };
+        rust = {
+          path = ./templates/rust;
+          description = "Rust toolchain via rust-overlay (honors rust-toolchain.toml)";
+        };
+        go = {
+          path = ./templates/go;
+          description = "Go + gopls/delve/golangci-lint devShell";
+        };
       };
     };
 }

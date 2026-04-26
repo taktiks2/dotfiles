@@ -31,7 +31,7 @@ hosts/MacBook-Air/default.nix   # networking / system.primaryUser / programs.fis
 home/taktiks2.nix               # home.packages / programs.{fish,tmux,direnv} / xdg.configFile / sops / activation
 modules/homebrew.nix            # taps / brews / casks (cleanup = "uninstall")
 modules/macos-defaults.nix      # system.defaults.* (ACTIVE / OPT-IN)
-templates/                      # nix flake init -t 用 devShell (default / laravel / node / ruby / claude-project)
+templates/                      # nix flake init -t 用 devShell (default / laravel / node / ruby / rust / go / claude-project)
 .config/<tool>/                 # mkOutOfStoreSymlink で ~/.config/<tool> に live link される設定
 ```
 
@@ -95,6 +95,8 @@ nix flake init -t ~/dotfiles            # 汎用 (templates/default)
 nix flake init -t ~/dotfiles#laravel    # PHP 8.4 + Composer
 nix flake init -t ~/dotfiles#node       # Node.js 22 + corepack
 nix flake init -t ~/dotfiles#ruby       # Ruby 3.3 + bundler
+nix flake init -t ~/dotfiles#rust       # Rust + rust-overlay (rust-toolchain.toml 尊重)
+nix flake init -t ~/dotfiles#go         # Go + gopls/delve/golangci-lint
 
 direnv allow                            # 以後 cd で自動有効化
 ```

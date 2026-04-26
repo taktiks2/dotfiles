@@ -124,6 +124,8 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   ├── laravel/                  # PHP 8.4 + Composer (MySQL は brew 側で常駐)
 │   ├── node/                     # Node.js 22 + corepack
 │   ├── ruby/                     # Ruby 3.3 + bundler
+│   ├── rust/                     # Rust + rust-overlay (rust-toolchain.toml 尊重)
+│   ├── go/                       # Go + gopls/delve/golangci-lint
 │   └── claude-project/           # 新規プロジェクト Claude Code セットアップ雛形 (cp -r 用)
 ├── .config/
 │   ├── nvim/                     # Neovim (LazyVim) 設定
@@ -198,6 +200,8 @@ nix flake init -t ~/dotfiles            # 汎用
 nix flake init -t ~/dotfiles#laravel    # PHP 8.4 + Composer
 nix flake init -t ~/dotfiles#node       # Node.js 22
 nix flake init -t ~/dotfiles#ruby       # Ruby 3.3
+nix flake init -t ~/dotfiles#rust       # Rust + rust-overlay
+nix flake init -t ~/dotfiles#go         # Go + gopls/delve/golangci-lint
 
 direnv allow                            # 以後 cd で自動有効化
 ```
