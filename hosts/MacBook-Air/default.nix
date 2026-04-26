@@ -46,4 +46,23 @@
 
   # /etc/shells への登録（chsh で fish を選択可能にするため）。
   environment.shells = [ pkgs.fish ];
+
+  # fish 4.2.x の Mach-O linker-signed が Apple Silicon の page integrity 検証で
+  # 弾かれ SIGKILL される問題への恒久対策。
+  # 症状: `kernel: CODE SIGNING: cs_invalid_page ... denying page sending SIGKILL`
+  # 対策: rebuild 後に ad-hoc 再署名でハッシュを引き直す（冪等）。
+  # 参考: 直近のクラッシュは `log show --predicate 'eventMessage CONTAINS "fish"'` で確認可。
+  system.activationScripts.postActivation.text = ''
+    echo "[fish-resign] re-signing fish to bypass macOS page integrity issue..."
+    fish_bin="$(/usr/bin/readlink /run/current-system/sw/bin/fish || true)"
+    if [ -n "$fish_bin" ] && [ -f "$fish_bin" ]; then
+      fish_dir="$(/usr/bin/dirname "$fish_bin")"
+      /bin/chmod u+w "$fish_dir" "$fish_bin" 2>/dev/null || true
+      /usr/bin/codesign --force --sign - "$fish_bin" 2>/dev/null || true
+      /bin/chmod 555 "$fish_bin" "$fish_dir" 2>/dev/null || true
+      echo "[fish-resign] done: $fish_bin"
+    else
+      echo "[fish-resign] skipped: fish binary not found"
+    fi
+  '';
 }

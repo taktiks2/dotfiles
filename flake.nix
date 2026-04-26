@@ -2,15 +2,20 @@
   description = "taktiks2 dotfiles — nix-darwin + home-manager (Step 1 minimal bootstrap)";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # 25.11 stable (2025-11 release, サポート 2026-06-30 まで)。
+    # 個人 dotfiles は半年に 1 度の手動 follow で十分なため stable channel を採用し、
+    # nixpkgs-unstable の stale lock より事故率が低い構成にする。
+    # 25.05 → 25.11 系の場合は sudo darwin-rebuild switch 後に
+    # `home.stateVersion` は変更しない（HM 公式が初回値固定を明記）。
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-25.11-darwin";
 
     nix-darwin = {
-      url = "github:nix-darwin/nix-darwin/master";
+      url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager/master";
+      url = "github:nix-community/home-manager/release-25.11";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
@@ -57,10 +62,10 @@
                 builtins.elem (lib.getName pkg) [
                   # 例: "vscode" "claude-code"
                 ];
-              # direnv 2.37.1 の zsh テストが macOS sandbox 内でハングするための回避。
-              # 注: Phase 6 計画は「2026-04 nixpkgs-unstable で fix 済」を前提に削除したが、
-              # flake.lock の nixpkgs は 2025-10-28 (rev daf6dc47aa4b) のまま固定で fix が入っていないため復元。
-              # nixpkgs lock を 2026-04 系に更新できたら再撤廃可。
+              # direnv 2.37.1 の fish/zsh テストが macOS sandbox 内で Killed: 9 で落ちるため回避。
+              # 検証 (2026-04-26): 25.11 stable channel (rev 3f05c8657c) に切替後も
+              # `nix build nixpkgs#direnv` で `make: *** [GNUmakefile:150: test-fish] Killed: 9`
+              # を継続観測したため overlay 残置。upstream fix 反映後に再撤廃判定可。
               nixpkgs.overlays = [
                 (final: prev: {
                   direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });

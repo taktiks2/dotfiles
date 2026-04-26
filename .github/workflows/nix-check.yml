@@ -13,6 +13,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # nixpkgs の stale / EOL channel / 既知脆弱 input を検出。
+      # https://github.com/DeterminateSystems/flake-checker-action
+      - name: Flake health check
+        uses: DeterminateSystems/flake-checker-action@main
+        with:
+          fail-mode: true
+          send-statistics: false
+
       - name: Install Determinate Nix
         uses: DeterminateSystems/determinate-nix-action@main
 

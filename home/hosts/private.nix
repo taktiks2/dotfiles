@@ -11,7 +11,9 @@
   # 移行手順は dotfiles/docs/sops-migration.md 参照。
   sops = lib.mkIf (builtins.pathExists ../secrets/secrets.yaml) {
     defaultSopsFile = ../secrets/secrets.yaml;
-    age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
+    # Darwin の AGE 鍵保存先は Apple File System Programming Guide に従い
+    # `~/Library/Application Support/sops/age/keys.txt` を採用（Mic92/sops-nix README 準拠）。
+    age.keyFile = "${config.home.homeDirectory}/Library/Application Support/sops/age/keys.txt";
     # ここに secrets/secrets.yaml の各キーを列挙すると ~/.config/sops-nix/secrets/<KEY> に復号される。
     # 例:
     #   secrets.GITHUB_TOKEN = {};
@@ -34,6 +36,8 @@
     "/opt/homebrew/opt/mysql@8.0/bin"
     "${config.home.homeDirectory}/.composer/vendor/bin"
     "${config.home.homeDirectory}/.cargo/bin"
+    # rbenv shim も sessionPath に集約（旧 fish interactiveShellInit からの移譲）
+    "${config.home.homeDirectory}/.rbenv/shims"
   ];
 
   home.sessionVariables = {
@@ -46,6 +50,7 @@
     VIRTUAL_ENV_DISABLE_PROMPT = "1";
     LANG                       = "en_US.UTF-8";
     DYLD_LIBRARY_PATH          = "/opt/homebrew/opt/mysql@8.0/lib";
+    RBENV_SHELL                = "fish";
   };
 
   # Step 2 第一陣: brew leaves 57 本のうち、移行確度が高い 31 本を Nix 化。
@@ -109,8 +114,15 @@
   # Phase 7: ~/.config 配下の symlink を home-manager の純宣言形へ移行。
   # `mkOutOfStoreSymlink` は store に格納せず dotfiles repo を直接参照するため、
   # `git pull` 後の rebuild 不要で編集が即時反映される（live link）。
+  #
+  # Trade-off (2026-04 ベスプラ監査): live edit は再現性を犠牲にする選択。
+  #   - メリット: nvim/cspell/ccstatusline 等の頻繁編集対象を `darwin-rebuild switch` 不要で更新
+  #   - デメリット: dotfiles repo が `~/dotfiles` に存在することが前提。別 host で
+  #                 git pull を忘れるとリンク先が古い。Pure 派は `source = ./.config/<name>`
+  #                 で nix store inclusion し、再現性を取る。
+  # 本リポジトリは「日常 1 マシン運用 + 編集快適性優先」として live を選択。
+  # 引っ越し / 多 host 化が進んだら store inclusion に切替検討。
   # fish は programs.fish が直接管理するため除外。
-  # tmux は Phase 8 までこの形式を維持し、Phase 8 で programs.tmux.extraConfig へ移譲予定。
   xdg.configFile = let
     dotfilesRoot = "${config.home.homeDirectory}/dotfiles/.config";
     link = name: {
@@ -169,9 +181,9 @@ EOF
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
-    enableFishIntegration = true; # Phase 3: programs.fish 有効化に伴い自動 hook
+    # HM 25.11 から enable*Integration は programs.<shell>.enable と連動して
+    # 自動有効化される read-only オプションになったため、明示指定を撤廃。
+    # bash / zsh / fish は既に programs.* で管理されているため自動 hook される。
   };
 
   # Phase 8: tmux 完全宣言化。TPM 撤廃、plugins は Nix 経由で配布。
@@ -258,6 +270,21 @@ EOF
       { name = "bass";       src = pkgs.fishPlugins.bass.src; }
     ];
 
+    # rbenv は brew 管理の binary を呼びつつ、sh-rehash / sh-shell だけ source 評価する。
+    # 旧 interactiveShellInit 内のインライン関数定義から宣言形へ移譲。
+    functions = {
+      rbenv = ''
+        set command $argv[1]
+        set -e argv[1]
+        switch "$command"
+            case rehash shell
+                rbenv "sh-$command" $argv | source
+            case '*'
+                command rbenv "$command" $argv
+        end
+      '';
+    };
+
     shellAliases = {
       vim = "nvim";
       vi = "nvim";
@@ -314,21 +341,9 @@ EOF
           source ~/.config/fish/secret-env.fish
       end
 
-      # rbenv shim
-      set -gx PATH '/Users/taktiks2/.rbenv/shims' $PATH
-      set -gx RBENV_SHELL fish
-      command rbenv rehash 2>/dev/null
-
-      function rbenv
-          set command $argv[1]
-          set -e argv[1]
-          switch "$command"
-              case rehash shell
-                  rbenv "sh-$command" $argv | source
-              case '*'
-                  command rbenv "$command" $argv
-          end
-      end
+      # rbenv 初期化 (PATH/RBENV_SHELL は home.sessionPath / sessionVariables へ移譲済)
+      # rehash は新規 shim 同期のための副作用なので interactive 起動時に 1 回だけ。
+      command -q rbenv; and command rbenv rehash 2>/dev/null
 
       # workmux completions
       if command -q workmux

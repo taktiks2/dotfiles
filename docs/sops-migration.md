@@ -19,19 +19,21 @@ $KEY 環境変数として設定される
 
 ### 1. AGE 鍵を生成
 
+Darwin では Apple File System Programming Guide に従い `~/Library/Application Support/sops/age/keys.txt` に置く（Mic92/sops-nix README 準拠）。
+
 ```fish
-mkdir -p ~/.config/sops/age
-nix run nixpkgs#age -- -k > ~/.config/sops/age/keys.txt
-chmod 600 ~/.config/sops/age/keys.txt
+mkdir -p "$HOME/Library/Application Support/sops/age"
+nix run nixpkgs#age -- -k > "$HOME/Library/Application Support/sops/age/keys.txt"
+chmod 600 "$HOME/Library/Application Support/sops/age/keys.txt"
 ```
 
-別端末で復号する場合は `~/.config/sops/age/keys.txt` を安全な手段で持ち運ぶ。
+別端末で復号する場合は keys.txt を安全な手段で持ち運ぶ。
 GitHub などにコミットすると終わるので絶対やらない。
 
 ### 2. 公開鍵を取得して `.sops.yaml` に埋める
 
 ```fish
-nix run nixpkgs#age -- -y ~/.config/sops/age/keys.txt
+nix run nixpkgs#age -- -y "$HOME/Library/Application Support/sops/age/keys.txt"
 # 出力例: age1xxxx... を控えておく
 ```
 
@@ -60,7 +62,8 @@ ANTHROPIC_API_KEY: sk-ant-xxxxxxxxxxxxx
 ```nix
 sops = lib.mkIf (builtins.pathExists ../secrets/secrets.yaml) {
   defaultSopsFile = ../secrets/secrets.yaml;
-  age.keyFile = "${config.home.homeDirectory}/.config/sops/age/keys.txt";
+  # Darwin パス (Mic92/sops-nix README 準拠)
+  age.keyFile = "${config.home.homeDirectory}/Library/Application Support/sops/age/keys.txt";
   secrets = {
     GITHUB_TOKEN     = {};
     OPENAI_API_KEY   = {};
@@ -110,7 +113,7 @@ fi
 
 ## トラブルシューティング
 
-- **`sops: failed to load AGE keys`** → `~/.config/sops/age/keys.txt` のパーミッションが 600 か確認
+- **`sops: failed to load AGE keys`** → `~/Library/Application Support/sops/age/keys.txt` のパーミッションが 600 か確認
 - **`~/.config/sops-nix/secrets/` が空** → `home/taktiks2.nix` の `sops.secrets` にキーを登録し忘れ
 - **`Permission denied` で switch 失敗** → `keys.txt` が user 権限で読めるか確認 (root 所有になっていないか)
 - **別 Mac で復号できない** → `keys.txt` をその Mac にも配置する必要がある
