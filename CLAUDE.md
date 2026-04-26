@@ -17,7 +17,7 @@ CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期�
 | レイヤ | 実体 | 場所 |
 |---|---|---|
 | Nix (home-manager) | CLI 33 本 + Fish 4.2 + plugins + tmux | `home/taktiks2.nix` |
-| Homebrew (nix-darwin で宣言) | formula 24 + cask 13 + tap 12 | `modules/homebrew.nix` |
+| Homebrew (nix-darwin で宣言) | formula 24 + cask 13 + tap 11 | `modules/homebrew.nix` |
 | macOS `system.defaults` | Dock / Finder / Trackpad / NSGlobalDomain 等 | `modules/macos-defaults.nix` |
 | `xdg.configFile` (live link) | `~/.config/<tool>` → dotfiles repo を `mkOutOfStoreSymlink` | `home/taktiks2.nix` |
 | sops-nix | AGE 暗号化 `secrets/secrets.yaml` を `~/.config/sops-nix/secrets/` に復号 | `home/taktiks2.nix` の `sops` |

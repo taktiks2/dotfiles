@@ -27,7 +27,7 @@ cd ~/dotfiles
 │ Nix (home-manager)        CLI 33 + Fish 4.x + plugins + tmux   │
 │   /etc/profiles/per-user/taktiks2/bin/                         │
 ├────────────────────────────────────────────────────────────────┤
-│ Homebrew (nix-darwin で宣言)  formula 24 + cask 13 + tap 12    │
+│ Homebrew (nix-darwin で宣言)  formula 24 + cask 13 + tap 11    │
 │   /opt/homebrew/  (cleanup="uninstall" で git に完全同期)      │
 ├────────────────────────────────────────────────────────────────┤
 │ macOS system.defaults     Dock / Finder / Trackpad 等          │

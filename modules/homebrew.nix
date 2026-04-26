@@ -38,6 +38,7 @@
       # formula 用
       "carlocab/personal" # unrar
       "heroku/brew"       # heroku
+      # "homebrew/services" は 2024 に Homebrew core 統合で tap 削除済み。`brew services` は core 内蔵。
       "julien-cpsn/atac"  # atac
       "ngrok/ngrok"       # ngrok (cask)
       "osx-cross/avr"     # AVR クロスコンパイル + avr-gcc
