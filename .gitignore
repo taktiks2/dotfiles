@@ -71,7 +71,9 @@ result-*
 
 # Phase 13: sops-nix
 # secrets/ ディレクトリの中身は基本的に AGE 暗号化済 yaml のみ git tracked。
-# 平文の sops 一時ファイルや age 鍵は除外。
+# 平文の sops 一時ファイルや age 鍵は除外（sops エディタが書く一時ファイル名のパターン）。
 secrets/*.unsafe
 secrets/*.dec.*
+# AGE 鍵の Darwin 推奨保存先は ~/Library/Application Support/sops/age/keys.txt （リポジトリ外）
+# のため本来 .gitignore は不要だが、誤って `cp` した場合の保険として残置。
 .config/sops/age/keys.txt

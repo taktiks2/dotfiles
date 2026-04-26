@@ -7,6 +7,17 @@
 #   - nix-darwin が `brew bundle` 相当の冪等な同期を実行する。
 #   - `onActivation.cleanup = "uninstall"`: 未宣言パッケージは switch 時に
 #     自動 uninstall + autoremove。tap/formula/cask が完全に git 管理下にある状態。
+#
+# 暗黙依存に関する注意 (cleanup = "uninstall" の挙動):
+#   `brew bundle cleanup` は Brewfile に列挙されていない formula のうち
+#   「Brewfile 内 formula の `depends_on` 依存ではない」もののみを uninstall する。
+#   そのため `composer` を列挙すれば `php` は依存として自動保持される。
+#   ただし upstream で formula の依存宣言が変わると意図せず削除される可能性があるため、
+#   重要な runtime 依存は列挙したいところ:
+#     - composer  → php (homebrew-core/Formula/c/composer.rb の depends_on "php")
+#     - rbenv     → ruby-build (cask 経由でなく brew tap)
+#     - nodebrew  → 単体動作 (依存なし)
+#   `MAS apps` は cleanup の対象外（Homebrew Bundle 制限）。
 {
   homebrew = {
     enable = true;

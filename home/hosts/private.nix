@@ -1,15 +1,24 @@
-{ pkgs, lib, config, username, ... }:
+{ pkgs, lib, config, username, dotfilesRoot, ... }:
 
 {
   # home.username / home.homeDirectory は nix-darwin の users.users.<name> から自動解決されるため指定しない。
 
   # 初回設定値。home-manager のメジャー仕様変更があっても挙動を維持するための固定値。
+  # ※ macOS Sequoia + HM release-25.11 で activation 中に TCC `checkAppManagementPermission`
+  #   がクラッシュする issue (nix-community/home-manager#8336) が報告されている。
+  #   発生したら `System Settings > Privacy & Security > App Management` で
+  #   ターミナル / `darwin-rebuild` を許可リストに追加して再実行。
   home.stateVersion = "25.05";
 
   # Phase 13: sops-nix によるシークレット管理。
-  # secrets/secrets.yaml が存在する時のみ有効化（移行前の build を壊さない）。
+  # 以下を全て満たす時のみ有効化（移行前 build や設定不備での暴発を防ぐ）:
+  #   1. secrets/secrets.yaml が存在
+  #   2. .sops.yaml の AGE 公開鍵が `AGE_PUBLIC_KEY_PLACEHOLDER` のまま放置されていない
   # 移行手順は dotfiles/docs/sops-migration.md 参照。
-  sops = lib.mkIf (builtins.pathExists ../secrets/secrets.yaml) {
+  sops = lib.mkIf (
+    builtins.pathExists ../secrets/secrets.yaml
+    && !lib.hasInfix "AGE_PUBLIC_KEY_PLACEHOLDER" (builtins.readFile ../.sops.yaml)
+  ) {
     defaultSopsFile = ../secrets/secrets.yaml;
     # Darwin の AGE 鍵保存先は Apple File System Programming Guide に従い
     # `~/Library/Application Support/sops/age/keys.txt` を採用（Mic92/sops-nix README 準拠）。
@@ -124,9 +133,9 @@
   # 引っ越し / 多 host 化が進んだら store inclusion に切替検討。
   # fish は programs.fish が直接管理するため除外。
   xdg.configFile = let
-    dotfilesRoot = "${config.home.homeDirectory}/dotfiles/.config";
+    configRoot = "${dotfilesRoot}/.config";
     link = name: {
-      source = config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/${name}";
+      source = config.lib.file.mkOutOfStoreSymlink "${configRoot}/${name}";
     };
   in {
     alacritty    = link "alacritty";
@@ -145,7 +154,7 @@
 
   # lazygit は ~/Library/Application Support 配下のため home.file 経由で別管理。
   home.file."Library/Application Support/lazygit/config.yml".source =
-    config.lib.file.mkOutOfStoreSymlink "${config.home.homeDirectory}/dotfiles/config.yml";
+    config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/config.yml";
 
   # Step 7 follow-up: install.sh の post-config 関数のうち、idempotent で
   # bootstrap 専用ではないものを home.activation に移譲。
@@ -176,8 +185,9 @@ EOF
   programs.home-manager.enable = true;
 
   # Step 6: direnv + nix-direnv（プロジェクト単位の devShell 自動有効化）
-  # Phase 6: upstream で direnv test の darwin issue が解消されたため
-  # `doCheck = false` の overrideAttrs を撤廃。バイナリキャッシュ復帰。
+  # NOTE: direnv の `doCheck = false` overlay は flake.nix 側に残置している。
+  #   nixpkgs#82606 (macOS sandbox 内の fish/zsh test SIGKILL) は 2026-04 時点で未解消。
+  #   upstream fix が landing したら flake.nix の overlay と本コメントを同時撤廃する。
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
@@ -231,7 +241,7 @@ EOF
       # に焼き付けてくる（default-shell より優先される）ので、ここで上書きする。
       set-option -g default-shell /run/current-system/sw/bin/fish
       set-option -g default-command /run/current-system/sw/bin/fish
-      set-environment -g PATH "/etc/profiles/per-user/taktiks2/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin"
+      set-environment -g PATH "/etc/profiles/per-user/${username}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin"
 
       # gh dash をポップアップで開く（prefix + g）
       bind g display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "gh dash"
@@ -272,6 +282,7 @@ EOF
 
     # rbenv は brew 管理の binary を呼びつつ、sh-rehash / sh-shell だけ source 評価する。
     # 旧 interactiveShellInit 内のインライン関数定義から宣言形へ移譲。
+    # 依存: `modules/homebrew.nix` の `brews = [... "rbenv" ...]` (brew 経由で `rbenv` バイナリを供給)。
     functions = {
       rbenv = ''
         set command $argv[1]
@@ -328,10 +339,22 @@ EOF
     interactiveShellInit = ''
       # Phase 13: sops-nix で復号された secrets を環境変数に展開。
       # `home/taktiks2.nix` の sops.secrets 配下に登録した KEY を順次読み込む。
+      # SAFETY:
+      #   - `set -gx` は変数名を validate しないため、`sops.secrets.PATH = {}` のような
+      #     設定ミスで対話シェル毎回 $PATH が破壊されうる。以下で多段防御:
+      #       a. シェル環境を破壊しうる予約名は contains で skip
+      #       b. POSIX 環境変数識別子のみ通す regex フィルタ
       if test -d ~/.config/sops-nix/secrets
           for f in ~/.config/sops-nix/secrets/*
+              set -l key (basename $f)
+              if contains -- $key PATH HOME USER SHELL PWD OLDPWD IFS LD_PRELOAD DYLD_LIBRARY_PATH DYLD_INSERT_LIBRARIES
+                  continue
+              end
+              if not string match -rq '^[A-Za-z_][A-Za-z0-9_]*$' -- $key
+                  continue
+              end
               if test -r $f
-                  set -gx (basename $f) (cat $f)
+                  set -gx $key (cat $f)
               end
           end
       end
@@ -350,9 +373,9 @@ EOF
           workmux completions fish | source
       end
 
-      # Google Cloud SDK
-      if test -f /Users/taktiks2/google-cloud-sdk/path.fish.inc
-          . /Users/taktiks2/google-cloud-sdk/path.fish.inc
+      # Google Cloud SDK (homeDirectory 経由で username に依存しない)
+      if test -f $HOME/google-cloud-sdk/path.fish.inc
+          . $HOME/google-cloud-sdk/path.fish.inc
       end
     '';
   };

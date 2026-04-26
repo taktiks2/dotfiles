@@ -36,10 +36,12 @@
     let
       # Phase 16: ホスト追加が 1 行で済むよう mkDarwin factory 化。
       # 新ホストは下の darwinConfigurations に `mkDarwin { hostname = "..."; username = "..."; }` を 1 行追加。
-      mkDarwin = { hostname, username, system ? "aarch64-darwin" }:
+      # `dotfilesRoot` は別マシンで `~/code/dotfiles` 等にクローンする場合の上書き用。
+      # デフォルトは `/Users/<username>/dotfiles`。`mkOutOfStoreSymlink` の絶対パス解決に使う。
+      mkDarwin = { hostname, username, dotfilesRoot ? "/Users/${username}/dotfiles", system ? "aarch64-darwin" }:
         nix-darwin.lib.darwinSystem {
           inherit system;
-          specialArgs = { inherit inputs username hostname; };
+          specialArgs = { inherit inputs username hostname dotfilesRoot; };
           modules = [
             determinate.darwinModules.default
             ({ ... }: {
@@ -51,7 +53,7 @@
               home-manager.useGlobalPkgs = true;
               home-manager.useUserPackages = true;
               home-manager.backupFileExtension = "hm-backup";
-              home-manager.extraSpecialArgs = { inherit username; };
+              home-manager.extraSpecialArgs = { inherit username dotfilesRoot; };
               # Phase 13: sops-nix を home-manager に注入（secrets を ~/.config/sops-nix/secrets/ に復号配置）
               home-manager.sharedModules = [ sops-nix.homeManagerModules.sops ];
               home-manager.users.${username} = import ./home/${username}.nix;

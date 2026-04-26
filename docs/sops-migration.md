@@ -117,3 +117,17 @@ fi
 - **`~/.config/sops-nix/secrets/` が空** → `home/taktiks2.nix` の `sops.secrets` にキーを登録し忘れ
 - **`Permission denied` で switch 失敗** → `keys.txt` が user 権限で読めるか確認 (root 所有になっていないか)
 - **別 Mac で復号できない** → `keys.txt` をその Mac にも配置する必要がある
+- **macOS Sequoia + HM 25.11 で activation が `checkAppManagementPermission` クラッシュする**
+  → [home-manager#8336](https://github.com/nix-community/home-manager/issues/8336) の既知問題。
+  `System Settings > Privacy & Security > App Management` で `Terminal` / `iTerm` / `Ghostty` /
+  `darwin-rebuild` (フルパス: `/run/current-system/sw/bin/darwin-rebuild`) を許可リストに
+  追加してから再実行。`home.stateVersion = "25.05"` のままでも発生する点に注意（stateVersion
+  は activation の挙動を切替えるため、`copyApps` 系の挙動とは独立）。
+- **`home.stateVersion` の "25.11" 以降への引き上げは原則しない**
+  → home-manager 公式が初回値固定を明記。新規ホストを `mkDarwin` で立ち上げた直後に
+  上げ忘れたまま固定される運用が正しい（誤って引き上げた場合、`copyApps` のデフォルト
+  変更等で activation 中に `/Applications` 配下を勝手に書換えに行く挙動を生む）。
+- **`.sops.yaml` の AGE_PUBLIC_KEY_PLACEHOLDER のまま secrets/secrets.yaml を作成した**
+  → `home/taktiks2.nix` 側の `lib.mkIf` ガードが両条件（pathExists + placeholder 不在）を
+  チェックしているため build は通る。`.sops.yaml` を実際の `age1...` 公開鍵で置換してから
+  再 switch すると sops モジュールが有効化される。

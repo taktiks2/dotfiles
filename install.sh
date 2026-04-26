@@ -121,13 +121,24 @@ setup_global_npm() {
     return
   fi
 
-  for pkg in @anthropic-ai/claude-code ccstatusline ccusage diffity; do
-    local bin="${pkg##*/}"; bin="${bin%@*}"
-    if exists "$bin" || [ "$bin" = "claude-code" ] && exists claude; then
-      log "$pkg を update"
+  # pkg:bin マッピング (bash 3.2 互換のため文字列で管理)
+  # @anthropic-ai/claude-code は `claude` という実バイナリを公開する点に注意。
+  # 旧実装の `exists "$bin" || [ "$bin" = "claude-code" ] && exists claude` は
+  # bash の `||`/`&&` 同優先度・左結合のため `(LHS) && exists claude` と評価され、
+  # claude 未インストール時に他パッケージも誤って install 分岐に落ちる不具合があった。
+  for entry in \
+    "@anthropic-ai/claude-code:claude" \
+    "ccstatusline:ccstatusline" \
+    "ccusage:ccusage" \
+    "diffity:diffity"
+  do
+    local pkg="${entry%%:*}"
+    local bin="${entry##*:}"
+    if exists "$bin"; then
+      log "$pkg ($bin) を update"
       npm update -g "$pkg" 2>&1 | tee -a "$LOG_FILE" || warning "$pkg update 失敗 (継続)"
     else
-      log "$pkg を install"
+      log "$pkg ($bin) を install"
       npm install -g "$pkg" 2>&1 | tee -a "$LOG_FILE" || warning "$pkg install 失敗 (継続)"
     fi
   done

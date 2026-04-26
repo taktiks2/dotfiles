@@ -1,5 +1,5 @@
 {
-  description = "Laravel devShell (php82 + composer + mysql)";
+  description = "Laravel devShell (php84 + composer; MySQL は brew 側で常駐)";
 
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
@@ -22,8 +22,8 @@
             name = "laravel-shell";
 
             packages = with pkgs; [
-              php82
-              php82Packages.composer
+              php84
+              php84Packages.composer
               # 補助ツール
               just
               gnused

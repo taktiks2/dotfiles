@@ -48,21 +48,41 @@
   environment.shells = [ pkgs.fish ];
 
   # fish 4.2.x の Mach-O linker-signed が Apple Silicon の page integrity 検証で
-  # 弾かれ SIGKILL される問題への恒久対策。
+  # 弾かれ SIGKILL される問題への対症療法。
   # 症状: `kernel: CODE SIGNING: cs_invalid_page ... denying page sending SIGKILL`
   # 対策: rebuild 後に ad-hoc 再署名でハッシュを引き直す（冪等）。
-  # 参考: 直近のクラッシュは `log show --predicate 'eventMessage CONTAINS "fish"'` で確認可。
+  # 検証: `log show --predicate 'eventMessage CONTAINS "fish"'` で SIGKILL 履歴確認。
+  # 注意点:
+  #   - 旧実装の `readlink` は 1 段しか辿らないため `realpath` で完全解決する。
+  #     macOS 12.3+ で `/usr/bin/realpath` が利用可能（本 PR は Apple Silicon 限定）。
+  #   - `chmod u+w` は /nix/store のパーミッション (mode 555) を一時的に書込可へ変更する。
+  #     Determinate Nix の store は rw-mounted のため root で動く activation から書込可能。
+  #   - 失敗時は WARN ログを出すのみで activation 全体は continue する。
+  #     ただし旧実装のように全エラーを `2>/dev/null || true` で握り潰さない。
+  #     再署名が無効化される事象（=fish SIGKILL 再発）を検知できるようにする。
+  #   - upstream (nixpkgs#461406 など) で fix backport が確認できたら本ブロックごと撤廃する。
   system.activationScripts.postActivation.text = ''
     echo "[fish-resign] re-signing fish to bypass macOS page integrity issue..."
-    fish_bin="$(/usr/bin/readlink /run/current-system/sw/bin/fish || true)"
-    if [ -n "$fish_bin" ] && [ -f "$fish_bin" ]; then
-      fish_dir="$(/usr/bin/dirname "$fish_bin")"
-      /bin/chmod u+w "$fish_dir" "$fish_bin" 2>/dev/null || true
-      /usr/bin/codesign --force --sign - "$fish_bin" 2>/dev/null || true
-      /bin/chmod 555 "$fish_bin" "$fish_dir" 2>/dev/null || true
-      echo "[fish-resign] done: $fish_bin"
+    fish_link="/run/current-system/sw/bin/fish"
+    if [ ! -L "$fish_link" ] && [ ! -f "$fish_link" ]; then
+      echo "[fish-resign] skipped: $fish_link not present"
     else
-      echo "[fish-resign] skipped: fish binary not found"
+      fish_bin="$(/usr/bin/realpath "$fish_link" 2>/dev/null || true)"
+      if [ -z "$fish_bin" ] || [ ! -f "$fish_bin" ]; then
+        echo "[fish-resign] WARN: failed to resolve $fish_link"
+      else
+        fish_dir="$(/usr/bin/dirname "$fish_bin")"
+        if /bin/chmod u+w "$fish_dir" "$fish_bin" 2>/dev/null; then
+          if /usr/bin/codesign --force --sign - "$fish_bin"; then
+            echo "[fish-resign] done: $fish_bin"
+          else
+            echo "[fish-resign] WARN: codesign failed for $fish_bin"
+          fi
+          /bin/chmod 555 "$fish_bin" "$fish_dir" 2>/dev/null || true
+        else
+          echo "[fish-resign] WARN: cannot chmod $fish_bin (read-only store?)"
+        fi
+      fi
     fi
   '';
 }

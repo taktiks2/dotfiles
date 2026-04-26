@@ -20,26 +20,32 @@ cd ~/dotfiles
 
 ## 🏗️ アーキテクチャ
 
-4 層の宣言的管理 + 1 層の post-config:
+完全宣言化された 6 層構造（Phase 6–16 で post-config を最小化済）:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
-│ Nix (home-manager)        CLI 33 + Fish 4.6 + plugins          │
+│ Nix (home-manager)        CLI 33 + Fish 4.x + plugins + tmux   │
 │   /etc/profiles/per-user/taktiks2/bin/                         │
 ├────────────────────────────────────────────────────────────────┤
 │ Homebrew (nix-darwin で宣言)  formula 24 + cask 13 + tap 12    │
 │   /opt/homebrew/  (cleanup="uninstall" で git に完全同期)      │
 ├────────────────────────────────────────────────────────────────┤
-│ macOS system.defaults     Dock / Finder / Trackpad 等           │
+│ macOS system.defaults     Dock / Finder / Trackpad 等          │
 ├────────────────────────────────────────────────────────────────┤
-│ home.activation           dotfilesSymlinks + bootstrapSideEffects │
-│                           (TPM / secret-env テンプレ / Laravel)  │
+│ xdg.configFile            ~/.config/<tool> を mkOutOfStoreSymlink │
+│                           で dotfiles repo に live link        │
+├────────────────────────────────────────────────────────────────┤
+│ sops-nix                  AGE 暗号化 secrets/secrets.yaml を    │
+│                           ~/.config/sops-nix/secrets/ に復号    │
 ├────────────────────────────────────────────────────────────────┤
 │ direnv + nix-direnv       プロジェクト単位の devShell 自動有効化 │
 └────────────────────────────────────────────────────────────────┘
 ```
 
-post-config (`install.sh`): PHP / MySQL / Rust (rustup) / Node (nodebrew) / Ruby (rbenv) / Claude Code (npm) / Neovim プラグインの初回投入。
+`install.sh` (179 行) の役割は最小 orchestration のみ:
+1. macOS / Apple Silicon / Xcode CLT チェック → 2. Homebrew 本体投入 →
+3. Determinate Nix install + 初回 `darwin-rebuild switch` → 4. fish chsh →
+5. Nix 管理境界外の npm global (claude / ccstatusline / ccusage / diffity)。
 
 ## 📦 管理される内容
 
@@ -73,18 +79,25 @@ Fish plugins (Fisher 撤廃、Nix 直接管理): bobthefish / z / bass
 
 Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンショット保存先、トラックパッドのタップクリック等を `modules/macos-defaults.nix` で固定。OPT-IN 候補（拡張子表示、自動修正系の無効化、KeyRepeat 最速化）はコメント形式で同梱。
 
-### home.activation
+### xdg.configFile + home.activation
 
-- `dotfilesSymlinks`: `~/.config/{nvim, git, alacritty, ...}` 計 12 ディレクトリと lazygit の symlink を冪等保証
-- `bootstrapSideEffects`: TPM (tmux plugin manager) clone、`~/.config/fish/secret-env.fish` テンプレ生成、Laravel Installer の初回投入
+- `xdg.configFile.<name>.source = mkOutOfStoreSymlink` で `~/.config/{nvim, git, alacritty, atac, btop, ccstatusline, cspell, gh-dash, ghostty, mcphub, workmux}` の 11 ディレクトリを live link（`darwin-rebuild` 不要で編集即反映）
+- `home.file."Library/Application Support/lazygit/config.yml"` で lazygit のみ別管理
+- `home.activation.bootstrapSideEffects`: `~/.config/fish/secret-env.fish` のテンプレ生成のみ（最小化済、sops-nix 移行完了後は削除予定）
 
-### post-config (install.sh が担当)
+### secrets (sops-nix)
 
-- PHP/Composer/MySQL のセットアップ（brew formula 経由のサービス起動・PATH 設定）
-- Rust (rustup)、Node.js (nodebrew)、Ruby (rbenv) の初回インストール
-- Claude Code CLI (`@anthropic-ai/claude-code`) と statusLine 用 `ccstatusline` の npm global インストール、`~/.claude` symlink
-- Fish の chsh
-- Neovim プラグインの初回展開 (`:Lazy install`)
+- `.sops.yaml` で AGE 公開鍵を宣言、`secrets/secrets.yaml` を AGE 暗号化のうえ git tracked
+- AGE 秘密鍵は `~/Library/Application Support/sops/age/keys.txt`（Mic92/sops-nix README 推奨パス）
+- 起動時に `programs.fish.interactiveShellInit` が `~/.config/sops-nix/secrets/<KEY>` を環境変数へ展開
+- 旧 `secret-env.fish` との併用フェーズ（移行手順は `docs/sops-migration.md`）
+
+### Nix 管理境界外 (install.sh の post-config)
+
+- npm global 4 本（`claude` / `ccstatusline` / `ccusage` / `diffity`）— upstream の更新が頻繁なため意図的に npm 直管理
+- `nodebrew` 最小 bootstrap（上記 npm 用の土台。本格的な Node 利用は `templates/node` devShell）
+- `fish` の chsh
+- Neovim プラグインの初回展開は手動（`nvim +Lazy +qa`）
 
 ## 📋 システム要件
 
@@ -107,26 +120,40 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   ├── homebrew.nix              # tap / formula / cask 宣言
 │   └── macos-defaults.nix        # system.defaults.* (ACTIVE / OPT-IN)
 ├── templates/
-│   ├── default/                  # `nix flake init -t ~/dotfiles` 用の汎用 devShell
-│   └── claude-project/           # 新規プロジェクトの Claude Code セットアップ雛形 (CLAUDE.md / .mcp.json / agents / commands)
+│   ├── default/                  # 汎用 devShell (`nix flake init -t ~/dotfiles`)
+│   ├── laravel/                  # PHP 8.4 + Composer (MySQL は brew 側で常駐)
+│   ├── node/                     # Node.js 22 + corepack
+│   ├── ruby/                     # Ruby 3.3 + bundler
+│   └── claude-project/           # 新規プロジェクト Claude Code セットアップ雛形 (cp -r 用)
 ├── .config/
 │   ├── nvim/                     # Neovim (LazyVim) 設定
 │   ├── alacritty/                # Alacritty 設定
 │   ├── ghostty/                  # Ghostty 設定
-│   ├── tmux/                     # tmux 設定
 │   ├── git/                      # Git 設定
 │   ├── atac/                     # ATAC (API クライアント) 設定
 │   ├── ccstatusline/             # Claude Code statusline 設定
 │   ├── btop/  cspell/  gh-dash/  mcphub/  workmux/
-│   └── (fish は home-manager 管理。dotfiles repo に置かない)
+│   ├── (fish は programs.fish 直管理。dotfiles repo の .config/fish/ は不要)
+│   └── (tmux も programs.tmux 直管理。.config/tmux/ は Phase 8 で撤廃済)
+├── secrets/
+│   └── secrets.yaml              # AGE 暗号化 (sops-nix 管理)
+├── .sops.yaml                    # sops creation_rules
 ├── config.yml                    # Lazygit 設定 (~/Library/Application Support/lazygit/ に symlink)
-├── install.sh                    # Nix bootstrap + post-config orchestration
+├── install.sh                    # Nix bootstrap + post-config orchestration (179 行)
+├── .github/workflows/
+│   ├── nix-check.yml             # CI: flake-checker + nix flake check + darwin build
+│   └── update-flake-lock.yml     # 月次 flake.lock 自動更新 PR
 └── docs/
-    ├── nix-adoption-report.md    # Nix 導入レポート (Step 1〜7 + 監査フォローアップ)
-    └── brew-triage.md            # brew formula 仕分け表
+    ├── nix-adoption-report.md    # Nix 導入レポート (Step 1〜7)
+    ├── nix-bestpractice-followup.md # 監査フォローアップ実装レポート (Phase 6–16)
+    ├── brew-triage.md            # brew formula 仕分け表
+    └── sops-migration.md         # sops-nix 移行手順
 ```
 
-秘匿情報 `~/.config/fish/secret-env.fish` は **dotfiles repo 外** に配置（`bootstrapSideEffects` がテンプレを生成、実値はマシンごとに編集）。
+秘匿情報の二系統:
+
+- **推奨**: `secrets/secrets.yaml` を sops-nix で AGE 暗号化、git tracked。AGE 鍵だけ別端末配布（`docs/sops-migration.md`）
+- **互換維持**: `~/.config/fish/secret-env.fish`（dotfiles repo 外、`bootstrapSideEffects` がテンプレ生成。sops 移行完了後は削除予定）
 
 ## 🎯 日常運用
 
@@ -143,21 +170,36 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 
 `~/.config/fish/config.fish` は **Nix 生成 symlink** のため直接編集してはいけません。`home/taktiks2.nix` の `programs.fish` セクションを編集してください。
 
-### 秘匿情報の管理
+### 秘匿情報の管理（sops-nix 推奨）
 
-```fish
-# ~/.config/fish/secret-env.fish (gitignore 対象、dotfiles repo 外)
-set -x GITHUB_TOKEN "your_token_here"
-set -x OPENAI_API_KEY "your_api_key_here"
+```bash
+# 初回セットアップ
+mkdir -p "$HOME/Library/Application Support/sops/age"
+nix run nixpkgs#age -- -k > "$HOME/Library/Application Support/sops/age/keys.txt"
+chmod 600 "$HOME/Library/Application Support/sops/age/keys.txt"
+nix run nixpkgs#age -- -y "$HOME/Library/Application Support/sops/age/keys.txt"
+# → 出力された公開鍵を .sops.yaml の AGE_PUBLIC_KEY_PLACEHOLDER に置換
+
+# secrets を編集
+nix run nixpkgs#sops -- secrets/secrets.yaml
+
+# home/taktiks2.nix の sops.secrets に各 KEY を列挙して switch
 ```
+
+詳細手順は `docs/sops-migration.md`。
 
 ### 新規プロジェクトの devShell
 
 ```bash
 mkdir my-project && cd my-project
-nix flake init -t ~/dotfiles      # 汎用 devShell テンプレを投入
-$EDITOR flake.nix                 # 必要なランタイムを packages に追加
-direnv allow                      # 以後 cd で自動有効化
+
+# 言語別テンプレートから投入
+nix flake init -t ~/dotfiles            # 汎用
+nix flake init -t ~/dotfiles#laravel    # PHP 8.4 + Composer
+nix flake init -t ~/dotfiles#node       # Node.js 22
+nix flake init -t ~/dotfiles#ruby       # Ruby 3.3
+
+direnv allow                            # 以後 cd で自動有効化
 ```
 
 ### 新規プロジェクトの Claude Code セットアップ
@@ -201,11 +243,17 @@ csm          → tmux attach-session -t multiagent
 ## 📝 Laravel プロジェクトの始め方
 
 ```bash
-brew services start mysql@8.0   # MySQL 起動
-laravel new my-project          # Laravel Installer (home.activation で自動導入済)
-cd my-project
+mkdir my-project && cd my-project
+nix flake init -t ~/dotfiles#laravel   # PHP 8.4 + Composer devShell
+direnv allow
+brew services start mysql@8.0          # MySQL は brew で常駐管理
+composer create-project laravel/laravel .
 php artisan serve
 ```
+
+`templates/laravel` には `pkgs.php84 / php84Packages.composer` が同梱され、
+`direnv allow` するとプロジェクト固有の PATH に切り替わります（MySQL は dotfiles 全体で
+共通の `brew services start mysql@8.0` を使う構成）。
 
 ## 🔍 トラブルシューティング
 
@@ -234,14 +282,21 @@ cat ~/.dotfiles_install_logs/install_*.log
 sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
 ```
 
-### symlink activation の WARN
+### xdg.configFile activation の競合
 
-`home.activation.dotfilesSymlinks` が「予期しない実体」を保護スキップしている可能性。手動で内容を確認してから削除 → 再 switch。
+既存の `~/.config/<name>` が同ターゲットへの symlink でない場合、HM が `*.hm-backup` で退避してから新規 symlink を貼ります。`hm-backup` ファイルが残ったら内容を確認のうえ削除してください。
+
+### CI（GitHub Actions）
+
+- `nix-check.yml`: push / PR ごとに `flake-checker` → `nix flake check` → `darwin-rebuild build` を macos-14 ランナーで実行
+- `update-flake-lock.yml`: 毎月 1 日に `flake.lock` を更新する PR を自動生成（生成された PR で `nix-check.yml` が再実行されるため、ビルドが通った状態でレビュー可能）
 
 ## 📚 詳細ドキュメント
 
-- [docs/nix-adoption-report.md](./docs/nix-adoption-report.md) — Nix 導入レポート（Step 1〜7 + 監査フォローアップの完全な実施記録）
+- [docs/nix-adoption-report.md](./docs/nix-adoption-report.md) — Nix 導入レポート（Step 1〜7）
+- [docs/nix-bestpractice-followup.md](./docs/nix-bestpractice-followup.md) — 監査フォローアップ実装レポート（Phase 6–16）
 - [docs/brew-triage.md](./docs/brew-triage.md) — brew formula 仕分け表
+- [docs/sops-migration.md](./docs/sops-migration.md) — sops-nix 移行手順
 - [CLAUDE.md](./CLAUDE.md) — Claude Code 用のリポジトリガイド
 - [LazyVim](https://www.lazyvim.org/) / [Fish Shell](https://fishshell.com/docs/current/)
 
