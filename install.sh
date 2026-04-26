@@ -288,21 +288,7 @@ setup_fish() {
     success "既にFishがデフォルトシェルです"
   fi
 
-  # secret-env.fishのテンプレート作成
-  local secret_env="$DOTFILES_DIR/.config/fish/secret-env.fish"
-  if [[ ! -f "$secret_env" ]]; then
-    info "secret-env.fishテンプレートを作成中..."
-    cat >"$secret_env" <<'EOF'
-# 秘匿情報用の環境変数
-# このファイルは.gitignoreに含まれています
-
-# 例:
-# set -x GITHUB_TOKEN "your_token_here"
-# set -x OPENAI_API_KEY "your_api_key_here"
-EOF
-    success "secret-env.fishテンプレート作成完了"
-    warning "必要に応じて $secret_env を編集してください"
-  fi
+  # secret-env.fish のテンプレート作成は home.activation.bootstrapSideEffects に移譲。
 }
 
 ################################################################################
@@ -365,21 +351,9 @@ setup_ruby() {
 ################################################################################
 
 setup_tmux() {
-  step "tmuxのセットアップ"
-
-  # TPM (Tmux Plugin Manager)のインストール
-  local tpm_dir="$HOME/.tmux/plugins/tpm"
-  if [[ ! -d "$tpm_dir" ]]; then
-    info "TPM (Tmux Plugin Manager)をインストール中..."
-    git clone https://github.com/tmux-plugins/tpm "$tpm_dir" 2>&1 | tee -a "$LOG_FILE"
-    success "TPMインストール完了"
-  else
-    success "TPM既にインストール済み"
-    info "TPMを更新中..."
-    cd "$tpm_dir" && git pull 2>&1 | tee -a "$LOG_FILE"
-  fi
-
-  info "tmux設定を有効にするには、tmux起動後に 'Ctrl+s' + 'I' を押してください"
+  step "tmux 補助情報"
+  # TPM のクローンは home/taktiks2.nix の home.activation.bootstrapSideEffects に移譲。
+  info "tmux 起動後に 'Ctrl+s' + 'I' を押すとプラグインが導入される"
 }
 
 ################################################################################

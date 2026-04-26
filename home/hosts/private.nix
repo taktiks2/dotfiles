@@ -55,6 +55,10 @@
     # AI / その他
     aichat
     just
+
+    # 第二陣 (Step 7 follow-up): brew LATER から Nix へ移行
+    tbls       # DB スキーマドキュメント生成
+    joshuto    # ranger 風ファイラ
   ];
 
   # Step 5: dotfiles リポジトリへの symlink を home-manager で冪等管理。
@@ -83,6 +87,32 @@
 
     ensure_symlink "$HOME/dotfiles/.config" "$HOME/.config"
     ensure_symlink "$HOME/dotfiles/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
+  '';
+
+  # Step 7 follow-up: install.sh の post-config 関数のうち、idempotent で
+  # bootstrap 専用ではないものを home.activation に移譲。
+  home.activation.bootstrapSideEffects = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    # TPM (tmux plugin manager) を初回のみクローン
+    TPM_DIR="$HOME/.tmux/plugins/tpm"
+    if [ ! -d "$TPM_DIR" ]; then
+      $DRY_RUN_CMD ${pkgs.git}/bin/git clone https://github.com/tmux-plugins/tpm "$TPM_DIR"
+      echo "TPM cloned to $TPM_DIR (run 'Ctrl+s + I' inside tmux to install plugins)"
+    fi
+
+    # secret-env.fish が無ければテンプレを作成（gitignore 対象なので個人マシンごとに実体ファイル必要）
+    SECRET_ENV="$HOME/dotfiles/.config/fish/secret-env.fish"
+    if [ ! -f "$SECRET_ENV" ]; then
+      $DRY_RUN_CMD mkdir -p "$(dirname "$SECRET_ENV")"
+      cat > "$SECRET_ENV" <<'EOF'
+# 秘匿情報用の環境変数
+# このファイルは .gitignore に含まれています
+#
+# 例:
+# set -x GITHUB_TOKEN "your_token_here"
+# set -x OPENAI_API_KEY "your_api_key_here"
+EOF
+      echo "secret-env.fish template created at $SECRET_ENV"
+    fi
   '';
 
   # home-manager 自身の管理を有効化。

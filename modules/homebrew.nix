@@ -78,10 +78,8 @@
       "qmk/qmk/qmk"
       "raine/workmux/workmux"
 
-      # LATER（Nix 化候補だが当面 brew）
-      "joshuto"
-      "rogue"
-      "tbls"
+      # LATER 残: Nix 化が困難または嗜好問題で残置
+      "rogue" # 古典ローグライクゲーム、Nix 版なし
     ];
 
     # ---------- cask（13 本） ----------

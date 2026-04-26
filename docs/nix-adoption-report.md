@@ -512,7 +512,31 @@ check_system → install_homebrew → bootstrap_nix
 
 ---
 
-### 累計成果（Step 1〜7 全て完了）
+### Step 7 follow-up: 第二陣 brew→Nix 移行 + post-config の home.activation 化
+
+#### 移行: tbls + joshuto を Nix へ
+- `home/taktiks2.nix` の `home.packages` に `tbls`, `joshuto` を追加
+- `modules/homebrew.nix` の `brews` から削除（`rogue` のみ残置：Nix 版なし）
+- 結果: `brew leaves` 27 → **25**、`Uninstalled 2 formulae` を確認
+
+#### post-config 移譲: TPM + secret-env を `home.activation` へ
+新規 activation: `home.activation.bootstrapSideEffects`
+- **TPM (tmux plugin manager)** の初回 git clone を冪等管理
+- **`secret-env.fish` テンプレート**を `~/dotfiles/.config/fish/` に存在しなければ生成
+
+`install.sh` 側:
+- `setup_tmux` を **15行 → 4行**（TPM ロジック削除、操作ヒントだけ残す）
+- `setup_fish` から secret-env テンプレ生成ブロックを削除
+- 行数: 501 → **475**（合計 588 → 475、**19% 削減**）
+
+#### 検証
+- ✅ `tbls 1.94.4`, `joshuto 0.9.9` が Nix 版で動作
+- ✅ `bootstrapSideEffects` 実行ログ: 既存検出スキップで無音通過（冪等）
+- ✅ `install.sh` シンタックス OK
+
+---
+
+### 累計成果（Step 1〜7 + follow-up 全て完了）
 
 - **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
 - **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
@@ -521,8 +545,8 @@ check_system → install_homebrew → bootstrap_nix
 - **Homebrew 完全宣言化**: tap 12 + formula 27 + cask 13 = 計 52 件
 - **dotfiles symlink を home-manager 管理化**: install.sh と二重防御
 - **direnv + nix-direnv 統合 + devShell テンプレート提供**: `nix flake init -t ~/dotfiles` で投入可能
-- **brew leaves が 57 → 27 本に整理**: cleanup="uninstall" で自動同期
-- **install.sh が 588 → 501 行に削減**: 重複処理削除 + Nix bootstrap 統合
+- **brew leaves が 57 → 25 本に整理**: cleanup="uninstall" で自動同期
+- **install.sh が 588 → 475 行に削減**: 重複処理削除 + Nix bootstrap 統合 + post-config 移譲
 - **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-9）
 - **既存環境への副作用ゼロ**: PHP / MySQL / Ruby / Node 含め全て従来通り動作
 
@@ -531,7 +555,7 @@ check_system → install_homebrew → bootstrap_nix
 | Step | 内容 | 優先度 |
 |---|---|---|
 | Step 3 follow-up | OPT-IN 項目から好みのものを uncomment して有効化 | 任意 |
-| install.sh 後続クリーンアップ | post-config 関数群 (setup_fish/setup_nodejs/setup_ruby 等) を home-manager activation に移譲 | 任意 |
+| install.sh 後続クリーンアップ | rustup / nodebrew install / rbenv install など bootstrap 専用 post-config の更なる削減 | 任意 |
 | Step 5 | `xdg.configFile` 経由で `.config/*` の symlink ロジックを home-manager に移譲 | 中 |
 | Step 6 | 新規プロジェクト用に `nix-direnv` セットアップ + devShell サンプル | 低（任意） |
 | 第二陣 MOVE | `tbls / joshuto` 等の追加移行 | 低 |
