@@ -42,7 +42,7 @@ cd ~/dotfiles
 └────────────────────────────────────────────────────────────────┘
 ```
 
-`install.sh` (179 行) の役割は最小 orchestration のみ:
+`install.sh` (190 行) の役割は最小 orchestration のみ:
 1. macOS / Apple Silicon / Xcode CLT チェック → 2. Homebrew 本体投入 →
 3. Determinate Nix install + 初回 `darwin-rebuild switch` → 4. fish chsh →
 5. Nix 管理境界外の npm global (claude / ccstatusline / ccusage / diffity)。
@@ -55,7 +55,7 @@ cd ~/dotfiles
 Git/開発: gh, delta, git-filter-repo, lazygit, lazydocker, cocogitto, tbls
 エディタ/マルチプレクサ: neovim, tmux
 JSON/テキスト: jq, gnused
-ネットワーク/シェル: wget, bash, bats, fish 4.6
+ネットワーク/シェル: wget, bash, bats, fish 4.2 (system 由来)
 ビジュアル/システム: btop, graphviz, television
 言語/ビルド: zig, deno, uv, sbcl, cargo-binstall
 AI/その他: aichat, just
@@ -139,7 +139,7 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   └── secrets.yaml              # AGE 暗号化 (sops-nix 管理)
 ├── .sops.yaml                    # sops creation_rules
 ├── config.yml                    # Lazygit 設定 (~/Library/Application Support/lazygit/ に symlink)
-├── install.sh                    # Nix bootstrap + post-config orchestration (179 行)
+├── install.sh                    # Nix bootstrap + post-config orchestration (190 行)
 ├── .github/workflows/
 │   ├── nix-check.yml             # CI: flake-checker + nix flake check + darwin build
 │   └── update-flake-lock.yml     # 月次 flake.lock 自動更新 PR
@@ -221,6 +221,183 @@ cd ~/dotfiles
 nix flake update                                  # 全 input を最新化
 sudo darwin-rebuild switch --flake .#MacBook-Air  # 適用
 ```
+
+## 📘 Nix 運用ガイド（実践編）
+
+dotfiles 全体は **「git に宣言されていなければ、存在しないのと同じ」** で運用します。
+新しいツール / 設定 / 環境変数を足すときは必ず **宣言 → 検証 → 切替** の順を踏み、`darwin-rebuild --rollback` でいつでも前世代に戻せる状態を保ちます。
+
+### 1. どこに何を書くか早見表
+
+| やりたいこと | 編集する場所 | 代表例 |
+|---|---|---|
+| CLI を入れる（Nix 化が第一選択） | `home/taktiks2.nix` の `home.packages` | ripgrep, fd, jq, neovim |
+| CLI を入れる（重量 / 商用 / cache 弱） | `modules/homebrew.nix` の `brews` | mysql, docker, azure-cli |
+| GUI を入れる | `modules/homebrew.nix` の `casks` | ghostty, warp, vscode |
+| ツールが `programs.<tool>` を持つ | `home/taktiks2.nix` の `programs.<tool>` | fish, tmux, direnv |
+| 任意の dotfile を `~/.config/<name>` に置きたい | `.config/<name>/` を repo に置く + `xdg.configFile.<name> = link "<name>"` | nvim, btop, ghostty |
+| `~/.config` 外のパスに置きたい | `home.file."<path>".source` | `Library/Application Support/lazygit/` |
+| 環境変数 | `home.sessionVariables` | `JAVA_HOME`, `LANG` |
+| PATH 追加 | `home.sessionPath` | `~/.cargo/bin` |
+| fish エイリアス / 関数 | `programs.fish.shellAliases` / `.functions` | `lg = "lazygit"` |
+| macOS の defaults | `modules/macos-defaults.nix` | Dock 自動隠し |
+| 新しい言語の devShell | `templates/<name>/` + `flake.nix` の `templates` | `templates/python/` |
+| 新ホスト | `flake.nix` の `darwinConfigurations` に `mkDarwin {...}` を 1 行 + `hosts/<name>/default.nix` | MacBook-Pro |
+
+### 2. 新しい設定ファイル（`~/.config/<tool>`）を足す
+
+最も頻度の高いオペレーション。原則 `programs.<tool>` で書ければそちら優先（バリデーション可・純宣言）、対応してなければ **`mkOutOfStoreSymlink` で live link** します。
+
+#### 手順（例: `~/.config/zellij/` を新規追加）
+
+```bash
+# 1. dotfiles repo にディレクトリと初期 config を作る
+mkdir -p ~/dotfiles/.config/zellij
+$EDITOR ~/dotfiles/.config/zellij/config.kdl
+```
+
+```nix
+# 2. home/taktiks2.nix:140 付近の xdg.configFile に 1 行追加
+xdg.configFile = let
+  configRoot = "${dotfilesRoot}/.config";
+  link = name: { source = config.lib.file.mkOutOfStoreSymlink "${configRoot}/${name}"; };
+in {
+  alacritty    = link "alacritty";
+  # ... 既存
+  workmux      = link "workmux";
+  zellij       = link "zellij";   # ← 追加
+};
+```
+
+```bash
+# 3. ドライビルド → 切替
+cd ~/dotfiles
+sudo darwin-rebuild build  --flake .#MacBook-Air   # 評価＋ビルドのみ（切替なし）
+sudo darwin-rebuild switch --flake .#MacBook-Air   # 適用
+
+# 4. symlink を確認
+ls -la ~/.config/zellij
+# → ~/dotfiles/.config/zellij への symlink になっていれば OK
+```
+
+以後 `~/dotfiles/.config/zellij/` を直接編集すると `darwin-rebuild` 不要で即反映されます（`mkOutOfStoreSymlink` の live link 性質）。**Pure な再現性が欲しいときだけ** `source = ./.config/<name>` に書き換えると nix store にコピーされます（編集ごとに rebuild 必須）。
+
+#### 既に `~/.config/<name>` がある場合
+
+home-manager は実体ファイル / 別 symlink を `~/.config/<name>.hm-backup` に退避してから新規 symlink を貼ります。switch 後に `find ~/.config -name '*.hm-backup'` で確認し、必要なら repo へ移植してから削除してください。
+
+#### `~/.config` の外（例: `Library/Application Support/...`）
+
+`home.file` を直接使います（既存例: lazygit）:
+
+```nix
+home.file."Library/Application Support/lazygit/config.yml".source =
+  config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/config.yml";
+```
+
+#### `programs.<tool>` と `xdg.configFile` の使い分け
+
+| 観点 | `xdg.configFile` (live link) | `programs.<tool>` (HM 生成) |
+|---|---|---|
+| 編集即反映 | ⭕ rebuild 不要 | ❌ rebuild 必須 |
+| バリデーション | ❌ typo は実行時に判明 | ⭕ `nix flake check` で検出 |
+| 設定 DSL | そのツール本来の DSL（Lua / KDL / TOML…） | Nix で書く |
+| 推奨対象 | DSL 編集が頻繁なもの（nvim / ghostty / btop） | 枯れた設定（fish / tmux / git） |
+
+本リポジトリは **fish / tmux** は `programs.*`、**nvim / btop / ghostty 等の 11 個** は live link というハイブリッド戦略。
+
+### 3. 検証 → 適用 → ロールバック
+
+```bash
+cd ~/dotfiles
+
+# ① 評価 lint（option typo / 未定義参照を検出）
+nix flake check
+
+# ② ドライビルド（store には作るが /run/current-system は変えない）
+sudo darwin-rebuild build --flake .#MacBook-Air
+
+# ③ 次世代と現行の closure 差分を見る（何が増減するか可視化）
+nix store diff-closures /run/current-system ./result
+
+# ④ 適用
+sudo darwin-rebuild switch --flake .#MacBook-Air
+
+# ⑤ 失敗 / 違和感があれば即ロールバック
+sudo darwin-rebuild --rollback                 # 直前の世代へ
+sudo darwin-rebuild --list-generations         # 世代一覧
+sudo darwin-rebuild --switch-generation 42     # 特定世代へ
+```
+
+`./result` は ② を打った直後のディレクトリに作られる symlink。④ の switch 後は不要なので `rm result` で消して OK。
+
+### 4. パッケージ / オプションを探す
+
+```bash
+nix search nixpkgs ripgrep        # CLI から
+brew search <name>                # Homebrew
+```
+
+ブラウザの一次資料:
+
+- [search.nixos.org/packages](https://search.nixos.org/packages?channel=25.11) — nixpkgs パッケージ検索
+- [home-manager-options.extranix.com](https://home-manager-options.extranix.com/?release=release-25.11) — `programs.*` オプション一覧
+- [nix-darwin manual](https://daiderd.com/nix-darwin/manual/index.html) — `system.defaults.*` / `homebrew.*` / `services.*` 等
+- [docs.determinate.systems](https://docs.determinate.systems/) — Determinate Nix の `determinateNix.*` 設定
+
+### 5. unfree パッケージを解禁する
+
+`flake.nix:62-67` の `allowUnfreePredicate` に **パッケージ名** を追記（一括許可ではなく allowlist）:
+
+```nix
+nixpkgs.config.allowUnfreePredicate = pkg:
+  builtins.elem (lib.getName pkg) [
+    "vscode"
+    "claude-code"
+  ];
+```
+
+### 6. 一時的に overlay でパッケージを書き換える
+
+`flake.nix` の `nixpkgs.overlays` に追記。現状は direnv の test を sandbox 内で skip するためだけに 1 個常駐（[nixpkgs#82606](https://github.com/NixOS/nixpkgs/issues/82606)）。**workaround を入れるときは必ず TODO + 撤去条件をコメントに残す** ルール。
+
+### 7. flake.lock の更新
+
+```bash
+nix flake update                  # 全 input を更新
+nix flake update nixpkgs          # 単独更新
+nix flake update determinate      # Determinate Nix だけ更新
+sudo darwin-rebuild switch --flake .#MacBook-Air
+```
+
+毎月 1 日に `update-flake-lock.yml` が自動 PR を出すので、CI が緑のままレビューしてマージするのが既定運用です。
+
+### 8. ディスクを掃除する
+
+```bash
+# 30 日以上前の世代を削除（system + user profile + nix store の roots）
+sudo nix-collect-garbage --delete-older-than 30d
+
+# nix store の現在量
+du -sh /nix/store
+
+# darwin の世代一覧
+sudo darwin-rebuild --list-generations | tail -20
+```
+
+Determinate Nix は `determinateNix.customSettings` で自動 GC スケジュールを宣言できます（[公式](https://docs.determinate.systems/guides/nix-darwin/)）。
+
+### 9. よくある詰まり
+
+| 症状 | 原因 | 対処 |
+|---|---|---|
+| `~/.config/<name>` が `.hm-backup` に退避された | 既存実体と新規 symlink の競合 | 必要な内容を repo に取り込み、`*.hm-backup` を削除 |
+| `darwin-rebuild switch` が TCC エラーで落ちる | macOS Sequoia + HM の既知 issue ([nix-community/home-manager#8336](https://github.com/nix-community/home-manager/issues/8336)) | Settings → Privacy & Security → App Management でターミナルを許可 |
+| fish が `Killed: 9` で起動しない | fish 4.2 の codesign 問題 | `hosts/MacBook-Air/default.nix` の `postActivation` で自動 ad-hoc 再署名済（手動対応不要） |
+| `nix flake check` で direnv が失敗 | macOS sandbox 内で fish/zsh test SIGKILL | `flake.nix` の `doCheck = false` overlay で回避済 |
+| switch 後に新しい CLI が PATH に出ない | 既存シェルが古い PATH を保持 | `exec fish` か新規ターミナルを開く |
+| `error: experimental Nix feature 'flakes' is disabled` | Determinate 以外の Nix が混入 | Determinate Nix で再インストール（`install.sh` 参照） |
+| `homebrew` モジュールが意図せず uninstall した | `cleanup = "uninstall"` で `brews` から外したものを刈り取った | 戻したいなら `modules/homebrew.nix` に再宣言、または依存関係に組み込む |
 
 ## 🔧 主要エイリアス
 
