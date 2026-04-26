@@ -39,7 +39,7 @@ cd ~/dotfiles
 └────────────────────────────────────────────────────────────────┘
 ```
 
-post-config (`install.sh`): PHP / MySQL / Rust (rustup) / Node (nodebrew) / Ruby (rbenv) / Neovim プラグインの初回投入。
+post-config (`install.sh`): PHP / MySQL / Rust (rustup) / Node (nodebrew) / Ruby (rbenv) / Claude Code (npm) / Neovim プラグインの初回投入。
 
 ## 📦 管理される内容
 
@@ -82,6 +82,7 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 
 - PHP/Composer/MySQL のセットアップ（brew formula 経由のサービス起動・PATH 設定）
 - Rust (rustup)、Node.js (nodebrew)、Ruby (rbenv) の初回インストール
+- Claude Code CLI (`@anthropic-ai/claude-code`) と statusLine 用 `ccstatusline` の npm global インストール、`~/.claude` symlink
 - Fish の chsh
 - Neovim プラグインの初回展開 (`:Lazy install`)
 
@@ -106,7 +107,8 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   ├── homebrew.nix              # tap / formula / cask 宣言
 │   └── macos-defaults.nix        # system.defaults.* (ACTIVE / OPT-IN)
 ├── templates/
-│   └── default/                  # `nix flake init -t ~/dotfiles` 用の汎用 devShell
+│   ├── default/                  # `nix flake init -t ~/dotfiles` 用の汎用 devShell
+│   └── claude-project/           # 新規プロジェクトの Claude Code セットアップ雛形 (CLAUDE.md / .mcp.json / agents / commands)
 ├── .config/
 │   ├── nvim/                     # Neovim (LazyVim) 設定
 │   ├── alacritty/                # Alacritty 設定
@@ -157,6 +159,18 @@ nix flake init -t ~/dotfiles      # 汎用 devShell テンプレを投入
 $EDITOR flake.nix                 # 必要なランタイムを packages に追加
 direnv allow                      # 以後 cd で自動有効化
 ```
+
+### 新規プロジェクトの Claude Code セットアップ
+
+```bash
+cd my-project
+cp -r ~/dotfiles/templates/claude-project/. .
+$EDITOR CLAUDE.md                 # プロジェクト説明・スタック・規約を埋める
+$EDITOR .mcp.json                 # 不要な MCP サーバーは削除、必要なものを追加
+```
+
+`templates/claude-project/` には CLAUDE.md スケルトン、`.mcp.json` (context7 / playwright)、
+`.claude/{settings.json, agents/code-reviewer.md, skills/project-plan/SKILL.md}`、`.gitignore` が同梱されています。
 
 ### 月次メンテ
 

@@ -306,6 +306,61 @@ setup_nodejs() {
 }
 
 ################################################################################
+# Claude Code (CLI) のセットアップ
+#
+# - claude-code 本体を npm global で冪等インストール / 更新
+# - statusLine 用の ccstatusline をローカル配置（settings.json から呼ぶ）
+# - ~/.claude を dotfiles/.claude への symlink として張る（既存 symlink は維持）
+# 依存: setup_nodejs が先に走り、npm が PATH に乗っていること
+################################################################################
+
+setup_claude_code() {
+  step "Claude Code CLI のセットアップ"
+
+  if ! command_exists npm; then
+    warning "npm が見つからないため Claude Code のインストールをスキップ"
+    return 0
+  fi
+
+  # claude-code 本体
+  if command_exists claude; then
+    info "claude-code を更新中..."
+    npm update -g @anthropic-ai/claude-code 2>&1 | tee -a "$LOG_FILE" || \
+      warning "claude-code の更新に失敗（継続）"
+    success "claude-code 確認: $(claude --version 2>/dev/null | head -1)"
+  else
+    info "claude-code をインストール中..."
+    if npm install -g @anthropic-ai/claude-code 2>&1 | tee -a "$LOG_FILE"; then
+      success "claude-code インストール完了"
+    else
+      error "claude-code のインストールに失敗"
+    fi
+  fi
+
+  # ccstatusline (settings.json の statusLine から呼ぶ)
+  if ! command_exists ccstatusline; then
+    info "ccstatusline をインストール中..."
+    npm install -g ccstatusline 2>&1 | tee -a "$LOG_FILE" || \
+      warning "ccstatusline のインストールに失敗（継続）"
+  else
+    success "ccstatusline 既にインストール済み"
+  fi
+
+  # ~/.claude を dotfiles/.claude へ symlink
+  local claude_link="$HOME/.claude"
+  local claude_target="$DOTFILES_DIR/.claude"
+
+  if [[ -L "$claude_link" ]] && [[ "$(readlink "$claude_link")" == "$claude_target" ]]; then
+    success "~/.claude は既に正しい symlink"
+  elif [[ -e "$claude_link" ]]; then
+    warning "~/.claude が存在し symlink ではない。手動で確認してください (現状を尊重しスキップ)"
+  else
+    ln -s "$claude_target" "$claude_link"
+    success "~/.claude -> $claude_target を作成"
+  fi
+}
+
+################################################################################
 # Ruby環境のセットアップ
 ################################################################################
 
@@ -408,6 +463,8 @@ final_check() {
     "node:Node.js (nodebrew)"
     "ruby:Ruby (rbenv)"
     "cargo:Rust (rustup)"
+    "claude:Claude Code (npm)"
+    "ccstatusline:ccstatusline (npm)"
   )
 
   echo "主要ツール:"
@@ -467,6 +524,7 @@ main() {
   setup_php_environment  # post-config: composer global require laravel/installer
   install_rust           # post-config: rustup toolchain
   setup_nodejs           # post-config: nodebrew install latest
+  setup_claude_code      # post-config: npm i -g @anthropic-ai/claude-code + ccstatusline + symlink
   setup_ruby             # post-config: rbenv install $version
   setup_fish             # post-config: Fisher + bobthefish + chsh + secret-env テンプレ
   setup_tmux             # post-config: TPM clone

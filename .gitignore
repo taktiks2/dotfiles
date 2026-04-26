@@ -49,6 +49,14 @@ secret-env.fish
 .claude/plugins/installed_plugins.json
 .claude/plugins/known_marketplaces.json
 
+# Claude Code: 個人トークンを含む可能性のある local 設定
+.claude/settings.local.json
+.claude/.credentials.json
+
+# Claude Code: 永続メモリは個別管理 (memory/ は別途 git で扱う場合は除外しない)
+# .claude/skills/, .claude/agents/, .claude/commands/, CLAUDE.md は追跡対象
+# (gitignore 上の明示は不要だが、誤って追加しないよう ! 例外も書かない)
+
 # Editor / app local backups
 *.bak
 
