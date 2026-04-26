@@ -54,7 +54,9 @@
   # 検証: `log show --predicate 'eventMessage CONTAINS "fish"'` で SIGKILL 履歴確認。
   # 注意点:
   #   - 旧実装の `readlink` は 1 段しか辿らないため `realpath` で完全解決する。
-  #     macOS 12.3+ で `/usr/bin/realpath` が利用可能（本 PR は Apple Silicon 限定）。
+  #     macOS には `/usr/bin/realpath` が無い (macOS 26 Tahoe で確認、おそらく以前から存在しない)
+  #     ため、Nix の coreutils 由来 `realpath` を絶対パスで呼ぶ。
+  #     pkgs.coreutils は flake 評価時点で固定されるため activation の PATH に依存しない。
   #   - `chmod u+w` は /nix/store のパーミッション (mode 555) を一時的に書込可へ変更する。
   #     Determinate Nix の store は rw-mounted のため root で動く activation から書込可能。
   #   - 失敗時は WARN ログを出すのみで activation 全体は continue する。
@@ -67,11 +69,11 @@
     if [ ! -L "$fish_link" ] && [ ! -f "$fish_link" ]; then
       echo "[fish-resign] skipped: $fish_link not present"
     else
-      fish_bin="$(/usr/bin/realpath "$fish_link" 2>/dev/null || true)"
+      fish_bin="$(${pkgs.coreutils}/bin/realpath "$fish_link" 2>/dev/null || true)"
       if [ -z "$fish_bin" ] || [ ! -f "$fish_bin" ]; then
         echo "[fish-resign] WARN: failed to resolve $fish_link"
       else
-        fish_dir="$(/usr/bin/dirname "$fish_bin")"
+        fish_dir="$(${pkgs.coreutils}/bin/dirname "$fish_bin")"
         if /bin/chmod u+w "$fish_dir" "$fish_bin" 2>/dev/null; then
           if /usr/bin/codesign --force --sign - "$fish_bin"; then
             echo "[fish-resign] done: $fish_bin"

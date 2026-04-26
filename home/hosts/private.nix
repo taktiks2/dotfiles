@@ -66,20 +66,20 @@
   # 仕分け根拠は docs/brew-triage.md を参照。
   home.packages = with pkgs; [
     # 検索 / ファイル操作
+    # fzf は programs.fzf.enable で fish/bash/zsh integration 込みで配布
+    # bat は programs.bat.enable で配布
+    # lsd は programs.lsd.enable で配布
     ripgrep
     fd
-    fzf
-    bat
-    lsd
     tree
     broot
     fswatch
 
     # Git / GitHub / 開発フロー
     gh
-    delta              # brew: git-delta
+    # delta は programs.git.delta.enable で git 連携付きで配布
     git-filter-repo
-    lazygit
+    # lazygit は programs.lazygit.enable で fish wrapper (cd-on-quit) 付きで配布
     lazydocker
     cocogitto
 
@@ -97,7 +97,7 @@
     bats               # brew: bats-core
 
     # ビジュアル / システム
-    btop
+    # btop は programs.btop.enable で配布
     graphviz
     television
 
@@ -138,23 +138,21 @@
       source = config.lib.file.mkOutOfStoreSymlink "${configRoot}/${name}";
     };
   in {
-    alacritty    = link "alacritty";
+    # 専用 programs.* モジュール非対応のもののみ live link で残す。
+    # alacritty/btop/gh-dash/ghostty/git/lazygit は programs.* に移行済（Phase 17）。
     atac         = link "atac";
-    btop         = link "btop";
     ccstatusline = link "ccstatusline";
     cspell       = link "cspell";
-    gh-dash      = link "gh-dash";
-    ghostty      = link "ghostty";
-    git          = link "git";
     mcphub       = link "mcphub";
     nvim         = link "nvim";
-    # tmux は Phase 8 で programs.tmux 一本化のため除外（generated tmux.conf と競合回避）
     workmux      = link "workmux";
-  };
+    # tmux は Phase 8 で programs.tmux 一本化のため除外（generated tmux.conf と競合回避）
 
-  # lazygit は ~/Library/Application Support 配下のため home.file 経由で別管理。
-  home.file."Library/Application Support/lazygit/config.yml".source =
-    config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/config.yml";
+    # gh-dash の keybindings から呼ばれるシェルスクリプトのみ残す
+    # （config.yml は programs.gh-dash.settings 側で管理）
+    "gh-dash/bin/octo-review.sh".source =
+      config.lib.file.mkOutOfStoreSymlink "${configRoot}/gh-dash/bin/octo-review.sh";
+  };
 
   # Step 7 follow-up: install.sh の post-config 関数のうち、idempotent で
   # bootstrap 専用ではないものを home.activation に移譲。
@@ -194,6 +192,272 @@ EOF
     # HM 25.11 から enable*Integration は programs.<shell>.enable と連動して
     # 自動有効化される read-only オプションになったため、明示指定を撤廃。
     # bash / zsh / fish は既に programs.* で管理されているため自動 hook される。
+  };
+
+  # Phase 17: home-manager の専用モジュールがあるツールを programs.* へ移行。
+  # 以下は元 .config/<name> または ~/.gitconfig / ~/Library/.../lazygit からの 1:1 移植。
+
+  programs.git = {
+    enable = true;
+
+    # 旧 .config/git/ignore (4 行) を Nix 化。
+    ignores = [
+      ".worktree"
+      ".DS_Store"
+      "**/.claude/settings.local.json"
+    ];
+
+    # 旧 ~/.gitconfig 内容を 1:1 移植。HM 25.11 で userName/userEmail/extraConfig は
+    # settings に統合された (settings.user.name / settings.user.email / settings.<section>.<key>)。
+    # delta 関連は programs.delta が interactive.diffFilter / pager.* / [delta] navigate
+    # 等を自動で注入するため重複定義しない。
+    settings = {
+      user.name             = "taktiks2";
+      user.email            = "deathproof.lee@gmail.com";
+      init.defaultBranch    = "main";
+      core.editor           = "nvim";
+      merge.conflictstyle   = "diff3";
+      diff.colorMoved       = "default";
+    };
+  };
+
+  # delta 本体（HM 25.11 で programs.git.delta から programs.delta へ昇格）。
+  programs.delta = {
+    enable = true;
+    enableGitIntegration = true;  # 25.11 以降は明示指定が必要
+    options = {
+      navigate     = true;
+      side-by-side = true;
+      line-numbers = true;
+    };
+  };
+
+  # 旧 ~/.gitconfig が残っていると XDG 側 (~/.config/git/config) より優先されるため、
+  # 一度だけリネームして HM に主導権を渡す。idempotent。
+  home.activation.migrateLegacyGitconfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    if [ -f "$HOME/.gitconfig" ] && [ ! -L "$HOME/.gitconfig" ]; then
+      $DRY_RUN_CMD mv "$HOME/.gitconfig" "$HOME/.gitconfig.pre-hm.bak"
+      echo "moved legacy ~/.gitconfig to ~/.gitconfig.pre-hm.bak (programs.git took over via ~/.config/git/config)"
+    fi
+  '';
+
+  programs.lazygit = {
+    enable = true;
+    # 旧 ~/Library/Application Support/lazygit/config.yml の YAML を attrset 化。
+    # 出力先は HM が macOS パスを自動判定する（xdg.enable=false なので AppSupport 側）。
+    settings = {
+      git.pagers = [
+        {
+          colorArg = "always";
+          pager    = "delta --dark --paging=never";
+        }
+      ];
+    };
+  };
+
+  programs.btop = {
+    enable = true;
+    # 旧 .config/btop/btop.conf からの移植。
+    # NOTE: HM が書き出す btop.conf は store 内 read-only symlink なので、
+    #       btop の終了時オートセーブが失敗しないよう save_config_on_exit を無効化。
+    settings = {
+      color_theme           = "tokyo-night";
+      theme_background      = true;
+      truecolor             = true;
+      force_tty             = false;
+      presets               = "cpu:1:default,proc:0:default cpu:0:default,mem:0:default,net:0:default cpu:0:block,net:0:tty";
+      vim_keys              = true;
+      rounded_corners       = true;
+      terminal_sync         = true;
+      graph_symbol          = "braille";
+      graph_symbol_cpu      = "default";
+      graph_symbol_mem      = "default";
+      graph_symbol_net      = "default";
+      graph_symbol_proc     = "default";
+      shown_boxes           = "cpu mem net proc";
+      update_ms             = 2000;
+      proc_sorting          = "cpu lazy";
+      proc_reversed         = false;
+      proc_tree             = false;
+      proc_colors           = true;
+      proc_gradient         = true;
+      proc_per_core         = false;
+      proc_mem_bytes        = true;
+      proc_cpu_graphs       = true;
+      proc_info_smaps       = false;
+      proc_left             = false;
+      proc_filter_kernel    = false;
+      proc_aggregate        = false;
+      keep_dead_proc_usage  = false;
+      cpu_graph_upper       = "Auto";
+      cpu_graph_lower       = "Auto";
+      cpu_invert_lower      = true;
+      cpu_single_graph      = false;
+      cpu_bottom            = false;
+      show_uptime           = true;
+      show_cpu_watts        = true;
+      check_temp            = true;
+      cpu_sensor            = "Auto";
+      show_coretemp         = true;
+      cpu_core_map          = "";
+      temp_scale            = "celsius";
+      base_10_sizes         = false;
+      show_cpu_freq         = true;
+      clock_format          = "%X";
+      background_update     = true;
+      custom_cpu_name       = "";
+      disks_filter          = "";
+      mem_graphs            = true;
+      mem_below_net         = false;
+      zfs_arc_cached        = true;
+      show_swap             = true;
+      swap_disk             = true;
+      show_disks            = false;
+      only_physical         = true;
+      use_fstab             = true;
+      zfs_hide_datasets     = false;
+      disk_free_priv        = false;
+      show_io_stat          = true;
+      io_mode               = false;
+      io_graph_combined     = false;
+      io_graph_speeds       = "";
+      net_download          = 100;
+      net_upload            = 100;
+      net_auto              = true;
+      net_sync              = true;
+      net_iface             = "";
+      base_10_bitrate       = "Auto";
+      show_battery          = true;
+      selected_battery      = "Auto";
+      show_battery_watts    = true;
+      log_level             = "WARNING";
+      save_config_on_exit   = false;  # 書き出し先が read-only のため無効化（旧設定 true から変更）
+    };
+  };
+
+  programs.gh-dash = {
+    enable = true;
+    # 旧 .config/gh-dash/config.yml の YAML を attrset 化。
+    # keybindings.prs から ~/.config/gh-dash/bin/octo-review.sh を呼ぶため、
+    # bin/ は xdg.configFile で個別 live link 済（上の xdg.configFile 参照）。
+    settings = {
+      prSections = [
+        { title = "Needs My Review";  filters = "is:open review-requested:@me"; type = null; }
+        { title = "My Pull Requests"; filters = "is:open author:@me draft:false"; type = null; }
+        { title = "My Drafts";        filters = "is:open author:@me draft:true";  type = null; }
+        { title = "Involved";         filters = "is:open involves:@me -author:@me"; type = null; }
+      ];
+      issuesSections = [
+        { title = "My Issues"; filters = "is:open author:@me"; }
+        { title = "Assigned"; filters = "is:open assignee:@me"; }
+        { title = "Involved"; filters = "is:open involves:@me -author:@me"; }
+      ];
+      repo = {
+        branchesRefetchIntervalSeconds = 30;
+        prsRefetchIntervalSeconds      = 60;
+      };
+      defaults = {
+        preview = { open = true; width = 0.5; };
+        prsLimit    = 20;
+        issuesLimit = 20;
+        view        = "prs";
+        layout = {
+          prs = {
+            updatedAt = { width = 5; };
+            repo      = { width = 20; };
+            author    = { width = 15; };
+            assignees = { width = 20; hidden = true; };
+            base      = { width = 15; hidden = true; };
+            lines     = { width = 15; };
+          };
+          issues = {
+            updatedAt = { width = 5; };
+            repo      = { width = 15; };
+            creator   = { width = 10; };
+            assignees = { width = 20; hidden = true; };
+          };
+        };
+        refetchIntervalMinutes = 30;
+      };
+      keybindings = {
+        universal = [];
+        issues    = [];
+        prs = [
+          {
+            key     = "o";
+            name    = "Octo PR";
+            command = "tmux new-window -c {{.RepoPath}} -n \"pr#{{.PrNumber}}-$(basename {{.RepoName}})\" \"nvim '+Octo pr edit {{.PrNumber}}'\" ; tmux display-popup -C";
+          }
+          {
+            key     = "O";
+            name    = "Checkout & Review";
+            command = "tmux new-window -c {{.RepoPath}} -n \"review#{{.PrNumber}}-$(basename {{.RepoName}})\" \"~/.config/gh-dash/bin/octo-review.sh {{.RepoName}} {{.PrNumber}}\" ; tmux display-popup -C";
+          }
+        ];
+        branches = [];
+      };
+      repoPaths = {
+        "taktiks2/*" = "/Users/taktiks2/dev/*";
+      };
+      theme = {
+        ui = {
+          sectionsShowCount = true;
+          table = { showSeparator = true; compact = false; };
+        };
+      };
+      pager       = { diff = "delta"; };
+      confirmQuit = false;
+    };
+  };
+
+  programs.alacritty = {
+    enable  = true;
+    package = null;  # alacritty は modules/homebrew.nix の cask 経由でインストールされるため Nix package は不要
+    # 旧 .config/alacritty/alacritty.toml （Shift+Return キーバインドのみ）。
+    settings = {
+      keyboard.bindings = [
+        {
+          key   = "Return";
+          mods  = "Shift";
+          # ESC (0x1B) + CR を送出。Nix は \u エスケープ非対応のため JSON 経由で ESC を組み立てる。
+          chars = (builtins.fromJSON ''"\u001b"'') + "\r";
+        }
+      ];
+    };
+  };
+
+  programs.ghostty = {
+    enable  = true;
+    package = null;  # ghostty は modules/homebrew.nix の cask 経由でインストールされるため Nix package は不要（macOS の ghostty は .app 配布）
+    # 旧 .config/ghostty/config からの移植。
+    settings = {
+      command       = "/run/current-system/sw/bin/fish";
+      font-family   = "HackGen Console NF";
+      font-size     = 10;
+      font-thicken  = true;
+      theme         = "TokyoNight Night";
+    };
+  };
+
+  # ---- 設定なしで enable のみ（既存ユーザ設定はゼロ、デフォルトで OK なもの） ----
+
+  programs.bat.enable = true;
+
+  programs.fzf = {
+    enable = true;
+    # programs.fish.enable と連動して enableFishIntegration は自動 true（HM 25.11 仕様）。
+    # bash / zsh も同様。Ctrl-T (file)、Ctrl-R (history)、Alt-C (cd) のキーバインドが入る。
+  };
+
+  programs.lsd = {
+    enable = true;
+    # HM 25.11 で旧 enableAliases は廃止され、enableFishIntegration（programs.fish 連動で自動 true）
+    # が `ls / la = lsd -A / ll = lsd -lA` を inject する。
+    # 既存の programs.fish.shellAliases (la = "lsd -a", ll = "lsd -al") と衝突するため、
+    # behavior 維持のため Fish integration を明示的に無効化。
+    enableFishIntegration = false;
+    enableBashIntegration = false;
+    enableZshIntegration  = false;
   };
 
   # Phase 8: tmux 完全宣言化。TPM 撤廃、plugins は Nix 経由で配布。
@@ -301,7 +565,7 @@ EOF
       vi = "nvim";
       v = "nvim";
       ghd = "gh dash";
-      lg = "lazygit";
+      # lg は programs.lazygit が fish wrapper (LAZYGIT_NEW_DIR_FILE 連携) を提供するため alias は削除
       ls = "lsd";
       la = "lsd -a";
       ll = "lsd -al";
