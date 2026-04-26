@@ -131,18 +131,14 @@ EOF
   programs.home-manager.enable = true;
 
   # Step 6: direnv + nix-direnv（プロジェクト単位の devShell 自動有効化）
-  # 注: direnv 2.37.1 のテストが aarch64-darwin sandbox で zsh test が hang するため
-  #     `doCheck = false` で回避（出来上がるバイナリ自体は変わらない）。
-  #     overrideAttrs によりバイナリキャッシュは無効化されローカルビルドになる。
-  #     upstream で test が darwin で skip されるよう修正されたら以下行を削除。
-  #     関連検索: https://github.com/NixOS/nixpkgs/issues?q=direnv+darwin+test
+  # Phase 6: upstream で direnv test の darwin issue が解消されたため
+  # `doCheck = false` の overrideAttrs を撤廃。バイナリキャッシュ復帰。
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;
     enableBashIntegration = true;
     enableZshIntegration = true;
     enableFishIntegration = true; # Phase 3: programs.fish 有効化に伴い自動 hook
-    package = pkgs.direnv.overrideAttrs (_: { doCheck = false; });
   };
 
   # Phase 3: Fish 本格宣言化

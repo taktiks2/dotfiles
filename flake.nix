@@ -50,6 +50,13 @@
               builtins.elem (lib.getName pkg) [
                 # 例: "vscode" "claude-code"
               ];
+            # direnv 2.37.1 の zsh テストが macOS sandbox 内でハングするための回避。
+            # 上流が修正されたら削除可。
+            nixpkgs.overlays = [
+              (final: prev: {
+                direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
+              })
+            ];
           })
         ];
       };

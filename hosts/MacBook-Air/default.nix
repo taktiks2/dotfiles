@@ -16,11 +16,15 @@
   # 設定の互換性バージョン（後方互換のため固定）。
   system.stateVersion = 6;
 
-  # Apple Silicon
-  nixpkgs.hostPlatform = "aarch64-darwin";
+  # Phase 6: Apple Silicon の system は flake.nix で `inherit system` 渡し済のため
+  # `nixpkgs.hostPlatform` の重複指定は削除。
 
-  # Step 1 検証用: 最小限のシステムレベルパッケージ。
-  environment.systemPackages = [ ];
+  # 救出用ツール: home-manager がぶっ壊れた緊急時にも
+  # /run/current-system/sw/bin/{git,vim} で復旧できるよう確保。
+  environment.systemPackages = with pkgs; [
+    git
+    vim
+  ];
 
   networking.hostName = hostname;
   networking.computerName = "MacBook Air";
