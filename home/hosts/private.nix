@@ -140,6 +140,9 @@ EOF
   # Fish 用のフックは config.fish で手動 source する（programs.fish を使わないため）。
   # 注: direnv 2.37.1 のテストが aarch64-darwin sandbox で zsh test が hang するため
   #     `doCheck = false` で回避（出来上がるバイナリ自体は変わらない）。
+  #     overrideAttrs によりバイナリキャッシュは無効化されローカルビルドになる。
+  #     upstream で test が darwin で skip されるよう修正されたら以下行を削除。
+  #     関連検索: https://github.com/NixOS/nixpkgs/issues?q=direnv+darwin+test
   programs.direnv = {
     enable = true;
     nix-direnv.enable = true;

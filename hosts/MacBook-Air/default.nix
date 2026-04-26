@@ -6,9 +6,9 @@
     ../../modules/homebrew.nix
   ];
 
-  # Determinate Nix がインストール済みのため、nix-darwin による Nix 自体の管理は無効化する。
-  # https://determinate.systems/posts/nix-darwin/
-  nix.enable = false;
+  # Nix 自体の管理は flake 側で `determinate.darwinModules.default` + `determinateNix.enable = true`
+  # により Determinate に委譲済み（nix-darwin の `nix.*` は自動で disable される）。
+  # https://docs.determinate.systems/guides/nix-darwin/
 
   # nix-darwin 25.05 以降で必須。home-manager 等のユーザ向け機能で使用される。
   system.primaryUser = username;

@@ -5,9 +5,8 @@
 # 戦略:
 #   - `nix-homebrew` は使わず、既存の Homebrew インストール (/opt/homebrew) はそのまま残す。
 #   - nix-darwin が `brew bundle` 相当の冪等な同期を実行する。
-#   - `onActivation.cleanup = "none"`: 未宣言パッケージを削除しない。
-#     Step 2 で Nix に移行した formula が brew 側に未削除で残っているため、
-#     誤削除を防ぐ目的。Step 2 follow-up の `brew uninstall` 完了後に "uninstall" へ切替予定。
+#   - `onActivation.cleanup = "uninstall"`: 未宣言パッケージは switch 時に
+#     自動 uninstall + autoremove。tap/formula/cask が完全に git 管理下にある状態。
 {
   homebrew = {
     enable = true;
@@ -15,8 +14,6 @@
     onActivation = {
       autoUpdate = false; # 切替のたびに brew update を走らせない
       upgrade = false;    # 既存パッケージの自動アップグレードもしない
-      # Step 2 follow-up (2026-04-25 以降): 全 KEEP/cask/tap が宣言済となったため
-      # 未宣言の brew パッケージは uninstall + autoremove で自動掃除する。
       cleanup = "uninstall";
     };
 
@@ -39,8 +36,9 @@
       "supabase/tap"      # supabase
     ];
 
-    # ---------- brew formula（27 本） ----------
+    # ---------- brew formula（25 本） ----------
     # docs/brew-triage.md の KEEP + LATER に該当。Nix 化が困難または非推奨なもの。
+    # （Step 7 follow-up で tbls/joshuto を Nix 移行、本フォローアップで fisher を削除予定）
     brews = [
       # 言語ランタイム / バージョンマネージャ
       "composer"
