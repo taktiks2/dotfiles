@@ -1,4 +1,4 @@
-command = /opt/homebrew/bin/fish --login
+command = /run/current-system/sw/bin/fish --login
 font-family = HackGen Console NF
 font-size = 10
 font-thicken = true

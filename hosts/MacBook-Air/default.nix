@@ -33,4 +33,10 @@
 
   # zsh は既存ユーザ環境を尊重し、interactive shell の初期化のみ有効化。
   programs.zsh.enable = true;
+
+  # fish を system level で有効化:
+  #   - /etc/shells に Nix 版 fish が登録される（chsh で選択可能に）
+  #   - /run/current-system/sw/bin/fish が公開される（Alacritty / Ghostty 等の terminal config から参照）
+  # 実際のユーザ向け設定は home-manager の programs.fish 側で行う。
+  programs.fish.enable = true;
 }

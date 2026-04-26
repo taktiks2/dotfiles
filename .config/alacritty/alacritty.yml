@@ -45,6 +45,6 @@ colors:
     cyan: "#0db9d7"
     white: "#acb0d0"
 shell:
-  program: /opt/homebrew/bin/fish
+  program: /run/current-system/sw/bin/fish
   args:
     - --login
