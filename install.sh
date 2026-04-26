@@ -160,8 +160,8 @@ install_homebrew() {
     info "Homebrewをインストール中..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" 2>&1 | tee -a "$LOG_FILE"
 
-    # PATHを追加
-    echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >>"$HOME/.zprofile"
+    # 現プロセスでこのあとの brew コマンドを使えるようにする (~/.zprofile への永続化はしない:
+    # zsh login shell 用 env は nix-darwin / home-manager 側で宣言する方針)
     eval "$(/opt/homebrew/bin/brew shellenv)"
 
     success "Homebrewインストール完了"
@@ -209,20 +209,8 @@ bootstrap_nix() {
 setup_php_environment() {
   step "PHP/Composer/Laravel環境のセットアップ"
 
-  # MySQL@8.0のPATH設定確認
-  if ! grep -q "/opt/homebrew/opt/mysql@8.0/bin" ~/.zprofile 2>/dev/null; then
-    info "MySQL@8.0のPATH設定を追加"
-    echo 'export PATH="/opt/homebrew/opt/mysql@8.0/bin:$PATH"' >>~/.zprofile
-  fi
-
-  # Composerグローバルパッケージ
-  info "Composerグローバルパッケージのセットアップ"
-
-  # Composer global binのPATH確認
-  if ! grep -q "/.composer/vendor/bin" ~/.zprofile 2>/dev/null; then
-    echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >>~/.zprofile
-  fi
-
+  # mysql@8.0 / composer global の PATH は home/taktiks2.nix の programs.fish.shellInit
+  # で宣言済（fish 中心運用のため zsh login shell には流し込まない）。
   # Laravel Installer のインストールは home.activation.bootstrapSideEffects に移譲。
 
   # PHP拡張の確認
@@ -337,14 +325,19 @@ setup_claude_code() {
     fi
   fi
 
-  # ccstatusline (settings.json の statusLine から呼ぶ)
-  if ! command_exists ccstatusline; then
-    info "ccstatusline をインストール中..."
-    npm install -g ccstatusline 2>&1 | tee -a "$LOG_FILE" || \
-      warning "ccstatusline のインストールに失敗（継続）"
-  else
-    success "ccstatusline 既にインストール済み"
-  fi
+  # 周辺ツール:
+  #   - ccstatusline: settings.json の statusLine から呼ぶ
+  #   - ccusage: Claude Code のトークン使用量・コスト集計
+  #   - diffity: ブラウザで GitHub 風の git diff を表示
+  for pkg in ccstatusline ccusage diffity; do
+    if command_exists "$pkg"; then
+      success "$pkg 既にインストール済み"
+    else
+      info "$pkg をインストール中..."
+      npm install -g "$pkg" 2>&1 | tee -a "$LOG_FILE" || \
+        warning "$pkg のインストールに失敗（継続）"
+    fi
+  done
 
   # ~/.claude を dotfiles/.claude へ symlink
   local claude_link="$HOME/.claude"
@@ -465,6 +458,8 @@ final_check() {
     "cargo:Rust (rustup)"
     "claude:Claude Code (npm)"
     "ccstatusline:ccstatusline (npm)"
+    "ccusage:ccusage (npm)"
+    "diffity:diffity (npm)"
   )
 
   echo "主要ツール:"

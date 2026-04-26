@@ -1,4 +1,4 @@
-{ pkgs, lib, config, username, ... }:
+{ pkgs, lib, username, ... }:
 
 {
   # home.username / home.homeDirectory は nix-darwin の users.users.<name> から自動解決されるため指定しない。
@@ -59,6 +59,9 @@
     # 第二陣 (Step 7 follow-up): brew LATER から Nix へ移行
     tbls       # DB スキーマドキュメント生成
     joshuto    # ranger 風ファイラ
+
+    # 第三陣: nvim none-ls から呼ばれる外部 CLI
+    cspell     # Spell checker (lua/plugins/lsp.lua の cspell.nvim が PATH 上の `cspell` を要求)
   ];
 
   # Phase 3: ~/.config 単一 symlink を解体し、git tracked な個別ディレクトリだけ symlink する。
