@@ -1,0 +1,17 @@
+# sops-nix 暗号化ルール
+#
+# 使い方:
+#   1. AGE 鍵を生成: nix run nixpkgs#age -- -k > ~/.config/sops/age/keys.txt
+#      （または age-keygen -o ~/.config/sops/age/keys.txt）
+#   2. 公開鍵を取得:  age-keygen -y ~/.config/sops/age/keys.txt
+#   3. 下の AGE_PUBLIC_KEY_PLACEHOLDER を実際の公開鍵に置換
+#   4. 編集: sops secrets/secrets.yaml
+#
+# 別端末で復号する場合は ~/.config/sops/age/keys.txt をその端末にも配置する。
+keys:
+  - &user_key AGE_PUBLIC_KEY_PLACEHOLDER
+
+creation_rules:
+  - path_regex: secrets/.*\.yaml$
+    age:
+      - *user_key

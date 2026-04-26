@@ -68,3 +68,10 @@ secret-env.fish
 .direnv/
 result
 result-*
+
+# Phase 13: sops-nix
+# secrets/ ディレクトリの中身は基本的に AGE 暗号化済 yaml のみ git tracked。
+# 平文の sops 一時ファイルや age 鍵は除外。
+secrets/*.unsafe
+secrets/*.dec.*
+.config/sops/age/keys.txt

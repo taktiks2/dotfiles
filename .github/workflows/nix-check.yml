@@ -1,0 +1,29 @@
+name: nix-check
+
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  flake-check:
+    name: nix flake check
+    runs-on: macos-14   # Apple Silicon (M1)
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Determinate Nix
+        uses: DeterminateSystems/determinate-nix-action@main
+
+      - name: Enable FlakeHub Cache
+        uses: DeterminateSystems/flakehub-cache-action@main
+
+      - name: Show flake metadata
+        run: nix flake metadata
+
+      - name: Evaluate flake
+        run: nix flake check --no-build
+
+      - name: Build darwin system
+        run: nix build .#darwinConfigurations.MacBook-Air.system --no-link --print-build-logs
