@@ -29,6 +29,8 @@
     };
 
     # 第三者 tap。homebrew/cask 標準配下のものは tap 不要。
+    # Brew 5.x で `brew services` はコア化されたため `homebrew/services` は不要（削除済）。
+    # `osx-cross/arm` / `oven-sh/bun` は宣言された formula が無いため削除。
     taps = [
       # cask 用
       "arto-app/tap"      # arto
@@ -36,12 +38,9 @@
       # formula 用
       "carlocab/personal" # unrar
       "heroku/brew"       # heroku
-      "homebrew/services" # `brew services` インフラ
       "julien-cpsn/atac"  # atac
       "ngrok/ngrok"       # ngrok (cask)
-      "osx-cross/arm"     # ARM クロスコンパイル
       "osx-cross/avr"     # AVR クロスコンパイル + avr-gcc
-      "oven-sh/bun"       # bun
       "qmk/qmk"           # qmk
       "raine/workmux"     # workmux
       "supabase/tap"      # supabase

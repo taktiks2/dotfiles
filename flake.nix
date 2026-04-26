@@ -99,7 +99,7 @@
         };
         laravel = {
           path = ./templates/laravel;
-          description = "Laravel + PHP 8.2 + Composer devShell";
+          description = "Laravel + PHP 8.4 + Composer devShell";
         };
         node = {
           path = ./templates/node;

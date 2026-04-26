@@ -59,11 +59,9 @@
   # fish 固有の手書きは bobthefish theme と Nix profile prepend だけに縮小。
   home.sessionPath = [
     "/opt/homebrew/bin"
-    "${config.home.homeDirectory}/Library/Android/sdk/cmdline-tools"
+    # Android SDK 実体側に存在するサブディレクトリのみ宣言（cmdline-tools/tools/tools/bin は実機に無いので除外）
     "${config.home.homeDirectory}/Library/Android/sdk/platform-tools"
     "${config.home.homeDirectory}/Library/Android/sdk/emulator"
-    "${config.home.homeDirectory}/Library/Android/sdk/tools"
-    "${config.home.homeDirectory}/Library/Android/sdk/tools/bin"
     "${config.home.homeDirectory}/bin"
     "${config.home.homeDirectory}/.nodebrew/current/bin"
     "/opt/homebrew/opt/mysql@8.0/bin"
@@ -174,6 +172,11 @@
     "gh-dash/bin/octo-review.sh".source =
       config.lib.file.mkOutOfStoreSymlink "${configRoot}/gh-dash/bin/octo-review.sh";
   };
+
+  # ~/.claude も dotfiles 配下を live link で参照（Claude Code 設定 / agents / skills / plugins）。
+  # 旧 install.sh の `setup_global_npm` 内で行っていた手動 `ln -s` を home-manager に集約。
+  home.file.".claude".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/.claude";
 
   # Step 7 follow-up: install.sh の post-config 関数のうち、idempotent で
   # bootstrap 専用ではないものを home.activation に移譲。

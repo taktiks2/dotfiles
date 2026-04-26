@@ -12,13 +12,14 @@
 #      - nodebrew + 4 つの npm global (claude / ccstatusline / ccusage / diffity)
 #        ※ 頻繁に upstream が更新されるため npm 直管理を意図的に維持
 #
-# 削除済の責務 (Phase 6-13 で Nix 化):
+# 削除済の責務 (Phase 6-13 + Phase 18 follow-up で Nix 化):
 #   - PHP / Composer / Laravel Installer       → templates/laravel devShell
 #   - Rust / cargo                              → Nix 化済 (home.packages の cargo-binstall)
 #   - rbenv + Ruby                              → templates/ruby devShell
 #   - Fish plugins (Fisher / bobthefish 等)     → programs.fish.plugins (Nix)
 #   - tmux + TPM                                → programs.tmux.plugins (Nix)
 #   - dotfiles symlink                          → xdg.configFile + mkOutOfStoreSymlink
+#   - ~/.claude symlink                         → home.file.".claude" (mkOutOfStoreSymlink)
 #   - Neovim プラグイン (:Lazy)                 → ユーザ手動 (`nvim +Lazy +qa`)
 #
 # 詳細: docs/nix-adoption-report.md
@@ -48,7 +49,8 @@ check_system() {
   if ! xcode-select -p &>/dev/null; then
     warning "Xcode CLT 未インストール"
     xcode-select --install
-    confirm "Xcode CLT のインストール完了後 Enter"
+    # GUI ダイアログ完了を待つ（押すキーは何でも良い）
+    read -rp "$(echo -e "${YELLOW}?${NC} Xcode CLT のインストール完了後 Enter: ")" _
   fi
   success "macOS / Apple Silicon / Xcode CLT OK"
 }
@@ -74,15 +76,17 @@ bootstrap_nix() {
     success "Nix 既にあり"
   fi
 
-  # 初回ブートストラップ
+  # 初回は flake 同梱の nix-darwin (25.11 ピン) を `nix run` で取得して switch。
+  # 2 回目以降は確立した /run/current-system 配下の darwin-rebuild を直接使う。
+  # ※ 旧実装は両方走っており初回 switch が 2 重 + master / 25.11 の不一致があったため整理。
   if ! exists darwin-rebuild && [ ! -x "/run/current-system/sw/bin/darwin-rebuild" ]; then
-    log "初回 darwin-rebuild ブートストラップ中..."
-    sudo nix run nix-darwin/master#darwin-rebuild -- switch --flake "$DOTFILES_DIR#MacBook-Air"
+    log "初回 darwin-rebuild ブートストラップ中 (flake の nix-darwin-25.11 ピンを使用)..."
+    sudo nix run "github:nix-darwin/nix-darwin/nix-darwin-25.11#darwin-rebuild" -- \
+      switch --flake "$DOTFILES_DIR#MacBook-Air"
+  else
+    log "darwin-rebuild switch (flake 一括同期) 中..."
+    sudo /run/current-system/sw/bin/darwin-rebuild switch --flake "$DOTFILES_DIR#MacBook-Air"
   fi
-
-  # 通常 switch
-  log "darwin-rebuild switch (flake 一括同期) 中..."
-  sudo /run/current-system/sw/bin/darwin-rebuild switch --flake "$DOTFILES_DIR#MacBook-Air"
   success "Nix システム同期完了"
 }
 
@@ -143,15 +147,8 @@ setup_global_npm() {
     fi
   done
 
-  # ~/.claude → dotfiles/.claude symlink
-  local claude_link="$HOME/.claude"
-  if [[ -L "$claude_link" ]] && [[ "$(readlink "$claude_link")" == "$DOTFILES_DIR/.claude" ]]; then
-    success "~/.claude symlink OK"
-  elif [[ ! -e "$claude_link" ]]; then
-    ln -s "$DOTFILES_DIR/.claude" "$claude_link" && success "~/.claude → dotfiles/.claude"
-  else
-    warning "~/.claude が symlink 以外で存在 (手動確認)"
-  fi
+  # ~/.claude → dotfiles/.claude symlink は home-manager (home.file.".claude") で管理されるため
+  # 旧 ln -s ロジックは撤廃済（home/taktiks2.nix:home.file.".claude" 参照）。
 }
 
 final_check() {
