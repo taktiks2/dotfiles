@@ -81,8 +81,8 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 
 ### xdg.configFile + home.activation
 
-- `xdg.configFile.<name>.source = mkOutOfStoreSymlink` で `~/.config/{nvim, git, alacritty, atac, btop, ccstatusline, cspell, gh-dash, ghostty, mcphub, workmux}` の 11 ディレクトリを live link（`darwin-rebuild` 不要で編集即反映）
-- `home.file."Library/Application Support/lazygit/config.yml"` で lazygit のみ別管理
+- `xdg.configFile.<name>.source = mkOutOfStoreSymlink` で `~/.config/{nvim, atac, ccstatusline, cspell, mcphub, workmux}` の 6 ディレクトリと `gh-dash/bin/octo-review.sh`（PR レビュー連携シェル）を live link（`darwin-rebuild` 不要で編集即反映）
+- alacritty / btop / gh-dash / ghostty / git / lazygit は Phase 17 で `programs.*` に移行済（生成 config を Nix store 経由で配置、`darwin-rebuild` で反映）
 - `home.activation.bootstrapSideEffects`: `~/.config/fish/secret-env.fish` のテンプレ生成のみ（最小化済、sops-nix 移行完了後は削除予定）
 
 ### secrets (sops-nix)
@@ -127,18 +127,18 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   └── claude-project/           # 新規プロジェクト Claude Code セットアップ雛形 (cp -r 用)
 ├── .config/
 │   ├── nvim/                     # Neovim (LazyVim) 設定
-│   ├── alacritty/                # Alacritty 設定
-│   ├── ghostty/                  # Ghostty 設定
-│   ├── git/                      # Git 設定
 │   ├── atac/                     # ATAC (API クライアント) 設定
 │   ├── ccstatusline/             # Claude Code statusline 設定
-│   ├── btop/  cspell/  gh-dash/  mcphub/  workmux/
-│   ├── (fish は programs.fish 直管理。dotfiles repo の .config/fish/ は不要)
-│   └── (tmux も programs.tmux 直管理。.config/tmux/ は Phase 8 で撤廃済)
+│   ├── cspell/                   # cspell ユーザー辞書
+│   ├── mcphub/                   # MCP Hub 設定
+│   ├── workmux/                  # workmux 設定
+│   ├── gh-dash/bin/octo-review.sh # PR レビュー連携 shell (config.yml は programs.gh-dash.settings)
+│   ├── (alacritty/btop/ghostty/git/lazygit は Phase 17 で programs.* に移行済 → 当ディレクトリ不在)
+│   ├── (fish も programs.fish 直管理 → .config/fish/ 不要)
+│   └── (tmux も programs.tmux 直管理 → .config/tmux/ は Phase 8 で撤廃済)
 ├── secrets/
 │   └── secrets.yaml              # AGE 暗号化 (sops-nix 管理)
 ├── .sops.yaml                    # sops creation_rules
-├── config.yml                    # Lazygit 設定 (~/Library/Application Support/lazygit/ に symlink)
 ├── install.sh                    # Nix bootstrap + post-config orchestration (190 行)
 ├── .github/workflows/
 │   ├── nix-check.yml             # CI: flake-checker + nix flake check + darwin build
@@ -288,11 +288,15 @@ home-manager は実体ファイル / 別 symlink を `~/.config/<name>.hm-backup
 
 #### `~/.config` の外（例: `Library/Application Support/...`）
 
-`home.file` を直接使います（既存例: lazygit）:
+macOS では `~/Library/Application Support/<vendor>/` 配下に config を置くアプリも多い。
+`programs.<tool>` モジュールがそのツールに対応していれば `xdg.enable=false` 環境で
+自動的に macOS 側パスへ書き出される（lazygit はこれで `programs.lazygit.settings` に統一済）。
+
+非対応のものは `home.file` を直接使う:
 
 ```nix
-home.file."Library/Application Support/lazygit/config.yml".source =
-  config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/config.yml";
+home.file."Library/Application Support/<vendor>/<app>/config.yml".source =
+  config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/.config/<app>/config.yml";
 ```
 
 #### `programs.<tool>` と `xdg.configFile` の使い分け

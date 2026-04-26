@@ -51,7 +51,7 @@
 ### Phase 7 — xdg.configFile 移行
 - `home/taktiks2.nix:70-95` の `home.activation.dotfilesSymlinks` (25 行の bash ループ) を削除。
 - `xdg.configFile.<name>.source = config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/${name}"` で 11 ディレクトリを宣言。`mkOutOfStoreSymlink` は Nix store に格納せず dotfiles repo を直接参照するため、git pull 後の rebuild が不要 (live link)。
-- lazygit の `~/Library/Application Support/lazygit/config.yml` は `home.file` 経由。
+- lazygit の `~/Library/Application Support/lazygit/config.yml` は `home.file` 経由（Phase 17 で `programs.lazygit.settings` に統合済、本記述は当時のスナップショット）。
 - HM が既存 symlink を「同ターゲット」と判定し、`hm-backup` 退避なしで管理下に組み込まれた。
 
 ### Phase 8 — tmux 完全宣言化
