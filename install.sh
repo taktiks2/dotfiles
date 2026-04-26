@@ -3,7 +3,19 @@
 ################################################################################
 # dotfiles インストールスクリプト
 # 対象: macOS (Apple Silicon)
-# 必要な環境を完全自動でセットアップします
+#
+# 環境管理は Nix (flakes + nix-darwin + home-manager + Determinate) で宣言化済。
+# 本スクリプトの役割は薄い orchestration:
+#   1. Determinate Nix のブートストラップ
+#   2. `darwin-rebuild switch` で flake を一括同期
+#      （CLI 33 / brew 24 / cask 13 / macOS 設定 / symlink を全て反映）
+#   3. post-config: Nix では非推奨な処理だけ実行
+#      - PHP/Composer の PATH 補強 + MySQL 起動
+#      - Rust (rustup) / Node (nodebrew) / Ruby (rbenv) の言語ランタイム導入
+#      - Fish のデフォルトシェル切替 (chsh)
+#      - Neovim プラグイン初回投入
+#
+# 詳細: docs/nix-adoption-report.md
 ################################################################################
 
 set -u # 未定義変数の使用でエラー
@@ -15,6 +27,7 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 MAGENTA='\033[0;35m'
 CYAN='\033[0;36m'
+BOLD='\033[1m'
 NC='\033[0m' # No Color
 
 # ログディレクトリ
@@ -374,24 +387,30 @@ final_check() {
   echo "================================"
   echo ""
 
-  # インストール済みツールの確認
+  # 主要ツールの確認（Nix 経由 / brew 経由 / post-config の混合）
   local tools=(
+    # Nix (home-manager)
+    "fish:Fish Shell (Nix)"
+    "nvim:Neovim (Nix)"
+    "tmux:tmux (Nix)"
+    "lazygit:Lazygit (Nix)"
+    "rg:ripgrep (Nix)"
+    "jq:jq (Nix)"
+    "delta:git-delta (Nix)"
+    "direnv:direnv (Nix)"
+    # Homebrew (nix-darwin で宣言)
     "brew:Homebrew"
-    "fish:Fish Shell"
-    "nvim:Neovim"
-    "tmux:tmux"
-    "lazygit:Lazygit"
-    "delta:git-delta"
-    "lsd:lsd"
-    "php:PHP"
-    "composer:Composer"
-    "laravel:Laravel Installer"
-    "node:Node.js"
-    "ruby:Ruby"
-    "cargo:Rust"
+    "php:PHP (brew)"
+    "composer:Composer (brew)"
+    "mysql:MySQL (brew)"
+    # post-config
+    "laravel:Laravel Installer (post-config)"
+    "node:Node.js (nodebrew)"
+    "ruby:Ruby (rbenv)"
+    "cargo:Rust (rustup)"
   )
 
-  echo "インストール済みツール:"
+  echo "主要ツール:"
   for tool_pair in "${tools[@]}"; do
     IFS=':' read -r cmd name <<<"$tool_pair"
     if command_exists "$cmd"; then
@@ -403,10 +422,16 @@ final_check() {
 
   echo ""
   echo "次のステップ:"
-  echo "  1. ターミナルを再起動してください"
-  echo "  2. Fishシェルでログインし直してください"
-  echo "  3. tmuxを起動して Ctrl+s + I でプラグインをインストールしてください"
-  echo "  4. Neovimを起動してプラグインをインストールしてください (:Lazy)"
+  echo "  1. 新しいターミナルウィンドウを開いて Fish が起動するか確認"
+  echo "     （chsh 済の場合はログインシェルが Nix 版 fish になっている）"
+  echo "  2. tmux を起動して Ctrl+s + I でプラグインをインストール"
+  echo "  3. Neovim 起動時にプラグインが自動展開される（:Lazy で確認）"
+  echo "  4. ~/.config/fish/secret-env.fish に必要な秘匿環境変数を追記"
+  echo ""
+  echo "日常運用:"
+  echo "  - 設定変更 → \$EDITOR ~/dotfiles/home/taktiks2.nix → sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air"
+  echo "  - 緊急ロールバック → sudo darwin-rebuild --rollback"
+  echo "  - 新規プロジェクトの devShell → nix flake init -t ~/dotfiles && direnv allow"
   echo ""
 
   if [[ -d "$BACKUP_DIR" ]]; then
