@@ -215,7 +215,10 @@ EOF
       set -ag terminal-overrides ",*256col*:Tc"
 
       # シェルのデフォルトを fish に。nix-darwin が公開する system fish を参照。
+      # tmux on macOS は default-command を reattach-to-user-namespace -l /bin/zsh
+      # に焼き付けてくる（default-shell より優先される）ので、ここで上書きする。
       set-option -g default-shell /run/current-system/sw/bin/fish
+      set-option -g default-command /run/current-system/sw/bin/fish
       set-environment -g PATH "/etc/profiles/per-user/taktiks2/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin"
 
       # gh dash をポップアップで開く（prefix + g）
