@@ -35,8 +35,11 @@
   programs.zsh.enable = true;
 
   # fish を system level で有効化:
-  #   - /etc/shells に Nix 版 fish が登録される（chsh で選択可能に）
   #   - /run/current-system/sw/bin/fish が公開される（Alacritty / Ghostty 等の terminal config から参照）
+  #   - /etc/fish/config.fish がシステム準備（Nix profile 等の PATH を全 fish セッションに注入）
   # 実際のユーザ向け設定は home-manager の programs.fish 側で行う。
   programs.fish.enable = true;
+
+  # /etc/shells への登録（chsh で fish を選択可能にするため）。
+  environment.shells = [ pkgs.fish ];
 }

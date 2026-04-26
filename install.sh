@@ -248,28 +248,27 @@ install_rust() {
 ################################################################################
 
 setup_fish() {
-  step "Fish Shell のセットアップ（チェック + chsh のみ）"
+  step "Fish Shell のセットアップ（chsh のみ）"
 
-  # Fisher / bobthefish / secret-env テンプレは home.activation.bootstrapSideEffects に移譲。
+  # Fish 本体・plugins (bobthefish/z/bass)・config.fish は home-manager (programs.fish) で管理。
+  # /etc/shells への登録は nix-darwin の `environment.shells` で実施。
+  # secret-env.fish のテンプレ生成は home.activation.bootstrapSideEffects に移譲。
 
-  # デフォルトシェルの変更
-  if [[ "$SHELL" != "/opt/homebrew/bin/fish" ]]; then
-    if confirm "デフォルトシェルをFishに変更しますか？"; then
-      # /etc/shellsに追加
-      if ! grep -q "/opt/homebrew/bin/fish" /etc/shells; then
-        info "/etc/shellsにFishを追加中..."
-        echo "/opt/homebrew/bin/fish" | sudo tee -a /etc/shells
-      fi
-
-      info "デフォルトシェルを変更中..."
-      chsh -s /opt/homebrew/bin/fish
-      success "デフォルトシェルをFishに変更しました"
-    fi
-  else
-    success "既にFishがデフォルトシェルです"
+  local nix_fish="/run/current-system/sw/bin/fish"
+  if [[ ! -x "$nix_fish" ]]; then
+    info "Nix 版 fish が未配置（先に darwin-rebuild switch が必要）。chsh をスキップ"
+    return 0
   fi
 
-  # secret-env.fish のテンプレート作成は home.activation.bootstrapSideEffects に移譲。
+  if [[ "$SHELL" != "$nix_fish" ]]; then
+    if confirm "デフォルトシェルを Nix 版 fish ($nix_fish) に変更しますか？"; then
+      info "デフォルトシェルを変更中..."
+      chsh -s "$nix_fish"
+      success "デフォルトシェルを変更しました"
+    fi
+  else
+    success "既に Nix 版 fish がデフォルトシェルです"
+  fi
 }
 
 ################################################################################
