@@ -115,9 +115,6 @@ lg           → lazygit
 ls, la, ll   → lsd, lsd -a, lsd -al
 sls          → sbcl --load ~/.local/share/nvim/lazy/nvlime/lisp/start-nvlime.lisp
 wm           → workmux
-agents       → agents.fish
-css          → tmux attach-session -t shogun
-csm          → tmux attach-session -t multiagent
 ```
 
 ## Troubleshooting

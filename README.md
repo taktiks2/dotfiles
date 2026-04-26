@@ -420,9 +420,6 @@ la           → lsd -a
 ll           → lsd -al
 sls          → sbcl --load ~/.local/share/nvim/lazy/nvlime/lisp/start-nvlime.lisp
 wm           → workmux
-agents       → agents.fish
-css          → tmux attach-session -t shogun
-csm          → tmux attach-session -t multiagent
 ```
 
 ## 📝 Laravel プロジェクトの始め方

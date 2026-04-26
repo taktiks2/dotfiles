@@ -41,10 +41,6 @@
       ll = "lsd -al";
       sls = "sbcl --load ~/.local/share/nvim/lazy/nvlime/lisp/start-nvlime.lisp";
       wm = "workmux";
-      agents = "agents.fish";
-      # 旧 conf.d/multi-agent-shogun.fish から移植
-      css = "tmux attach-session -t shogun";
-      csm = "tmux attach-session -t multiagent";
     };
 
     # Phase 9: PATH と環境変数は home.sessionPath / home.sessionVariables に移譲済。
