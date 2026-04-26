@@ -536,7 +536,48 @@ check_system → install_homebrew → bootstrap_nix
 
 ---
 
-### 累計成果（Step 1〜7 + follow-up 全て完了）
+### Step 7 follow-up 第二弾: install.sh 更なる削減（2026-04-26 完了）
+
+#### `home.activation.bootstrapSideEffects` に追加移譲した 3 件
+1. **Fisher (Fish プラグインマネージャ)**: `~/.config/fish/functions/fisher.fish` 不在時のみ実行
+2. **bobthefish テーマ**: `fish_prompt.fish` 不在時のみ実行
+3. **Laravel Installer**: `~/.composer/vendor/bin/laravel` 不在時のみ実行
+
+#### install.sh の変更
+| 関数 | Before | After |
+|---|---|---|
+| `setup_php_environment` | Laravel installer ブロック含む | MySQL PATH と composer PATH のみ |
+| `setup_fish` | Fisher + bobthefish + chsh + secret-env | chsh のみ（他は activation） |
+
+#### 行数推移
+| 段階 | 行数 |
+|---|---|
+| 開始時 | 588 |
+| Step 7 (Part B) 後 | 501 |
+| Step 7 follow-up 第一弾後 | 475 |
+| **Step 7 follow-up 第二弾後** | **456** |
+| 削減合計 | **132 行 (-22.4%)** |
+
+#### install.sh に残置した bootstrap 専用関数
+重い / ネットワーク多 / 対話 / 特殊起動が必要なため activation には不適：
+- `install_rust`: rustup-init.sh の curl + 実行
+- `setup_nodejs`: `nodebrew install-binary stable`（数十 MB ダウンロード）
+- `setup_ruby`: `rbenv install <latest>`（Ruby ソースコンパイル、5-10分）
+- `setup_fish` の chsh 部分: `sudo` + 対話確認
+- `setup_neovim`: `nvim +Lazy +qall` の TUI 起動
+- `setup_php_environment` の `brew services start mysql@8.0`: 対話確認
+- `final_check`: ツール一覧の確認出力
+
+これらは新規マシン bootstrap 時の 1 回のみ走れば良い処理であり、毎回 switch で冗長に走らせる価値は薄い。
+
+#### 検証結果
+- `bootstrapSideEffects` 5 項目（TPM, secret-env, Fisher, bobthefish, Laravel installer）全て既存検出 → スキップ → 無音通過 ✅
+- bash syntax check: ✅
+- `darwin-rebuild switch` 28.2 秒で完了
+
+---
+
+### 累計成果（Step 1〜7 + 全 follow-up 完了）
 
 - **CLI ツール 31 本を Nix 化**（brew leaves 57 本のうち 54%）
 - **dotfiles リポジトリ構造の確立**: `flake.nix` / `hosts/` / `home/` / `modules/` / `docs/` の 5 ディレクトリ体制
@@ -546,7 +587,7 @@ check_system → install_homebrew → bootstrap_nix
 - **dotfiles symlink を home-manager 管理化**: install.sh と二重防御
 - **direnv + nix-direnv 統合 + devShell テンプレート提供**: `nix flake init -t ~/dotfiles` で投入可能
 - **brew leaves が 57 → 25 本に整理**: cleanup="uninstall" で自動同期
-- **install.sh が 588 → 475 行に削減**: 重複処理削除 + Nix bootstrap 統合 + post-config 移譲
+- **install.sh が 588 → 456 行に削減**（-22.4%）: 重複処理削除 + Nix bootstrap 統合 + post-config 6 件を home.activation 化
 - **ロールバック可能性確保**: `darwin-rebuild --rollback` でいつでも世代戻し可（現在 system-9）
 - **既存環境への副作用ゼロ**: PHP / MySQL / Ruby / Node 含め全て従来通り動作
 
@@ -555,7 +596,6 @@ check_system → install_homebrew → bootstrap_nix
 | Step | 内容 | 優先度 |
 |---|---|---|
 | Step 3 follow-up | OPT-IN 項目から好みのものを uncomment して有効化 | 任意 |
-| install.sh 後続クリーンアップ | rustup / nodebrew install / rbenv install など bootstrap 専用 post-config の更なる削減 | 任意 |
 | Step 5 | `xdg.configFile` 経由で `.config/*` の symlink ロジックを home-manager に移譲 | 中 |
 | Step 6 | 新規プロジェクト用に `nix-direnv` セットアップ + devShell サンプル | 低（任意） |
 | 第二陣 MOVE | `tbls / joshuto` 等の追加移行 | 低 |

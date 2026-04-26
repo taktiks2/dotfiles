@@ -113,6 +113,24 @@
 EOF
       echo "secret-env.fish template created at $SECRET_ENV"
     fi
+
+    # Fisher (Fish プラグインマネージャ) の初回インストール
+    # 注: fish 本体は brew formula 'fisher' の依存として既に配置されている。
+    if [ ! -f "$HOME/.config/fish/functions/fisher.fish" ] && command -v fish >/dev/null 2>&1; then
+      $DRY_RUN_CMD fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher"
+      echo "Fisher installed"
+    fi
+
+    # bobthefish テーマ（インストール済か functions ディレクトリで判定）
+    if [ -f "$HOME/.config/fish/functions/fisher.fish" ] && ! [ -f "$HOME/.config/fish/functions/fish_prompt.fish" ]; then
+      $DRY_RUN_CMD fish -c "fisher install oh-my-fish/theme-bobthefish"
+      echo "bobthefish theme installed"
+    fi
+
+    # Laravel Installer（composer がある場合のみ・初回のみ）
+    if command -v composer >/dev/null 2>&1 && [ ! -x "$HOME/.composer/vendor/bin/laravel" ]; then
+      $DRY_RUN_CMD composer global require laravel/installer || echo "Laravel Installer の自動インストール失敗（手動で対応してください）"
+    fi
   '';
 
   # home-manager 自身の管理を有効化。

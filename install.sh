@@ -210,14 +210,7 @@ setup_php_environment() {
     echo 'export PATH="$HOME/.composer/vendor/bin:$PATH"' >>~/.zprofile
   fi
 
-  # Laravel Installerのインストール
-  if ! command_exists laravel; then
-    info "Laravel Installerをインストール中..."
-    composer global require laravel/installer 2>&1 | tee -a "$LOG_FILE"
-    success "Laravel Installerインストール完了"
-  else
-    success "Laravel Installer既にインストール済み"
-  fi
+  # Laravel Installer のインストールは home.activation.bootstrapSideEffects に移譲。
 
   # PHP拡張の確認
   info "PHP設定の確認"
@@ -255,21 +248,9 @@ install_rust() {
 ################################################################################
 
 setup_fish() {
-  step "Fish Shellのセットアップ"
+  step "Fish Shell のセットアップ（チェック + chsh のみ）"
 
-  # Fisherのインストール
-  if [[ ! -f "$HOME/.config/fish/functions/fisher.fish" ]]; then
-    info "Fisherをインストール中..."
-    fish -c "curl -sL https://raw.githubusercontent.com/jorgebucaran/fisher/main/functions/fisher.fish | source && fisher install jorgebucaran/fisher" 2>&1 | tee -a "$LOG_FILE"
-    success "Fisherインストール完了"
-  else
-    success "Fisher既にインストール済み"
-  fi
-
-  # bobthefishテーマのインストール
-  info "bobthefishテーマをインストール中..."
-  fish -c "fisher install oh-my-fish/theme-bobthefish" 2>&1 | tee -a "$LOG_FILE"
-  success "bobthefishテーマインストール完了"
+  # Fisher / bobthefish / secret-env テンプレは home.activation.bootstrapSideEffects に移譲。
 
   # デフォルトシェルの変更
   if [[ "$SHELL" != "/opt/homebrew/bin/fish" ]]; then
