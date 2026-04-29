@@ -122,6 +122,7 @@
     # 言語ランタイム / ビルド
     zig
     deno
+    bun
     uv
     sbcl
     cargo-binstall
