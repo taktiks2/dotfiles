@@ -20,6 +20,7 @@
     ./programs/cli.nix         # programs.bat + programs.fzf + programs.lsd
     ./programs/tmux.nix
     ./programs/fish.nix
+    ./programs/claude.nix      # claude work / claude private profile switcher
   ];
 
   # home.username / home.homeDirectory は nix-darwin の users.users.<name> から自動解決されるため指定しない。

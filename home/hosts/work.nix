@@ -49,6 +49,13 @@
     "${config.home.homeDirectory}/.rbenv/shims"
   ];
 
+  # 5. tmux: 業務用 lazyjira ポップアップ（prefix + J）。
+  #    programs.tmux.extraConfig は types.lines なので home/programs/tmux.nix の設定に連結される。
+  programs.tmux.extraConfig = ''
+    # lazyjira をポップアップで開く（prefix + J）
+    bind J display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "lazyjira"
+  '';
+
   # ghostty は main の programs.ghostty で十分（command/font/theme の差は
   # Nix 化後 /run/current-system/sw/bin/fish で動作するため override 不要）。
 

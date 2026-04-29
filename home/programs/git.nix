@@ -124,8 +124,10 @@ in
     # extraIdentities が 1 件以上 sshHostAlias を持つ場合のみ programs.ssh を有効化し、
     # 既存の手書き ~/.ssh/config を破壊しない（hasAnySsh = false なら無効）。
     programs.ssh = lib.mkIf hasAnySsh {
-      enable      = true;
-      matchBlocks = identityMatchBlocks;
+      enable              = true;
+      # home-manager 25.11+ deprecation 回避: 暗黙デフォルト (ForwardAgent=no 等) を ~/.ssh/config に書かない。
+      enableDefaultConfig = false;
+      matchBlocks         = identityMatchBlocks;
     };
 
     # 旧 ~/.gitconfig が残っていると XDG 側 (~/.config/git/config) より優先されるため、

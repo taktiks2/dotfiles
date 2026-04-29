@@ -28,6 +28,18 @@
                 command rbenv "$command" $argv
         end
       '';
+
+      # darwin-rebuild switch のラッパ。引数で flake のホスト attribute を切り替える。
+      darwin-switch = ''
+        set -l host $argv[1]
+        switch "$host"
+            case work private
+                sudo darwin-rebuild switch --flake ~/dotfiles#$host
+            case '*'
+                echo "usage: darwin-switch <work|private>" >&2
+                return 1
+        end
+      '';
     };
 
     shellAliases = {
