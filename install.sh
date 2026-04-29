@@ -9,7 +9,7 @@
 #      → flake で CLI / formula / cask / macOS defaults / dotfiles symlink を一括同期
 #   4. fish のデフォルトシェル化 (chsh)
 #   5. Nix 管理境界外の最小 bootstrap:
-#      - nodebrew + 4 つの npm global (claude / ccstatusline / ccusage / diffity)
+#      - fnm + 4 つの npm global (claude / ccstatusline / ccusage / diffity)
 #        ※ 頻繁に upstream が更新されるため npm 直管理を意図的に維持
 #
 # 削除済の責務 (Phase 6-13 + Phase 18 follow-up で Nix 化):
@@ -144,16 +144,29 @@ setup_fish_default_shell() {
 #   - ccusage (Claude Code のトークン使用量・コスト集計)
 #   - diffity (ブラウザで GitHub 風 git diff)
 # 更新は `npm update -g <pkg>` を手動実行する運用。
-# nodebrew + nodejs はこれらを動かすための最小依存として残置。
+# Node 管理は fnm (home/users/takeru.osoegawa.nix で programs.fnm.enable) を使用する。
 setup_global_npm() {
-  step "グローバル npm パッケージ (Nix 管理外)"
+  step "グローバル npm パッケージ (Nix 管理外、fnm 経由)"
 
-  # nodebrew の最小 bootstrap (本格的な Node 利用は templates/node devShell へ)
-  if [[ ! -d "$HOME/.nodebrew" ]] && exists nodebrew; then
-    nodebrew setup
-    nodebrew install-binary stable
-    nodebrew use stable
+  # fnm は darwin-rebuild switch で home.packages 経由で配布される。
+  # Nix profile を PATH 先頭に追加して fnm を解決可能にする。
+  export PATH="/etc/profiles/per-user/$USER/bin:/run/current-system/sw/bin:$PATH"
+
+  if ! exists fnm; then
+    warning "fnm が PATH に無いため npm global packages をスキップ"
+    warning "post-install: 新シェルで fnm install --lts && npm install -g claude ccstatusline ccusage diffity"
+    return
   fi
+
+  # default Node が無ければ LTS を install
+  if ! fnm list 2>/dev/null | grep -q 'default'; then
+    log "fnm 経由で Node LTS を install"
+    fnm install --lts
+    fnm default lts-latest
+  fi
+
+  # current shell の PATH に fnm-managed Node を載せる
+  eval "$(fnm env --shell bash)"
 
   if ! exists npm; then
     warning "npm 未配置のため npm global packages をスキップ"
