@@ -17,7 +17,7 @@ CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期�
 | レイヤ | 実体 | 場所 |
 |---|---|---|
 | Nix (home-manager) | CLI 33 本 + Fish 4.2 + plugins + tmux | `home/common.nix` (+ `home/users/<username>.nix`) |
-| Homebrew (nix-darwin で宣言) | formula 24 + cask 13 + tap 11 | `modules/homebrew.nix` |
+| Homebrew (nix-darwin で宣言) | 共通 brew 4 / cask 6 / tap 2 + host 固有上書き | `modules/homebrew/{default,local}.nix` |
 | macOS `system.defaults` | Dock / Finder / Trackpad / NSGlobalDomain 等 | `modules/macos-defaults.nix` |
 | `xdg.configFile` (live link) | `~/.config/<tool>` → dotfiles repo を `mkOutOfStoreSymlink` | `home/common.nix` |
 | sops-nix | AGE 暗号化 `secrets/secrets.yaml` を `~/.config/sops-nix/secrets/` に復号 | `home/common.nix` の `sops` |
@@ -31,7 +31,8 @@ hosts/common.nix                # 全ホスト共通: networking / system.primar
 home/common.nix                 # home-manager 共通 baseline: home.packages / programs.{fish,tmux,direnv} / xdg.configFile / sops / activation
 home/users/<username>.nix       # ユーザ個人差分 (auto-import, 任意): JAVA_HOME 等の install-specific 値
 home/programs/                  # per-tool 設定: fish / git / tmux / direnv / lazygit / btop / gh-dash / terminal / cli
-modules/homebrew.nix            # taps / brews / casks (cleanup = "uninstall")
+modules/homebrew/default.nix    # 全 PC 共通 taps / brews / casks (cleanup = "uninstall")
+modules/homebrew/local.nix      # ホスト固有 (git tracked + skip-worktree、upstream は空 stub)
 modules/macos-defaults.nix      # system.defaults.* (ACTIVE / OPT-IN)
 templates/                      # nix flake init -t 用 devShell (default / laravel / node / ruby / rust / go / claude-project)
 .config/<tool>/                 # mkOutOfStoreSymlink で ~/.config/<tool> に live link される設定
@@ -47,12 +48,12 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 # 2. clone & bootstrap
 git clone git@github.com:taktiks2/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-./install.sh MacBook-Air      # ホスト名は flake.nix の darwinConfigurations attribute と一致させる
+./install.sh private          # ホスト名は flake.nix の darwinConfigurations attribute と一致させる
 ```
 
 新ホスト追加手順は `README.md` の「新しい Mac に導入する」を参照。
 
-`install.sh` (190 行) は **薄い orchestration** に縮小済み:
+`install.sh` (363 行) は **薄い orchestration** に集約:
 
 1. macOS / Apple Silicon / Xcode CLT チェック
 2. Homebrew 本体投入（nix-darwin の homebrew モジュールが `/opt/homebrew` を参照）
@@ -64,8 +65,8 @@ cd ~/dotfiles
 
 | 何を | 編集ファイル | 適用 |
 |---|---|---|
-| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
-| brew formula / cask（共通） | `modules/homebrew/common.nix` の `brews` / `casks` / `taps` | 同上 |
+| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#private` |
+| brew formula / cask（共通） | `modules/homebrew/default.nix` の `brews` / `casks` / `taps` | 同上 |
 | brew formula / cask（ホスト固有） | `modules/homebrew/local.nix`（git tracked + skip-worktree でローカル変更非追跡） | 同上 |
 | macOS 設定 | `modules/macos-defaults.nix` | 同上 |
 | Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases, plugins}` (個人 alias は `home/users/<username>.nix`) | 同上 |

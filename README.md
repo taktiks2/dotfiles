@@ -27,7 +27,8 @@ cd ~/dotfiles
 │ Nix (home-manager)        CLI 33 + Fish 4.x + plugins + tmux   │
 │   /etc/profiles/per-user/taktiks2/bin/                         │
 ├────────────────────────────────────────────────────────────────┤
-│ Homebrew (nix-darwin で宣言)  formula 24 + cask 13 + tap 11    │
+│ Homebrew (nix-darwin で宣言)  共通 brew 4 / cask 6 / tap 2     │
+│   + ホスト固有上書き (modules/homebrew/local.nix, skip-worktree)│
 │   /opt/homebrew/  (cleanup="uninstall" で git に完全同期)      │
 ├────────────────────────────────────────────────────────────────┤
 │ macOS system.defaults     Dock / Finder / Trackpad 等          │
@@ -42,7 +43,7 @@ cd ~/dotfiles
 └────────────────────────────────────────────────────────────────┘
 ```
 
-`install.sh` (190 行) の役割は最小 orchestration のみ:
+`install.sh` (363 行) の役割は最小 orchestration のみ:
 1. macOS / Apple Silicon / Xcode CLT チェック → 2. Homebrew 本体投入 →
 3. Determinate Nix install + 初回 `darwin-rebuild switch` → 4. fish chsh →
 5. Nix 管理境界外の npm global (claude / ccstatusline / ccusage / diffity)。
@@ -63,17 +64,15 @@ direnv (+ nix-direnv)
 
 Fish plugins (Fisher 撤廃、Nix 直接管理): bobthefish / z / bass
 
-### Homebrew (`modules/homebrew.nix` で宣言)
+### Homebrew (`modules/homebrew/{default,local}.nix` で宣言)
 
-- **言語ランタイム**: composer, luarocks, nodebrew, python@3.10, rbenv
-- **DB**: mysql, mysql@8.0, postgresql@14
-- **重量ビルド**: bundletool, clisp, openapi-generator, qemu
-- **ベンダー CLI**: azure-cli, docker, fastlane, gemini-cli, supabase
-- **第三者 tap**: qmk, atac, workmux, unrar, avr-gcc@9, heroku
-- **嗜好**: rogue
-- **GUI cask 13** + Nerd Fonts: VS Code / Warp / Ghostty / UTM / Bruno / Godot 等
+- **共通 (`default.nix`)** — 全 PC 共通の最小セット
+  - brew: composer / mysql@8.0 / rbenv / workmux
+  - cask: arto / bruno / ghostty / visual-studio-code + Nerd Fonts (font-hack-nerd-font / font-hackgen-nerd)
+  - tap: arto-app/tap / raine/workmux
+- **ホスト固有 (`local.nix`、git tracked + skip-worktree)** — upstream は空 stub。各 PC で自由に上乗せ可能（業務 PC では awscli / acli / lazyjira / jira-cli / oath-toolkit / csv 系 / lnav / claude-squad / cursor / docker-desktop / orbstack / firefox / raycast / obsidian / mysqlworkbench / dbeaver-community / alacritty 等を実装中）。
 
-完全な内訳は `modules/homebrew.nix` および `docs/brew-triage.md` を参照。
+完全な内訳は `modules/homebrew/default.nix`（共通）/ `modules/homebrew/local.nix`（host 固有）/ `docs/brew-triage.md` を参照。
 
 ### macOS system.defaults
 
@@ -120,7 +119,9 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   │   └── taktiks2.nix          # taktiks2 の差分 (JAVA_HOME 等)
 │   └── programs/                 # per-tool 設定 (fish / git / tmux / direnv / lazygit / ...)
 ├── modules/
-│   ├── homebrew.nix              # tap / formula / cask 宣言
+│   ├── homebrew/
+│   │   ├── default.nix           # 全 PC 共通 tap / formula / cask
+│   │   └── local.nix             # ホスト固有 (git tracked + skip-worktree、upstream は空 stub)
 │   └── macos-defaults.nix        # system.defaults.* (ACTIVE / OPT-IN)
 ├── templates/
 │   ├── default/                  # 汎用 devShell (`nix flake init -t ~/dotfiles`)
@@ -144,7 +145,7 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 ├── secrets/
 │   └── secrets.yaml              # AGE 暗号化 (sops-nix 管理)
 ├── .sops.yaml                    # sops creation_rules
-├── install.sh                    # Nix bootstrap + post-config orchestration (190 行)
+├── install.sh                    # Nix bootstrap + post-config orchestration (363 行)
 ├── .github/workflows/
 │   ├── nix-check.yml             # CI: flake-checker + nix flake check + darwin build
 │   └── update-flake-lock.yml     # 月次 flake.lock 自動更新 PR
@@ -166,8 +167,8 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 
 | 種類 | 編集ファイル | 適用 |
 |---|---|---|
-| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
-| brew formula / cask（共通） | `modules/homebrew/common.nix` の `brews` / `casks` / `taps` | 同上 |
+| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#private` |
+| brew formula / cask（共通） | `modules/homebrew/default.nix` の `brews` / `casks` / `taps` | 同上 |
 | brew formula / cask（ホスト固有） | `modules/homebrew/local.nix`（git tracked + skip-worktree） | 同上 |
 | macOS 設定 | `modules/macos-defaults.nix` | 同上 |
 | Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases}` (個人 alias は `home/users/<username>.nix`) | 同上 |
@@ -229,7 +230,7 @@ $EDITOR .mcp.json                 # 不要な MCP サーバーは削除、必要
 ```bash
 cd ~/dotfiles
 nix flake update                                  # 全 input を最新化
-sudo darwin-rebuild switch --flake .#MacBook-Air  # 適用
+sudo darwin-rebuild switch --flake .#private  # 適用
 ```
 
 ## 📘 Nix 運用ガイド（実践編）
@@ -242,8 +243,10 @@ dotfiles 全体は **「git に宣言されていなければ、存在しない�
 | やりたいこと | 編集する場所 | 代表例 |
 |---|---|---|
 | CLI を入れる（Nix 化が第一選択） | `home/common.nix` の `home.packages` | ripgrep, fd, jq, neovim |
-| CLI を入れる（重量 / 商用 / cache 弱） | `modules/homebrew.nix` の `brews` | mysql, docker, azure-cli |
-| GUI を入れる | `modules/homebrew.nix` の `casks` | ghostty, warp, vscode |
+| CLI を入れる（重量 / 商用 / cache 弱、共通） | `modules/homebrew/default.nix` の `brews` | composer, mysql@8.0, rbenv |
+| CLI を入れる（ホスト固有、push しない） | `modules/homebrew/local.nix` の `brews` | awscli, jira-cli, claude-squad |
+| GUI を入れる（共通） | `modules/homebrew/default.nix` の `casks` | ghostty, vscode, bruno |
+| GUI を入れる（ホスト固有） | `modules/homebrew/local.nix` の `casks` | cursor, docker-desktop, raycast |
 | ツールが `programs.<tool>` を持つ | `home/programs/<tool>.nix` の `programs.<tool>` | fish, tmux, direnv |
 | 個人ユーザだけの差分（JAVA_HOME / 個人 alias / 個人 packages） | `home/users/<username>.nix` (auto-import) | JAVA_HOME, 業務用 awscli2 |
 | 任意の dotfile を `~/.config/<name>` に置きたい | `.config/<name>/` を repo に置く + `xdg.configFile.<name> = link "<name>"` | nvim, btop, ghostty |
@@ -283,8 +286,8 @@ in {
 ```bash
 # 3. ドライビルド → 切替
 cd ~/dotfiles
-sudo darwin-rebuild build  --flake .#MacBook-Air   # 評価＋ビルドのみ（切替なし）
-sudo darwin-rebuild switch --flake .#MacBook-Air   # 適用
+sudo darwin-rebuild build  --flake .#private   # 評価＋ビルドのみ（切替なし）
+sudo darwin-rebuild switch --flake .#private   # 適用
 
 # 4. symlink を確認
 ls -la ~/.config/zellij
@@ -330,13 +333,13 @@ cd ~/dotfiles
 nix flake check
 
 # ② ドライビルド（store には作るが /run/current-system は変えない）
-sudo darwin-rebuild build --flake .#MacBook-Air
+sudo darwin-rebuild build --flake .#private
 
 # ③ 次世代と現行の closure 差分を見る（何が増減するか可視化）
 nix store diff-closures /run/current-system ./result
 
 # ④ 適用
-sudo darwin-rebuild switch --flake .#MacBook-Air
+sudo darwin-rebuild switch --flake .#private
 
 # ⑤ 失敗 / 違和感があれば即ロールバック
 sudo darwin-rebuild --rollback                 # 直前の世代へ
@@ -382,7 +385,7 @@ nixpkgs.config.allowUnfreePredicate = pkg:
 nix flake update                  # 全 input を更新
 nix flake update nixpkgs          # 単独更新
 nix flake update determinate      # Determinate Nix だけ更新
-sudo darwin-rebuild switch --flake .#MacBook-Air
+sudo darwin-rebuild switch --flake .#private
 ```
 
 毎月 1 日に `update-flake-lock.yml` が自動 PR を出すので、CI が緑のままレビューしてマージするのが既定運用です。
@@ -412,7 +415,7 @@ Determinate Nix は `determinateNix.customSettings` で自動 GC スケジュー
 | `nix flake check` で direnv が失敗 | macOS sandbox 内で fish/zsh test SIGKILL | `flake.nix` の `doCheck = false` overlay で回避済 |
 | switch 後に新しい CLI が PATH に出ない | 既存シェルが古い PATH を保持 | `exec fish` か新規ターミナルを開く |
 | `error: experimental Nix feature 'flakes' is disabled` | Determinate 以外の Nix が混入 | Determinate Nix で再インストール（`install.sh` 参照） |
-| `homebrew` モジュールが意図せず uninstall した | `cleanup = "uninstall"` で `brews` から外したものを刈り取った | 戻したいなら `modules/homebrew.nix` に再宣言、または依存関係に組み込む |
+| `homebrew` モジュールが意図せず uninstall した | `cleanup = "uninstall"` で `brews` から外したものを刈り取った | 戻したいなら `modules/homebrew/default.nix`（共通）または `modules/homebrew/local.nix`（host 固有）に再宣言、または依存関係に組み込む |
 
 ## 🖥️ 新しい Mac に導入する
 
@@ -424,7 +427,7 @@ git clone git@github.com:taktiks2/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 # 2. ホスト名を引数で明示して実行（出荷時 LocalHostName は flake と一致しないため）
-./install.sh MacBook-Air
+./install.sh private
 ```
 
 `hosts/common.nix` がホスト非依存なので、同 hostname / 同 username の Mac はこれだけで完結します。
@@ -434,7 +437,7 @@ cd ~/dotfiles
 ```nix
 # 1. flake.nix の darwinConfigurations にブロック追加
 darwinConfigurations = {
-  "MacBook-Air" = mkDarwin { hostname = "MacBook-Air"; username = "taktiks2"; };
+  "private"     = mkDarwin { hostname = "private";     username = "taktiks2"; };
   "MacBook-Pro" = mkDarwin { hostname = "MacBook-Pro"; username = "taktiks2"; };  # ← 追加
 };
 ```
@@ -443,7 +446,7 @@ darwinConfigurations = {
 # 2. .github/workflows/nix-check.yml の matrix.host にも追加（CI build 検証）
 strategy:
   matrix:
-    host: [MacBook-Air, MacBook-Pro]   # ← 追加
+    host: [private, MacBook-Pro]   # ← 追加
 ```
 
 ```bash
@@ -572,7 +575,7 @@ cat ~/.dotfiles_install_logs/install_*.log
 ### 再適用
 
 ```bash
-sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
+sudo darwin-rebuild switch --flake ~/dotfiles#private
 ```
 
 ### xdg.configFile activation の競合

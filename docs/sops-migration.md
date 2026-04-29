@@ -76,8 +76,8 @@ sops = lib.mkIf (builtins.pathExists ../secrets/secrets.yaml) {
 ### 5. switch して動作確認
 
 ```fish
-darwin-rebuild build --flake .#MacBook-Air
-sudo darwin-rebuild switch --flake .#MacBook-Air
+darwin-rebuild build --flake .#private
+sudo darwin-rebuild switch --flake .#private
 
 # 復号配置の確認
 ls -la ~/.config/sops-nix/secrets/

@@ -101,7 +101,7 @@ home/
 #### 使い方
 
 ```fish
-nh darwin switch ~/dotfiles -H MacBook-Air
+nh darwin switch ~/dotfiles -H private
 ```
 
 Determinate Nix との公式互換性明記はないが、`darwin-rebuild` を呼ぶ wrapper のため `determinateNix.enable = true` 環境でも動く実例多数。**1 行 alias 化して試す価値あり**、合わなければ素の `darwin-rebuild` に戻すだけ。

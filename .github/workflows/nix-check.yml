@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        host: [MacBook-Air]
+        host: [private]
     steps:
       - uses: actions/checkout@v4
 

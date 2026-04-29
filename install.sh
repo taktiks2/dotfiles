@@ -52,7 +52,7 @@ if [ -z "$HOST_NAME" ]; then
 fi
 if [ -z "$HOST_NAME" ]; then
   echo "ERROR: ホスト名を解決できません。引数で明示してください: ./install.sh <HostName>" >&2
-  echo "       例: ./install.sh MacBook-Air" >&2
+  echo "       例: ./install.sh private" >&2
   exit 1
 fi
 

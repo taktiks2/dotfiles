@@ -11,14 +11,14 @@ description: Use when the user asks to sync, update, or apply dotfiles changes �
 
 - `~/dotfiles` が git 管理されている
 - `nix`、`darwin-rebuild` が PATH にある (`/run/current-system/sw/bin/`)
-- ホスト名が `MacBook-Air` (異なる場合は flake から該当 host を選ぶ)
+- ホスト名が `private` (異なる場合は flake から該当 host を選ぶ)
 
 ## フロー
 
 1. **作業ツリーの確認**: `git -C ~/dotfiles status --short` を実行。未コミット変更があれば中断し、ユーザーに「先にコミット/stash するか」を確認する
 2. **fetch + 変更プレビュー**: `git -C ~/dotfiles fetch origin` → `git -C ~/dotfiles log --oneline HEAD..origin/main` で取り込む差分を提示
 3. **fast-forward**: `git -C ~/dotfiles pull --ff-only` で更新
-4. **適用**: `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake ~/dotfiles#MacBook-Air`
+4. **適用**: `sudo /run/current-system/sw/bin/darwin-rebuild switch --flake ~/dotfiles#private`
    - 失敗したら最後の 50 行を抜粋して報告
    - `Building` フェーズで時間がかかるのは正常 (sudo タイムアウトに注意)
 5. **検証**: `claude --version`、`fish --version`、`nvim --version | head -1` で主要ツールが動作するか確認

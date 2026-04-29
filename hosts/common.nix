@@ -30,7 +30,7 @@
   ];
 
   networking.hostName = hostname;
-  # Phase 20: computerName は hostname のハイフンを空白に置換して派生（"MacBook-Air" → "MacBook Air"）。
+  # Phase 20: computerName は hostname のハイフンを空白に置換して派生（例: "MacBook-Pro" → "MacBook Pro"）。
   networking.computerName = lib.replaceStrings [ "-" ] [ " " ] hostname;
 
   # ユーザ定義（home-manager がホームディレクトリ解決に参照する）

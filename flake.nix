@@ -100,11 +100,10 @@
     in
     {
       darwinConfigurations = {
-        "MacBook-Air" = mkDarwin {
-          hostname = "MacBook-Air";
+        "private" = mkDarwin {
+          hostname = "private";
           username = "taktiks2";
         };
-        # 業務用 Mac
         "work" = mkDarwin {
           hostname = "work";
           username = "takeru.osoegawa";

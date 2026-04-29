@@ -130,7 +130,7 @@
     # AI / その他
     aichat
     just
-    nh         # darwin-rebuild の Rust 再実装 (`nh darwin switch ~/dotfiles -H MacBook-Air`)。
+    nh         # darwin-rebuild の Rust 再実装 (`nh darwin switch ~/dotfiles -H private`)。
                # diff 表示・confirm prompt・nix-output-monitor 統合を提供。
                # Determinate Nix 環境でも darwin-rebuild を呼ぶ wrapper として動作する想定。
 
