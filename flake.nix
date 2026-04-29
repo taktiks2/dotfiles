@@ -46,7 +46,13 @@
         , dotfilesRoot ? "/Users/${username}/dotfiles"
         , system ? "aarch64-darwin"
         , extraModules ? [ ]
+        , homeExtraModules ? [ ]
         }:
+        let
+          # Phase 21: ユーザ単位の差分を home/users/<username>.nix で auto-import。
+          # ファイルが無ければ pathExists=false で skip され common.nix のみが適用される。
+          userFile = ./home/users + "/${username}.nix";
+        in
         nix-darwin.lib.darwinSystem {
           inherit system;
           specialArgs = { inherit inputs username hostname dotfilesRoot; };
@@ -64,7 +70,14 @@
               home-manager.extraSpecialArgs = { inherit username dotfilesRoot; };
               # Phase 13: sops-nix を home-manager に注入（secrets を ~/.config/sops-nix/secrets/ に復号配置）
               home-manager.sharedModules = [ sops-nix.homeManagerModules.sops ];
-              home-manager.users.${username} = import ./home/${username}.nix;
+              # Phase 21: home/common.nix を baseline、home/users/<username>.nix を user 差分、
+              # homeExtraModules を per-host one-off escape hatch として import。
+              home-manager.users.${username} = { lib, ... }: {
+                imports =
+                  [ ./home/common.nix ]
+                  ++ lib.optional (builtins.pathExists userFile) userFile
+                  ++ homeExtraModules;
+              };
             }
             # 予防的 unfree allowlist。Nix 化したい unfree パッケージが出たらここに追加。
             ({ lib, ... }: {
