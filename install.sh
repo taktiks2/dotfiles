@@ -8,7 +8,12 @@
 #   3. Determinate Nix のインストール + 初回 `darwin-rebuild switch`
 #      → flake で CLI / formula / cask / macOS defaults / dotfiles symlink を一括同期
 #   4. fish のデフォルトシェル化 (chsh)
-#   5. Nix 管理境界外の最小 bootstrap:
+#   5. SSH 鍵 bootstrap (host 非依存):
+#      - ~/.ssh/id_ed25519 (default、OS user に紐づく主アカウント用) を生成
+#      - my.git.extraIdentities を nix eval で読み、宣言された各 sub-identity の
+#        sshIdentityFile を生成（host 側で宣言ゼロなら no-op）
+#      - 公開鍵を表示し、GitHub への登録 URL を提示（自動登録はしない）
+#   6. Nix 管理境界外の最小 bootstrap:
 #      - fnm + 4 つの npm global (claude / ccstatusline / ccusage / diffity)
 #        ※ 頻繁に upstream が更新されるため npm 直管理を意図的に維持
 #
@@ -199,6 +204,94 @@ setup_global_npm() {
   # 旧 ln -s ロジックは撤廃済（home/common.nix の home.file.".claude" 参照）。
 }
 
+setup_ssh_keys() {
+  step "SSH 鍵 bootstrap (default + my.git.extraIdentities)"
+
+  # darwin-rebuild 直後、user profile の bin がまだ PATH に無いことがあるため
+  # jq / nix CLI が引ける位置を念のため先頭に追加（このプロセス内限定）。
+  export PATH="/etc/profiles/per-user/${USER}/bin:/run/current-system/sw/bin:$PATH"
+
+  mkdir -p "$HOME/.ssh"
+  chmod 700 "$HOME/.ssh"
+
+  # github.com を known_hosts に登録（初回 ssh の "yes/no" プロンプトを抑止、idempotent）
+  if [ ! -f "$HOME/.ssh/known_hosts" ] \
+     || ! ssh-keygen -F github.com -f "$HOME/.ssh/known_hosts" >/dev/null 2>&1; then
+    log "github.com を known_hosts に追加..."
+    ssh-keyscan -t ed25519,rsa github.com 2>/dev/null >> "$HOME/.ssh/known_hosts" \
+      || warning "ssh-keyscan 失敗 (継続)"
+  fi
+
+  # default 鍵 (~/.ssh/id_ed25519): 既存があれば再生成しない (idempotent)。
+  # ssh-keygen はパスフレーズを対話入力する。空 Enter 2 回で no passphrase。
+  local default_key="$HOME/.ssh/id_ed25519"
+  if [ -f "$default_key" ]; then
+    log "default 鍵は既存: $default_key (再生成しない)"
+  else
+    log "default 鍵を生成: $default_key"
+    ssh-keygen -t ed25519 -C "${USER}@$(hostname -s)" -f "$default_key" \
+      || warning "ssh-keygen (default) 中断 (継続)"
+  fi
+
+  # my.git.extraIdentities を Nix から読み出す（host で宣言が無ければ {}）。
+  # eval が失敗 (flake 未 build / 設定 typo 等) してもインストール全体は止めない。
+  local ids_json='{}'
+  if exists nix; then
+    local hm_path=".#darwinConfigurations.\"$HOST_NAME\".config.home-manager.users.\"$USER\".my.git.extraIdentities"
+    ids_json=$(cd "$DOTFILES_DIR" && nix eval --json --no-warn-dirty "$hm_path" 2>/dev/null) \
+      || ids_json='{}'
+  fi
+
+  if [ -z "$ids_json" ] || [ "$ids_json" = "{}" ]; then
+    log "my.git.extraIdentities は空 (sub-identity 鍵の生成は不要)"
+  elif ! exists jq; then
+    warning "jq が PATH に無いため extraIdentities のループをスキップ"
+  else
+    while IFS=$'\t' read -r id keyfile alias; do
+      [ -z "$id" ] && continue
+      if [ -z "$keyfile" ] || [ "$keyfile" = "null" ]; then
+        log "extra identity '$id': sshIdentityFile 未指定 → 鍵生成スキップ"
+        continue
+      fi
+      keyfile="${keyfile/#\~/$HOME}"   # ~ を $HOME に展開
+      if [ -f "$keyfile" ]; then
+        log "extra identity '$id' 鍵は既存: $keyfile (再生成しない)"
+      else
+        mkdir -p "$(dirname "$keyfile")"
+        log "extra identity '$id' 鍵を生成: $keyfile (alias: ${alias:-<none>})"
+        ssh-keygen -t ed25519 -C "${id}@$(hostname -s)" -f "$keyfile" \
+          || warning "ssh-keygen ($id) 中断 (継続)"
+      fi
+    done < <(echo "$ids_json" | jq -r 'to_entries[] | "\(.key)\t\(.value.sshIdentityFile // "")\t\(.value.sshHostAlias // "")"')
+  fi
+
+  # 公開鍵 + 登録 URL のサマリ表示。実値の自動登録はしない（権限/2FA を強制要求しないため）。
+  log ""
+  log "公開鍵 (GitHub に登録):"
+  shopt -s nullglob
+  for pubkey in "$HOME/.ssh"/id_ed25519*.pub; do
+    log "  $pubkey:"
+    log "    $(cat "$pubkey")"
+  done
+  shopt -u nullglob
+  log ""
+  log "次にやること:"
+  log "  1. 上記 .pub を https://github.com/settings/keys に登録"
+  log "     (extra identity の鍵は対応する GitHub アカウントでログインしてから)"
+  log "  2. 接続テスト:"
+  log "       ssh -T git@github.com    # default"
+  if [ -n "$ids_json" ] && [ "$ids_json" != "{}" ] && exists jq; then
+    while IFS=$'\t' read -r id alias; do
+      [ -z "$id" ] && continue
+      [ -z "$alias" ] || [ "$alias" = "null" ] && continue
+      log "       ssh -T git@${alias}    # extra identity '${id}'"
+    done < <(echo "$ids_json" | jq -r 'to_entries[] | "\(.key)\t\(.value.sshHostAlias // "")"')
+  fi
+  log "  3. ~/.config/git/config.local (および config.<id>) に user.name / user.email を記入"
+
+  success "SSH bootstrap 完了"
+}
+
 final_check() {
   step "完了"
   cat <<EOS
@@ -211,6 +304,7 @@ final_check() {
       direnv allow
   - secrets 移行: docs/sops-migration.md 参照
   - git user.{name,email} を埋める: ~/.config/git/config.local
+  - SSH 鍵 (~/.ssh/id_ed25519*.pub) を https://github.com/settings/keys に登録
 
 日常運用:
   \$EDITOR ~/dotfiles/home/common.nix              # 全ユーザ共通の baseline
@@ -230,6 +324,7 @@ main() {
   install_homebrew
   bootstrap_nix
   setup_fish_default_shell
+  setup_ssh_keys
   setup_global_npm
   final_check
 }
