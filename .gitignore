@@ -49,6 +49,10 @@ secret-env.fish
 .claude/plugins/install-counts-cache.json
 .claude/plugins/installed_plugins.json
 .claude/plugins/known_marketplaces.json
+.claude/session-data/
+.claude/bash-commands.log
+.claude/cost-tracker.log
+.claude/policy-limits.json
 
 # Claude Code: 個人トークンを含む可能性のある local 設定
 .claude/settings.local.json

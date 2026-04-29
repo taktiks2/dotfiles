@@ -65,11 +65,14 @@ cd ~/dotfiles
 | 何を | 編集ファイル | 適用 |
 |---|---|---|
 | Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
-| brew formula / cask | `modules/homebrew.nix` の `brews` / `casks` / `taps` | 同上 |
+| brew formula / cask（共通） | `modules/homebrew/common.nix` の `brews` / `casks` / `taps` | 同上 |
+| brew formula / cask（ホスト固有） | `modules/homebrew/local.nix`（git tracked + skip-worktree でローカル変更非追跡） | 同上 |
 | macOS 設定 | `modules/macos-defaults.nix` | 同上 |
 | Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases, plugins}` (個人 alias は `home/users/<username>.nix`) | 同上 |
 | tmux 設定 | `home/programs/tmux.nix` の `programs.tmux.*` | 同上 |
 | 月次更新 | `nix flake update` → `darwin-rebuild switch` | — |
+
+`modules/homebrew/local.nix` は upstream に空 stub が commit されており、`install.sh` が `git update-index --skip-worktree` を冪等にセットすることで各マシンのローカル編集を `git status` / `git diff` から隠蔽する（push されない）。skip-worktree が外れた場合は `./install.sh` 再実行で復元される。Nix の flake eval は git tracked ファイルしか読まないため、gitignore + 通常運用では成立しない（`--impure` で絶対パス参照する代替案より、skip-worktree のほうが pure-mode を保てて再現性が良い）。
 
 ### 直接編集してはいけないファイル
 

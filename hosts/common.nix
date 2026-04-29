@@ -6,7 +6,7 @@
 {
   imports = [
     ../modules/macos-defaults.nix
-    ../modules/homebrew.nix
+    ../modules/homebrew
   ];
 
   # Nix 自体の管理は flake 側で `determinate.darwinModules.default` + `determinateNix.enable = true`

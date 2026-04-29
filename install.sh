@@ -88,6 +88,32 @@ install_homebrew() {
   fi
 }
 
+setup_local_overrides() {
+  step "ホスト固有 brew/cask の skip-worktree 設定 (modules/homebrew/local.nix)"
+  local local_file="modules/homebrew/local.nix"
+  local full_path="$DOTFILES_DIR/$local_file"
+
+  if [ ! -f "$full_path" ]; then
+    warning "$local_file が存在しません (git pull 漏れ？) — スキップ"
+    return 0
+  fi
+
+  if ! (cd "$DOTFILES_DIR" && git ls-files --error-unmatch "$local_file" >/dev/null 2>&1); then
+    warning "$local_file が git tracked ではありません — skip-worktree 設定をスキップ"
+    return 0
+  fi
+
+  # `git ls-files -v` の先頭が 'S' なら skip-worktree 済 (idempotent check)。
+  local flag
+  flag=$(cd "$DOTFILES_DIR" && git ls-files -v "$local_file" | head -c1)
+  if [ "$flag" = "S" ]; then
+    success "skip-worktree 既に設定済 ($local_file)"
+  else
+    (cd "$DOTFILES_DIR" && git update-index --skip-worktree "$local_file")
+    success "skip-worktree 設定完了 ($local_file の編集は git status に出ません)"
+  fi
+}
+
 bootstrap_nix() {
   step "Determinate Nix + nix-darwin"
   if ! exists nix; then
@@ -119,6 +145,9 @@ bootstrap_nix() {
   # 初回は flake 同梱の nix-darwin (25.11 ピン) を `nix run` で取得して switch。
   # 2 回目以降は確立した /run/current-system 配下の darwin-rebuild を直接使う。
   # ※ 旧実装は両方走っており初回 switch が 2 重 + master / 25.11 の不一致があったため整理。
+  #
+  # ホスト固有の brew/cask は `modules/homebrew/local.nix`（git tracked + skip-worktree）
+  # で上書き可能。setup_local_overrides で skip-worktree フラグを冪等にセット済。
   if ! exists darwin-rebuild && [ ! -x "/run/current-system/sw/bin/darwin-rebuild" ]; then
     log "初回 darwin-rebuild ブートストラップ中 (flake の nix-darwin-25.11 ピンを使用、host=$HOST_NAME)..."
     sudo nix run "github:nix-darwin/nix-darwin/nix-darwin-25.11#darwin-rebuild" -- \
@@ -307,8 +336,9 @@ final_check() {
   - SSH 鍵 (~/.ssh/id_ed25519*.pub) を https://github.com/settings/keys に登録
 
 日常運用:
-  \$EDITOR ~/dotfiles/home/common.nix              # 全ユーザ共通の baseline
-  \$EDITOR ~/dotfiles/home/users/<username>.nix    # 個人差分 (任意)
+  \$EDITOR ~/dotfiles/home/common.nix                    # 全ユーザ共通の baseline
+  \$EDITOR ~/dotfiles/home/users/<username>.nix          # 個人差分 (任意)
+  \$EDITOR ~/dotfiles/modules/homebrew/local.nix         # ホスト固有 brew/cask (skip-worktree で git status 非表示)
   sudo darwin-rebuild switch --flake ~/dotfiles#${HOST_NAME}
 
 ロールバック:
@@ -322,6 +352,7 @@ main() {
   log "dotfiles bootstrap 開始: $DOTFILES_DIR (host=$HOST_NAME)"
   check_system
   install_homebrew
+  setup_local_overrides
   bootstrap_nix
   setup_fish_default_shell
   setup_ssh_keys

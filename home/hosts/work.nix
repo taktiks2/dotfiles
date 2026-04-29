@@ -49,45 +49,6 @@
     "${config.home.homeDirectory}/.rbenv/shims"
   ];
 
-  # 5. alacritty: TokyoNight + 200x60 + Hack Nerd Font
-  #    main の programs.alacritty は Shift+Return キーバインドのみ宣言。
-  #    settings は attrset として merge されるため別キー（colors/font/window/terminal）
-  #    だけを追加する（keyboard.bindings は重複させない）。
-  programs.alacritty.settings = {
-    colors = {
-      bright = {
-        black   = "#444b6a"; blue    = "#7da6ff"; cyan = "#0db9d7";
-        green   = "#b9f27c"; magenta = "#bb9af7"; red  = "#ff7a93";
-        white   = "#acb0d0"; yellow  = "#ff9e64";
-      };
-      normal = {
-        black   = "#32344a"; blue    = "#7aa2f7"; cyan = "#449dab";
-        green   = "#9ece6a"; magenta = "#ad8ee6"; red  = "#f7768e";
-        white   = "#787c99"; yellow  = "#e0af68";
-      };
-      primary = {
-        background = "#1a1b26";
-        foreground = "#a9b1d6";
-      };
-    };
-    font = {
-      size   = 10;
-      bold   = { family = "Hack Nerd Font"; style = "Bold"; };
-      italic = { family = "Hack Nerd Font"; style = "Regular Italic"; };
-      normal = { family = "Hack Nerd Font"; style = "Regular"; };
-    };
-    terminal.shell = {
-      args    = [ "--login" ];
-      program = "/opt/homebrew/bin/fish";
-    };
-    window = {
-      opacity        = 1.0;
-      option_as_alt  = "Both";
-      dimensions     = { columns = 200; lines = 60; };
-      padding        = { x = 4; y = 4; };
-    };
-  };
-
   # ghostty は main の programs.ghostty で十分（command/font/theme の差は
   # Nix 化後 /run/current-system/sw/bin/fish で動作するため override 不要）。
 

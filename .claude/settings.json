@@ -1,4 +1,12 @@
 {
+  "cleanupPeriodDays": 30,
+  "env": {
+    "EDITOR": "nvim",
+    "VISUAL": "nvim",
+    "PAGER": "less",
+    "LANG": "ja_JP.UTF-8"
+  },
+  "includeCoAuthoredBy": true,
   "permissions": {
     "allow": [
       "List(*)",
@@ -138,16 +146,6 @@
     "preferredNotifChannel": "terminal_bell"
   },
   "model": "claude-opus-4-7[1m]",
-  "effortLevel": "xhigh",
-  "env": {
-    "EDITOR": "nvim",
-    "VISUAL": "nvim",
-    "PAGER": "less",
-    "LANG": "ja_JP.UTF-8"
-  },
-  "outputStyle": "default",
-  "cleanupPeriodDays": 30,
-  "includeCoAuthoredBy": true,
   "hooks": {
     "Notification": [
       {
@@ -234,9 +232,11 @@
       }
     }
   },
+  "outputStyle": "default",
+  "effortLevel": "xhigh",
   "skipDangerousModePermissionPrompt": false,
-  "skipAutoPermissionPrompt": true,
   "theme": "dark-daltonized",
   "showTurnDuration": false,
-  "remoteControlAtStartup": false
+  "remoteControlAtStartup": false,
+  "skipAutoPermissionPrompt": true
 }
