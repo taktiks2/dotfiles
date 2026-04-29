@@ -44,6 +44,7 @@ secret-env.fish
 # Claude Code plugin runtime/cache
 .claude/plugins/cache/
 .claude/plugins/marketplaces/
+.claude/plugins/config.json
 .claude/plugins/blocklist.json
 .claude/plugins/install-counts-cache.json
 .claude/plugins/installed_plugins.json
@@ -56,6 +57,11 @@ secret-env.fish
 # Claude Code: 永続メモリは個別管理 (memory/ は別途 git で扱う場合は除外しない)
 # .claude/skills/, .claude/agents/, .claude/commands/, CLAUDE.md は追跡対象
 # (gitignore 上の明示は不要だが、誤って追加しないよう ! 例外も書かない)
+
+# atac (HTTP client) のリクエストコレクションは runtime データのため追跡しない。
+# settings/ 配下の keybinding/theme は config として tracked のまま。
+.config/atac/*.json
+.config/atac/*.log
 
 # Editor / app local backups
 *.bak
