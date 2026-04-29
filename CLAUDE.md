@@ -16,19 +16,21 @@ CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期�
 
 | レイヤ | 実体 | 場所 |
 |---|---|---|
-| Nix (home-manager) | CLI 33 本 + Fish 4.2 + plugins + tmux | `home/taktiks2.nix` |
+| Nix (home-manager) | CLI 33 本 + Fish 4.2 + plugins + tmux | `home/common.nix` (+ `home/users/<username>.nix`) |
 | Homebrew (nix-darwin で宣言) | formula 24 + cask 13 + tap 11 | `modules/homebrew.nix` |
 | macOS `system.defaults` | Dock / Finder / Trackpad / NSGlobalDomain 等 | `modules/macos-defaults.nix` |
-| `xdg.configFile` (live link) | `~/.config/<tool>` → dotfiles repo を `mkOutOfStoreSymlink` | `home/taktiks2.nix` |
-| sops-nix | AGE 暗号化 `secrets/secrets.yaml` を `~/.config/sops-nix/secrets/` に復号 | `home/taktiks2.nix` の `sops` |
+| `xdg.configFile` (live link) | `~/.config/<tool>` → dotfiles repo を `mkOutOfStoreSymlink` | `home/common.nix` |
+| sops-nix | AGE 暗号化 `secrets/secrets.yaml` を `~/.config/sops-nix/secrets/` に復号 | `home/common.nix` の `sops` |
 | direnv + nix-direnv | プロジェクト単位 devShell の自動有効化 | `templates/` |
 
 ### 主要ファイル
 
 ```
-flake.nix                       # inputs / mkDarwin factory (extraModules で per-host 差分注入可) / devShell templates
+flake.nix                       # inputs / mkDarwin factory (extraModules / homeExtraModules で per-host 差分注入可) / devShell templates
 hosts/common.nix                # 全ホスト共通: networking / system.primaryUser / programs.fish / fish 再署名 activation
-home/taktiks2.nix               # home.packages / programs.{fish,tmux,direnv} / xdg.configFile / sops / activation
+home/common.nix                 # home-manager 共通 baseline: home.packages / programs.{fish,tmux,direnv} / xdg.configFile / sops / activation
+home/users/<username>.nix       # ユーザ個人差分 (auto-import, 任意): JAVA_HOME 等の install-specific 値
+home/programs/                  # per-tool 設定: fish / git / tmux / direnv / lazygit / btop / gh-dash / terminal / cli
 modules/homebrew.nix            # taps / brews / casks (cleanup = "uninstall")
 modules/macos-defaults.nix      # system.defaults.* (ACTIVE / OPT-IN)
 templates/                      # nix flake init -t 用 devShell (default / laravel / node / ruby / rust / go / claude-project)
@@ -62,16 +64,16 @@ cd ~/dotfiles
 
 | 何を | 編集ファイル | 適用 |
 |---|---|---|
-| Nix CLI | `home/taktiks2.nix` の `home.packages` | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
+| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
 | brew formula / cask | `modules/homebrew.nix` の `brews` / `casks` / `taps` | 同上 |
 | macOS 設定 | `modules/macos-defaults.nix` | 同上 |
-| Fish 設定 | `home/taktiks2.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases, plugins}` | 同上 |
-| tmux 設定 | `home/taktiks2.nix` の `programs.tmux.*` | 同上 |
+| Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases, plugins}` (個人 alias は `home/users/<username>.nix`) | 同上 |
+| tmux 設定 | `home/programs/tmux.nix` の `programs.tmux.*` | 同上 |
 | 月次更新 | `nix flake update` → `darwin-rebuild switch` | — |
 
 ### 直接編集してはいけないファイル
 
-- `~/.config/fish/config.fish` — home-manager 生成 symlink。`programs.fish` セクションを編集
+- `~/.config/fish/config.fish` — home-manager 生成 symlink。`home/programs/fish.nix` の `programs.fish` セクションを編集
 - `~/.config/tmux/tmux.conf` — `programs.tmux` から生成される
 - `/etc/profiles/per-user/taktiks2/bin/*` — Nix store の symlink
 
@@ -108,7 +110,7 @@ direnv allow                            # 以後 cd で自動有効化
 
 ## Common Aliases
 
-`home/taktiks2.nix` の `programs.fish.shellAliases`:
+`home/programs/fish.nix` の `programs.fish.shellAliases`:
 
 ```fish
 vim, vi, v   → nvim

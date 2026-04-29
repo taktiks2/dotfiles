@@ -2,7 +2,7 @@
 
 # Phase 17: gh-dash を programs.gh-dash へ移行。旧 .config/gh-dash/config.yml の YAML を attrset 化。
 # keybindings.prs から ~/.config/gh-dash/bin/octo-review.sh を呼ぶため、
-# bin/ は home/taktiks2.nix の xdg.configFile で個別 live link 維持。
+# bin/ は home/common.nix の xdg.configFile で個別 live link 維持。
 # Phase 20: GitHub org / dev clone path をユーザ引数から派生（multi-host 対応）。
 
 {

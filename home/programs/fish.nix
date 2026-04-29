@@ -2,7 +2,7 @@
 
 # Phase 3: Fish 本格宣言化。Phase 9 で PATH / 環境変数を home.sessionPath / sessionVariables へ移譲。
 # Phase 13 で sops 復号 secrets の interactiveShellInit 取り込みを追加。
-# Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し。
+# Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し（Phase 21 で taktiks2.nix → common.nix へ rename）。
 
 {
   programs.fish = {
@@ -68,7 +68,7 @@
     # 対話シェル限定の初期化
     interactiveShellInit = ''
       # Phase 13: sops-nix で復号された secrets を環境変数に展開。
-      # `home/taktiks2.nix` の sops.secrets 配下に登録した KEY を順次読み込む。
+      # `home/common.nix` の sops.secrets 配下に登録した KEY を順次読み込む。
       # SAFETY:
       #   - `set -gx` は変数名を validate しないため、`sops.secrets.PATH = {}` のような
       #     設定ミスで対話シェル毎回 $PATH が破壊されうる。以下で多段防御:

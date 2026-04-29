@@ -115,7 +115,10 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   └── common.nix                # nix-darwin: networking / shells / system.primaryUser (全ホスト共通)
 │                                  # ホスト固有差分は flake.nix の mkDarwin extraModules 引数で注入
 ├── home/
-│   └── taktiks2.nix              # home-manager: Nix CLI / programs.fish / direnv / activation
+│   ├── common.nix                # home-manager 共通 baseline (全ユーザ): Nix CLI / programs.* / activation
+│   ├── users/                    # ユーザ単位の個人差分 (auto-import される)
+│   │   └── taktiks2.nix          # taktiks2 の差分 (JAVA_HOME 等)
+│   └── programs/                 # per-tool 設定 (fish / git / tmux / direnv / lazygit / ...)
 ├── modules/
 │   ├── homebrew.nix              # tap / formula / cask 宣言
 │   └── macos-defaults.nix        # system.defaults.* (ACTIVE / OPT-IN)
@@ -163,14 +166,14 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 
 | 種類 | 編集ファイル | 適用 |
 |---|---|---|
-| Nix CLI | `home/taktiks2.nix` の `home.packages` | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
+| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air` |
 | brew formula / cask | `modules/homebrew.nix` の `brews` / `casks` | 同上 |
 | macOS 設定 | `modules/macos-defaults.nix` | 同上 |
-| Fish 設定 | `home/taktiks2.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases}` | 同上 |
+| Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases}` (個人 alias は `home/users/<username>.nix`) | 同上 |
 
 ### Fish 設定の編集
 
-`~/.config/fish/config.fish` は **Nix 生成 symlink** のため直接編集してはいけません。`home/taktiks2.nix` の `programs.fish` セクションを編集してください。
+`~/.config/fish/config.fish` は **Nix 生成 symlink** のため直接編集してはいけません。共通設定は `home/programs/fish.nix`、個人 alias / 関数は `home/users/<username>.nix` の `programs.fish.*` セクションを編集してください（後者は HM が set/list を merge するため追加方向は `mkForce` 不要）。
 
 ### 秘匿情報の管理（sops-nix 推奨）
 
@@ -185,7 +188,7 @@ nix run nixpkgs#age -- -y "$HOME/Library/Application Support/sops/age/keys.txt"
 # secrets を編集
 nix run nixpkgs#sops -- secrets/secrets.yaml
 
-# home/taktiks2.nix の sops.secrets に各 KEY を列挙して switch
+# home/common.nix の sops.secrets に各 KEY を列挙して switch
 ```
 
 詳細手順は `docs/sops-migration.md`。
@@ -235,10 +238,11 @@ dotfiles 全体は **「git に宣言されていなければ、存在しない�
 
 | やりたいこと | 編集する場所 | 代表例 |
 |---|---|---|
-| CLI を入れる（Nix 化が第一選択） | `home/taktiks2.nix` の `home.packages` | ripgrep, fd, jq, neovim |
+| CLI を入れる（Nix 化が第一選択） | `home/common.nix` の `home.packages` | ripgrep, fd, jq, neovim |
 | CLI を入れる（重量 / 商用 / cache 弱） | `modules/homebrew.nix` の `brews` | mysql, docker, azure-cli |
 | GUI を入れる | `modules/homebrew.nix` の `casks` | ghostty, warp, vscode |
-| ツールが `programs.<tool>` を持つ | `home/taktiks2.nix` の `programs.<tool>` | fish, tmux, direnv |
+| ツールが `programs.<tool>` を持つ | `home/programs/<tool>.nix` の `programs.<tool>` | fish, tmux, direnv |
+| 個人ユーザだけの差分（JAVA_HOME / 個人 alias / 個人 packages） | `home/users/<username>.nix` (auto-import) | JAVA_HOME, 業務用 awscli2 |
 | 任意の dotfile を `~/.config/<name>` に置きたい | `.config/<name>/` を repo に置く + `xdg.configFile.<name> = link "<name>"` | nvim, btop, ghostty |
 | `~/.config` 外のパスに置きたい | `home.file."<path>".source` | `Library/Application Support/lazygit/` |
 | 環境変数 | `home.sessionVariables` | `JAVA_HOME`, `LANG` |
@@ -261,7 +265,7 @@ $EDITOR ~/dotfiles/.config/zellij/config.kdl
 ```
 
 ```nix
-# 2. home/taktiks2.nix:140 付近の xdg.configFile に 1 行追加
+# 2. home/common.nix の xdg.configFile に 1 行追加
 xdg.configFile = let
   configRoot = "${dotfilesRoot}/.config";
   link = name: { source = config.lib.file.mkOutOfStoreSymlink "${configRoot}/${name}"; };
@@ -444,34 +448,68 @@ strategy:
 ./install.sh MacBook-Pro
 ```
 
-### 別 username の Mac を追加する
+### 別 username の Mac を追加する（会社配布 PC など）
 
 ```bash
-# 1. home/<username>.nix を新規作成（既存をコピー）
-cp home/taktiks2.nix home/foo.nix
+# 1. flake.nix の darwinConfigurations に新 username のブロックを 1 行追加
+#    "Company-MBP" = mkDarwin { hostname = "Company-MBP"; username = "firstname.lastname"; };
 
-# 2. flake.nix に新 username でブロック追加
-#    "MacBook-Foo" = mkDarwin { hostname = "MacBook-Foo"; username = "foo"; };
+# 2. 個人差分が必要なら home/users/<username>.nix を新規作成（auto-import される）
+$EDITOR home/users/firstname.lastname.nix
+```
 
-# 3. dotfilesRoot を ~/dotfiles 以外に置くなら引数で上書き
-#    "MacBook-Foo" = mkDarwin {
-#      hostname = "MacBook-Foo";
-#      username = "foo";
-#      dotfilesRoot = "/Users/foo/code/dotfiles";
-#    };
+`home/common.nix` の baseline はそのまま使い回し、JAVA_HOME / proxy / 業務固有 packages 等の差分だけを user file に書く運用です。`home/users/<username>.nix` は **存在すれば自動 import**、無ければ skip されます。
+
+例: 会社配布 PC で JDK / proxy / awscli を上書きする `home/users/firstname.lastname.nix`:
+
+```nix
+{ lib, pkgs, ... }:
+{
+  home.sessionVariables = {
+    JAVA_HOME = "/Library/Java/JavaVirtualMachines/temurin-21.jdk/Contents/Home";
+    HTTPS_PROXY = "http://proxy.corp:8080";
+  };
+
+  home.packages = with pkgs; [ awscli2 ];
+
+  programs.git.includes = [
+    { path = "~/.config/git/config.work";
+      condition = "gitdir:~/work/"; }
+  ];
+}
+```
+
+`dotfilesRoot` を `~/dotfiles` 以外に置くなら引数で上書き:
+
+```nix
+"Company-MBP" = mkDarwin {
+  hostname = "Company-MBP";
+  username = "firstname.lastname";
+  dotfilesRoot = "/Users/firstname.lastname/code/dotfiles";
+};
 ```
 
 ### ホスト固有モジュールを差し込みたい
 
-`flake.nix` の `mkDarwin` は `extraModules ? []` 引数を持ちます。例えば 1 ホストだけに開発用 systemd サービスや brew 追加 cask を入れる場合:
+`flake.nix` の `mkDarwin` は 2 種類の引数を持ちます:
+
+- `extraModules ? []` — **darwin-level** (homebrew / system.defaults / networking 等)
+- `homeExtraModules ? []` — **home-manager-level** (home.packages / programs.* / sessionVariables 等)。ファイルを作らず inline で済ませたい場合用。基本は `home/users/<username>.nix` を使う
 
 ```nix
 "MacBook-Pro" = mkDarwin {
   hostname = "MacBook-Pro";
   username = "taktiks2";
   extraModules = [
+    # darwin-level: ホスト限定 cask
     ({ ... }: {
       homebrew.casks = [ "logi-options-plus" ];
+    })
+  ];
+  homeExtraModules = [
+    # home-manager-level: ホスト限定 alias など (file に切り出すほどでもない時)
+    ({ ... }: {
+      programs.fish.shellAliases.dock = "open -a Docker";
     })
   ];
 };
@@ -479,7 +517,7 @@ cp home/taktiks2.nix home/foo.nix
 
 ## 🔧 主要エイリアス
 
-`programs.fish.shellAliases` で宣言（`home/taktiks2.nix` 参照）:
+`programs.fish.shellAliases` で宣言（`home/programs/fish.nix` 参照）:
 
 ```fish
 vim, vi, v   → nvim

@@ -2,7 +2,7 @@
 
 # Phase 8: tmux 完全宣言化。TPM 撤廃、plugins は Nix 経由で配布。
 # tmux.conf は HM が programs.tmux 設定から生成するため、~/dotfiles/.config/tmux/ 側は不要。
-# Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し。username は specialArgs から受け取る。
+# Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し（Phase 21 で taktiks2.nix → common.nix へ rename）。username は specialArgs から受け取る。
 
 {
   programs.tmux = {

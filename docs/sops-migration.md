@@ -57,7 +57,7 @@ ANTHROPIC_API_KEY: sk-ant-xxxxxxxxxxxxx
 
 保存して閉じると自動暗号化される (中身を `cat` しても暗号文だけが見える)。
 
-### 4. `home/taktiks2.nix` の `sops.secrets` にキーを登録
+### 4. `home/common.nix` の `sops.secrets` にキーを登録
 
 ```nix
 sops = lib.mkIf (builtins.pathExists ../secrets/secrets.yaml) {
@@ -98,7 +98,7 @@ rm ~/.config/fish/secret-env.fish
 
 ### 7. `home.activation.bootstrapSideEffects` の secret-env.fish 生成ブロックを削除
 
-`home/taktiks2.nix` の以下を削除:
+`home/common.nix` の以下を削除:
 
 ```nix
 SECRET_ENV="$HOME/.config/fish/secret-env.fish"
@@ -114,7 +114,7 @@ fi
 ## トラブルシューティング
 
 - **`sops: failed to load AGE keys`** → `~/Library/Application Support/sops/age/keys.txt` のパーミッションが 600 か確認
-- **`~/.config/sops-nix/secrets/` が空** → `home/taktiks2.nix` の `sops.secrets` にキーを登録し忘れ
+- **`~/.config/sops-nix/secrets/` が空** → `home/common.nix` の `sops.secrets` にキーを登録し忘れ
 - **`Permission denied` で switch 失敗** → `keys.txt` が user 権限で読めるか確認 (root 所有になっていないか)
 - **別 Mac で復号できない** → `keys.txt` をその Mac にも配置する必要がある
 - **macOS Sequoia + HM 25.11 で activation が `checkAppManagementPermission` クラッシュする**
@@ -128,6 +128,6 @@ fi
   上げ忘れたまま固定される運用が正しい（誤って引き上げた場合、`copyApps` のデフォルト
   変更等で activation 中に `/Applications` 配下を勝手に書換えに行く挙動を生む）。
 - **`.sops.yaml` の AGE_PUBLIC_KEY_PLACEHOLDER のまま secrets/secrets.yaml を作成した**
-  → `home/taktiks2.nix` 側の `lib.mkIf` ガードが両条件（pathExists + placeholder 不在）を
+  → `home/common.nix` 側の `lib.mkIf` ガードが両条件（pathExists + placeholder 不在）を
   チェックしているため build は通る。`.sops.yaml` を実際の `age1...` 公開鍵で置換してから
   再 switch すると sops モジュールが有効化される。

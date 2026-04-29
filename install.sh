@@ -183,7 +183,7 @@ setup_global_npm() {
   done
 
   # ~/.claude → dotfiles/.claude symlink は home-manager (home.file.".claude") で管理されるため
-  # 旧 ln -s ロジックは撤廃済（home/taktiks2.nix:home.file.".claude" 参照）。
+  # 旧 ln -s ロジックは撤廃済（home/common.nix の home.file.".claude" 参照）。
 }
 
 final_check() {
@@ -200,7 +200,8 @@ final_check() {
   - git user.{name,email} を埋める: ~/.config/git/config.local
 
 日常運用:
-  \$EDITOR ~/dotfiles/home/<username>.nix
+  \$EDITOR ~/dotfiles/home/common.nix              # 全ユーザ共通の baseline
+  \$EDITOR ~/dotfiles/home/users/<username>.nix    # 個人差分 (任意)
   sudo darwin-rebuild switch --flake ~/dotfiles#${HOST_NAME}
 
 ロールバック:

@@ -12,7 +12,7 @@
 
 ---
 
-## 第一陣 MOVED（Step 2c で home/taktiks2.nix へ移行・31 本）
+## 第一陣 MOVED（Step 2c で home/common.nix へ移行・31 本）
 
 | Formula | Nix 名 | 備考 |
 |---|---|---|
@@ -142,5 +142,5 @@ visual-studio-code, warp, zulu@17
 ## 運用メモ
 
 - 新規 formula を追加するとき: `modules/homebrew.nix` の `brews = [ ... ]` に追記 → `darwin-rebuild switch`
-- KEEP セットから外したくなったとき: home/taktiks2.nix に追加 → switch（cleanup=uninstall が自動的に brew 側を削除）
+- KEEP セットから外したくなったとき: home/common.nix に追加 → switch（cleanup=uninstall が自動的に brew 側を削除）
 - `brew install` を素手で叩いた一時パッケージは次回 switch で削除される（意図的設計）
