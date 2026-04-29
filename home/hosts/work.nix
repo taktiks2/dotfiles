@@ -74,4 +74,14 @@
     sshHostAlias    = "github-taktiks2";
     sshIdentityFile = "${config.home.homeDirectory}/.ssh/id_ed25519_taktiks2";
   };
+
+  # このホストでだけ ignore したいパス。
+  # home/programs/git.nix の programs.git.ignores と list merge される。
+  programs.git.ignores = [
+    ".claude/worktrees/"
+    ".github/hooks/"
+    "docs/.obsidian/"
+    "sqls/"
+    ".workmux.yaml"
+  ];
 }
