@@ -71,15 +71,16 @@
     "${config.home.homeDirectory}/.rbenv/shims"
   ];
 
+  # Phase 21: install-specific な hard-coded path (JAVA_HOME など) は home/users/<username>.nix へ移譲。
+  # LANG はロケール変更があり得るため lib.mkDefault でラップし、user 側で `mkForce` 不要で上書き可能にする。
   home.sessionVariables = {
     ANDROID_SDK_ROOT           = "${config.home.homeDirectory}/Library/Android/sdk";
-    JAVA_HOME                  = "/Library/Java/JavaVirtualMachines/zulu-17.jdk/Contents/Home";
     ATAC_MAIN_DIR              = "${config.home.homeDirectory}/.config/atac";
     ATAC_THEME                 = "${config.home.homeDirectory}/.config/atac/settings/theme.toml";
     ATAC_KEY_BINDINGS          = "${config.home.homeDirectory}/.config/atac/settings/key.toml";
     GH_PAGER                   = "delta";
     VIRTUAL_ENV_DISABLE_PROMPT = "1";
-    LANG                       = "en_US.UTF-8";
+    LANG                       = lib.mkDefault "en_US.UTF-8";
     DYLD_LIBRARY_PATH          = "/opt/homebrew/opt/mysql@8.0/lib";
     RBENV_SHELL                = "fish";
   };
