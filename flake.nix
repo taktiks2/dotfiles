@@ -104,11 +104,11 @@
           hostname = "MacBook-Air";
           username = "taktiks2";
         };
-        # 追加例 (新 Mac 来たら 1 ブロック増やすだけ):
-        # "MacBook-Pro" = mkDarwin {
-        #   hostname = "MacBook-Pro";
-        #   username = "taktiks2";
-        # };
+        # 業務用 Mac
+        "work" = mkDarwin {
+          hostname = "work";
+          username = "takeru.osoegawa";
+        };
       };
 
       # `nix flake init -t ~/dotfiles#<name>` でプロジェクトに devShell を投入できる。
