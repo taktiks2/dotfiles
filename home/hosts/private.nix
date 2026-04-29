@@ -1,4 +1,4 @@
-{ ... }:
+{ pkgs, ... }:
 
 # Phase 21: taktiks2 個人の install-specific 差分。
 # home/common.nix の baseline を override する形で hard-coded path 等を上書きする。
