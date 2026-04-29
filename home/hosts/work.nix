@@ -90,4 +90,20 @@
 
   # ghostty は main の programs.ghostty で十分（command/font/theme の差は
   # Nix 化後 /run/current-system/sw/bin/fish で動作するため override 不要）。
+
+  # Phase 22: 社用 PC ではデフォルト identity = 社用アカウント (~/.config/git/config.local)。
+  # taktiks2 所有 repo (dotfiles 等) は github-taktiks2 host alias 経由で taktiks2 identity に切替える。
+  # 連携手順:
+  #   1. darwin-rebuild switch  → ~/.ssh/config に Host github-taktiks2 が生成
+  #                              + ~/.config/git/config に includeIf 行 + config.taktiks2 雛形が生成
+  #   2. ./install.sh           → ~/.ssh/id_ed25519_taktiks2 を自動生成 (setup_ssh_keys)
+  #   3. 公開鍵を taktiks2 GitHub アカに登録
+  #   4. ~/.config/git/config.taktiks2 に taktiks2 identity (name/email) を手書き
+  #   5. 対象 repo の remote URL を git@github-taktiks2:taktiks2/<repo>.git に切替
+  #      (例: cd ~/dotfiles && git remote set-url origin git@github-taktiks2:taktiks2/dotfiles.git)
+  my.git.extraIdentities.taktiks2 = {
+    condition       = "hasconfig:remote.*.url:git@github-taktiks2:taktiks2/**";
+    sshHostAlias    = "github-taktiks2";
+    sshIdentityFile = "${config.home.homeDirectory}/.ssh/id_ed25519_taktiks2";
+  };
 }
