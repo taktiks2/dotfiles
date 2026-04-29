@@ -5,7 +5,12 @@
 # 中身は最小スタート (YAGNI)。今後の追加候補:
 #   - 個人用追加 packages (home.packages = with pkgs; [ ... ])
 #   - 個人 alias (programs.fish.shellAliases.foo = "bar")
-#   - 個人 git identity (programs.git.includes に gitdir 条件)
+#   - 追加の git identity（home/programs/git.nix で定義された option を使う）:
+#       my.git.extraIdentities.<id> = {
+#         condition       = "hasconfig:remote.*.url:git@github-<id>:<owner>/**";
+#         sshHostAlias    = "github-<id>";
+#         sshIdentityFile = "${config.home.homeDirectory}/.ssh/id_ed25519_<id>";
+#       };
 
 {
   # Zulu JDK 17 を使う install 環境への hard-coded path。
