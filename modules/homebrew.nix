@@ -15,7 +15,9 @@
 #   - bandwhich/eza/fnm/gum/httpie/nushell/p7zip/poppler/pv/terminal-notifier/vhs/
 #     visidata/zoxide/bun は home/common.nix（bun）または home/users/takeru.osoegawa.nix
 #     （その他）で Nix 化。
-#   - acli/lazyjira/wtp/awscli/jira-cli/oath-toolkit/csv 系/lnav/miller 等は brew 維持。
+#   - acli/lazyjira/awscli/jira-cli/oath-toolkit/csv 系/lnav/miller 等は brew 維持。
+#   - wtp は git を transitive 依存として持ち込み /opt/homebrew/bin/git が
+#     PATH 順で Nix git を覆い隠していたため撤去（satococoa/tap も同時 drop）。
 
 {
   homebrew = {
@@ -31,13 +33,13 @@
       "arto-app/tap"            # cask: arto
       "atlassian-labs/acli"     # acli
       "raine/workmux"           # workmux
-      "satococoa/tap"           # wtp
       "textfuel/tap"            # lazyjira
       # oven-sh/bun は bun の Nix 化により不要（cleanup = "uninstall" で除去される）
+      # satococoa/tap は wtp 撤去により未使用
       # local/tap, lucagrulla/tap は orphan のため宣言しない
     ];
 
-    # ---------- brew formula（20 本） ----------
+    # ---------- brew formula（19 本） ----------
     brews = [
       # 言語ランタイム / DB（main と共通理由）
       "composer"
@@ -51,7 +53,6 @@
       # 業務系（brew tap 専属で nixpkgs 不在 / 不安定）
       "atlassian-labs/acli/acli"
       "textfuel/tap/lazyjira"
-      "satococoa/tap/wtp"
       "awscli"
       "jira-cli"
       "oath-toolkit"
