@@ -2,109 +2,102 @@
 
 # Homebrew の宣言化（nix-darwin 標準 `homebrew` モジュール経由）。
 #
-# 戦略:
-#   - `nix-homebrew` は使わず、既存の Homebrew インストール (/opt/homebrew) はそのまま残す。
-#   - nix-darwin が `brew bundle` 相当の冪等な同期を実行する。
-#   - `onActivation.cleanup = "uninstall"`: 未宣言パッケージは switch 時に
-#     自動 uninstall + autoremove。tap/formula/cask が完全に git 管理下にある状態。
+# 本ファイルは feat/work ブランチ専用に書き換えられている。
+# main の同ファイルは個人機（taktiks2 / MacBook-Air）向け。
 #
-# 暗黙依存に関する注意 (cleanup = "uninstall" の挙動):
-#   `brew bundle cleanup` は Brewfile に列挙されていない formula のうち
-#   「Brewfile 内 formula の `depends_on` 依存ではない」もののみを uninstall する。
-#   そのため `composer` を列挙すれば `php` は依存として自動保持される。
-#   ただし upstream で formula の依存宣言が変わると意図せず削除される可能性があるため、
-#   重要な runtime 依存は列挙したいところ:
-#     - composer  → php (homebrew-core/Formula/c/composer.rb の depends_on "php")
-#     - rbenv     → ruby-build (cask 経由でなく brew tap)
-#     - nodebrew  → 単体動作 (依存なし)
-#   `MAS apps` は cleanup の対象外（Homebrew Bundle 制限）。
+# 戦略:
+#   - `nix-homebrew` は使わず、既存の Homebrew インストール (/opt/homebrew) はそのまま。
+#   - `onActivation.cleanup = "uninstall"`: 未宣言は switch 時に uninstall + autoremove。
+#
+# 本マシン固有の判断:
+#   - bash/bat/broot/btop/fish/fzf/gh/git-delta/jq/just/lazydocker/lazygit/lsd/neovim/
+#     ripgrep/tmux/uv/wget は home/common.nix の Nix 経由で配布されるため brew から除外。
+#   - bandwhich/eza/fnm/gum/httpie/nushell/p7zip/poppler/pv/terminal-notifier/vhs/
+#     visidata/zoxide/bun は home/common.nix（bun）または home/users/takeru.osoegawa.nix
+#     （その他）で Nix 化。
+#   - acli/lazyjira/wtp/awscli/jira-cli/oath-toolkit/csv 系/lnav/miller 等は brew 維持。
+
 {
   homebrew = {
     enable = true;
 
     onActivation = {
-      autoUpdate = false; # 切替のたびに brew update を走らせない
-      upgrade = false;    # 既存パッケージの自動アップグレードもしない
-      cleanup = "uninstall";
+      autoUpdate = false;
+      upgrade    = false;
+      cleanup    = "uninstall";
     };
 
-    # 第三者 tap。homebrew/cask 標準配下のものは tap 不要。
-    # Brew 5.x で `brew services` はコア化されたため `homebrew/services` は不要（削除済）。
-    # `osx-cross/arm` / `oven-sh/bun` は宣言された formula が無いため削除。
     taps = [
-      # cask 用
-      "arto-app/tap"      # arto
-
-      # formula 用
-      "carlocab/personal" # unrar
-      "heroku/brew"       # heroku
-      # "homebrew/services" は 2024 に Homebrew core 統合で tap 削除済み。`brew services` は core 内蔵。
-      "julien-cpsn/atac"  # atac
-      "ngrok/ngrok"       # ngrok (cask)
-      "osx-cross/avr"     # AVR クロスコンパイル + avr-gcc
-      "qmk/qmk"           # qmk
-      "raine/workmux"     # workmux
-      "supabase/tap"      # supabase
+      "arto-app/tap"            # cask: arto
+      "atlassian-labs/acli"     # acli
+      "raine/workmux"           # workmux
+      "satococoa/tap"           # wtp
+      "textfuel/tap"            # lazyjira
+      # oven-sh/bun は bun の Nix 化により不要（cleanup = "uninstall" で除去される）
+      # local/tap, lucagrulla/tap は orphan のため宣言しない
     ];
 
-    # ---------- brew formula（24 本） ----------
-    # docs/brew-triage.md の KEEP + LATER に該当。Nix 化が困難または非推奨なもの。
-    # （Step 7 follow-up で tbls/joshuto を Nix 移行、本フォローアップで fisher を削除）
+    # ---------- brew formula（20 本） ----------
     brews = [
-      # 言語ランタイム / バージョンマネージャ
+      # 言語ランタイム / DB（main と共通理由）
       "composer"
-      "luarocks"
-      "nodebrew"
-      "python@3.10"
+      "mysql@8.0"
       "rbenv"
 
-      # データベース / サービス
-      "mysql"
-      "mysql@8.0"
-      "postgresql@14"
-
-      # 重量ビルド / Nix キャッシュが弱い
-      "bundletool"
-      "clisp"
-      "openapi-generator"
-      "qemu"
-
-      # ベンダー / 商用 CLI
-      "azure-cli"
-      "docker"
-      "fastlane"
+      # ベンダー / 商用 CLI（main と共通理由）
       "gemini-cli"
-      "supabase"
-
-      # 第三者 tap formula（tap/repo/name 形式）
-      "carlocab/personal/unrar"
-      "heroku/brew/heroku"
-      "julien-cpsn/atac/atac"
-      "osx-cross/avr/avr-gcc@9"
-      "qmk/qmk/qmk"
       "raine/workmux/workmux"
 
-      # LATER 残: Nix 化が困難または嗜好問題で残置
-      "rogue" # 古典ローグライクゲーム、Nix 版なし
+      # 業務系（brew tap 専属で nixpkgs 不在 / 不安定）
+      "atlassian-labs/acli/acli"
+      "textfuel/tap/lazyjira"
+      "satococoa/tap/wtp"
+      "awscli"
+      "jira-cli"
+      "oath-toolkit"
+
+      # データ探索系（CLI 群、brew 維持）
+      "csview"
+      "csvkit"
+      "csvtk"
+      "lnav"
+      "miller"
+      "qsv"
+      "rich-cli"
+      "tidy-viewer"
+
+      # 直 install 系
+      "claude-squad"
     ];
 
-    # ---------- cask（13 本） ----------
+    # ---------- cask（23 本） ----------
     casks = [
+      # main と共通
       "arto"
       "bruno"
       "copilot-cli"
-      "devtoys"
       "font-hack-nerd-font"
       "font-hackgen-nerd"
       "ghostty"
-      "godot"
-      "ngrok"
-      "utm"
       "visual-studio-code"
-      "warp"
-      "zulu@17"
-    ];
 
-    # masApps（Mac App Store）は現状未使用。
+      # work PC 固有
+      "alacritty"             # programs.alacritty.package = null のため cask 必須
+      "aws-vault-binary"
+      "claude-devtools"
+      "cmux"
+      "cursor"
+      "dbeaver-community"
+      "docker-desktop"
+      "firefox"
+      "font-hackgen"
+      "mysql-shell"
+      "mysqlworkbench"
+      "obsidian"
+      "orbstack"
+      "postman"
+      "raycast"
+      "session-manager-plugin"
+    ];
   };
 }
