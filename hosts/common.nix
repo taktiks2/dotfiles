@@ -1,9 +1,12 @@
 { pkgs, lib, username, hostname, ... }:
 
+# Phase 20: ホスト固有値ゼロのため hosts/<name>/default.nix を統合し本ファイル 1 本に集約。
+# ホスト固有差分が必要になったら mkDarwin の `extraModules` 引数で per-host モジュールを注入する。
+
 {
   imports = [
-    ../../modules/macos-defaults.nix
-    ../../modules/homebrew.nix
+    ../modules/macos-defaults.nix
+    ../modules/homebrew.nix
   ];
 
   # Nix 自体の管理は flake 側で `determinate.darwinModules.default` + `determinateNix.enable = true`

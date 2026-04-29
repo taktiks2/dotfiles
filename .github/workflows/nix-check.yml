@@ -8,8 +8,14 @@ on:
 
 jobs:
   flake-check:
-    name: nix flake check
+    name: nix-check (${{ matrix.host }})
     runs-on: macos-14   # Apple Silicon (M1)
+    # Phase 20: 新ホスト追加時は matrix.host に 1 行追加するだけで build 検証される。
+    # fail-fast=false にしておき、1 ホストの失敗で他ホストの検証を巻き添えにしない。
+    strategy:
+      fail-fast: false
+      matrix:
+        host: [MacBook-Air]
     steps:
       - uses: actions/checkout@v4
 
@@ -42,5 +48,5 @@ jobs:
       #   - run: nix run nixpkgs#statix  -- check .  || true
       #   - run: nix run nixpkgs#deadnix -- .         || true
 
-      - name: Build darwin system
-        run: nix build .#darwinConfigurations.MacBook-Air.system --no-link --print-build-logs
+      - name: Build darwin system (${{ matrix.host }})
+        run: nix build ".#darwinConfigurations.\"${{ matrix.host }}\".system" --no-link --print-build-logs

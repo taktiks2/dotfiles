@@ -112,8 +112,8 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 ├── flake.nix                     # Nix flake エントリ (inputs / darwinConfigurations / templates)
 ├── flake.lock                    # 依存バージョンロック
 ├── hosts/
-│   └── MacBook-Air/
-│       └── default.nix           # nix-darwin: networking / shells / system.primaryUser
+│   └── common.nix                # nix-darwin: networking / shells / system.primaryUser (全ホスト共通)
+│                                  # ホスト固有差分は flake.nix の mkDarwin extraModules 引数で注入
 ├── home/
 │   └── taktiks2.nix              # home-manager: Nix CLI / programs.fish / direnv / activation
 ├── modules/
@@ -246,7 +246,7 @@ dotfiles 全体は **「git に宣言されていなければ、存在しない�
 | fish エイリアス / 関数 | `programs.fish.shellAliases` / `.functions` | `lg = "lazygit"` |
 | macOS の defaults | `modules/macos-defaults.nix` | Dock 自動隠し |
 | 新しい言語の devShell | `templates/<name>/` + `flake.nix` の `templates` | `templates/python/` |
-| 新ホスト | `flake.nix` の `darwinConfigurations` に `mkDarwin {...}` を 1 行 + `hosts/<name>/default.nix` | MacBook-Pro |
+| 新ホスト | `flake.nix` の `darwinConfigurations` に `mkDarwin { hostname; username; }` を 1 行 + CI matrix.host に追加 | MacBook-Pro |
 
 ### 2. 新しい設定ファイル（`~/.config/<tool>`）を足す
 
@@ -401,11 +401,81 @@ Determinate Nix は `determinateNix.customSettings` で自動 GC スケジュー
 |---|---|---|
 | `~/.config/<name>` が `.hm-backup` に退避された | 既存実体と新規 symlink の競合 | 必要な内容を repo に取り込み、`*.hm-backup` を削除 |
 | `darwin-rebuild switch` が TCC エラーで落ちる | macOS Sequoia + HM の既知 issue ([nix-community/home-manager#8336](https://github.com/nix-community/home-manager/issues/8336)) | Settings → Privacy & Security → App Management でターミナルを許可 |
-| fish が `Killed: 9` で起動しない | fish 4.2 の codesign 問題 | `hosts/MacBook-Air/default.nix` の `postActivation` で自動 ad-hoc 再署名済（手動対応不要） |
+| fish が `Killed: 9` で起動しない | fish 4.2 の codesign 問題 | `hosts/common.nix` の `postActivation` で自動 ad-hoc 再署名済（手動対応不要） |
 | `nix flake check` で direnv が失敗 | macOS sandbox 内で fish/zsh test SIGKILL | `flake.nix` の `doCheck = false` overlay で回避済 |
 | switch 後に新しい CLI が PATH に出ない | 既存シェルが古い PATH を保持 | `exec fish` か新規ターミナルを開く |
 | `error: experimental Nix feature 'flakes' is disabled` | Determinate 以外の Nix が混入 | Determinate Nix で再インストール（`install.sh` 参照） |
 | `homebrew` モジュールが意図せず uninstall した | `cleanup = "uninstall"` で `brews` から外したものを刈り取った | 戻したいなら `modules/homebrew.nix` に再宣言、または依存関係に組み込む |
+
+## 🖥️ 新しい Mac に導入する
+
+### 同 username の Mac（一番楽なケース）
+
+```bash
+# 1. リポジトリをクローン
+git clone git@github.com:taktiks2/dotfiles.git ~/dotfiles
+cd ~/dotfiles
+
+# 2. ホスト名を引数で明示して実行（出荷時 LocalHostName は flake と一致しないため）
+./install.sh MacBook-Air
+```
+
+`hosts/common.nix` がホスト非依存なので、同 hostname / 同 username の Mac はこれだけで完結します。
+
+### 別 hostname の Mac を追加する
+
+```nix
+# 1. flake.nix の darwinConfigurations にブロック追加
+darwinConfigurations = {
+  "MacBook-Air" = mkDarwin { hostname = "MacBook-Air"; username = "taktiks2"; };
+  "MacBook-Pro" = mkDarwin { hostname = "MacBook-Pro"; username = "taktiks2"; };  # ← 追加
+};
+```
+
+```yaml
+# 2. .github/workflows/nix-check.yml の matrix.host にも追加（CI build 検証）
+strategy:
+  matrix:
+    host: [MacBook-Air, MacBook-Pro]   # ← 追加
+```
+
+```bash
+# 3. 新 Mac で実行
+./install.sh MacBook-Pro
+```
+
+### 別 username の Mac を追加する
+
+```bash
+# 1. home/<username>.nix を新規作成（既存をコピー）
+cp home/taktiks2.nix home/foo.nix
+
+# 2. flake.nix に新 username でブロック追加
+#    "MacBook-Foo" = mkDarwin { hostname = "MacBook-Foo"; username = "foo"; };
+
+# 3. dotfilesRoot を ~/dotfiles 以外に置くなら引数で上書き
+#    "MacBook-Foo" = mkDarwin {
+#      hostname = "MacBook-Foo";
+#      username = "foo";
+#      dotfilesRoot = "/Users/foo/code/dotfiles";
+#    };
+```
+
+### ホスト固有モジュールを差し込みたい
+
+`flake.nix` の `mkDarwin` は `extraModules ? []` 引数を持ちます。例えば 1 ホストだけに開発用 systemd サービスや brew 追加 cask を入れる場合:
+
+```nix
+"MacBook-Pro" = mkDarwin {
+  hostname = "MacBook-Pro";
+  username = "taktiks2";
+  extraModules = [
+    ({ ... }: {
+      homebrew.casks = [ "logi-options-plus" ];
+    })
+  ];
+};
+```
 
 ## 🔧 主要エイリアス
 

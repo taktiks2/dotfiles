@@ -34,10 +34,22 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$HOME/.dotfiles_install_logs"
 LOG_FILE="$LOG_DIR/install_$(date +%Y%m%d_%H%M%S).log"
 
-# Phase 20: hostname は scutil から動的解決し、引数があれば優先（multi-host 対応）。
-# darwinConfigurations の attribute 名と一致している必要がある。
-# 例: ./install.sh MacBook-Pro
-HOST_NAME="${1:-$(scutil --get LocalHostName 2>/dev/null || echo MacBook-Air)}"
+# Phase 20: hostname 解決ポリシー（multi-host 対応）。
+#   1. 引数 $1 があればそれを使う          (./install.sh MacBook-Pro)
+#   2. scutil --get LocalHostName で取得   (既設 Mac で自動解決)
+#   3. 取得失敗ならエラー終了              (フレッシュ Mac は出荷時 LocalHostName が
+#                                           flake の attribute と一致しないことが多いため
+#                                           誤った host で switch してハマるのを避ける)
+#   実在性は bootstrap_nix で nix eval により検証する。
+HOST_NAME="${1:-}"
+if [ -z "$HOST_NAME" ]; then
+  HOST_NAME="$(scutil --get LocalHostName 2>/dev/null || true)"
+fi
+if [ -z "$HOST_NAME" ]; then
+  echo "ERROR: ホスト名を解決できません。引数で明示してください: ./install.sh <HostName>" >&2
+  echo "       例: ./install.sh MacBook-Air" >&2
+  exit 1
+fi
 
 log()     { echo -e "${CYAN}[$(date +'%H:%M:%S')]${NC} $*"     | tee -a "$LOG_FILE"; }
 success() { echo -e "${GREEN}✓${NC} $*"                          | tee -a "$LOG_FILE"; }
@@ -76,9 +88,27 @@ bootstrap_nix() {
   if ! exists nix; then
     curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
       | sh -s -- install --determinate
-    success "Determinate Nix インストール完了 (新シェルで PATH 再読込)"
+    success "Determinate Nix インストール完了"
+
+    # Phase 20: インストーラは /etc/{zshenv,bashrc} に PATH を仕込むだけで
+    # 現在の bash プロセスには反映されない。同セッションで `nix run` を呼ぶため
+    # nix-daemon プロファイルを source して PATH を取り込む。
+    if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
+      # shellcheck source=/dev/null
+      . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+    fi
   else
     success "Nix 既にあり"
+  fi
+
+  # Phase 20: switch 前に flake に host attribute が存在するか軽量検証。
+  # 出荷時 LocalHostName が flake と一致しないケース等で意味不明なエラーを出さないため。
+  local flake_attr="$DOTFILES_DIR#darwinConfigurations.\"$HOST_NAME\""
+  if ! nix eval --no-warn-dirty "$flake_attr" --apply 'x: true' >/dev/null 2>&1; then
+    error "darwinConfigurations.\"$HOST_NAME\" が flake.nix に未定義"
+    error "  → flake.nix の darwinConfigurations に以下を追加してください:"
+    error "      \"$HOST_NAME\" = mkDarwin { hostname = \"$HOST_NAME\"; username = \"<your-user>\"; };"
+    exit 1
   fi
 
   # 初回は flake 同梱の nix-darwin (25.11 ピン) を `nix run` で取得して switch。

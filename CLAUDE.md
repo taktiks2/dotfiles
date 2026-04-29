@@ -26,8 +26,8 @@ CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期�
 ### 主要ファイル
 
 ```
-flake.nix                       # inputs / mkDarwin factory / devShell templates
-hosts/MacBook-Air/default.nix   # networking / system.primaryUser / programs.fish / fish 再署名 activation
+flake.nix                       # inputs / mkDarwin factory (extraModules で per-host 差分注入可) / devShell templates
+hosts/common.nix                # 全ホスト共通: networking / system.primaryUser / programs.fish / fish 再署名 activation
 home/taktiks2.nix               # home.packages / programs.{fish,tmux,direnv} / xdg.configFile / sops / activation
 modules/homebrew.nix            # taps / brews / casks (cleanup = "uninstall")
 modules/macos-defaults.nix      # system.defaults.* (ACTIVE / OPT-IN)
@@ -45,8 +45,10 @@ curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix 
 # 2. clone & bootstrap
 git clone git@github.com:taktiks2/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-./install.sh
+./install.sh MacBook-Air      # ホスト名は flake.nix の darwinConfigurations attribute と一致させる
 ```
+
+新ホスト追加手順は `README.md` の「新しい Mac に導入する」を参照。
 
 `install.sh` (190 行) は **薄い orchestration** に縮小済み:
 
@@ -122,7 +124,7 @@ wm           → workmux
 - 緊急ロールバック: `sudo darwin-rebuild --rollback`
 - インストールログ: `~/.dotfiles_install_logs/install_*.log`
 - `~/.config/<name>` が既に別 symlink/実体だと HM が `*.hm-backup` で退避（要手動確認）
-- fish 4.2.x の SIGKILL 問題は `hosts/MacBook-Air/default.nix` の
+- fish 4.2.x の SIGKILL 問題は `hosts/common.nix` の
   `system.activationScripts.postActivation` で ad-hoc 再署名済（自動）
 
 ## CI

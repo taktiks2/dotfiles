@@ -35,10 +35,18 @@
   outputs = inputs@{ self, nixpkgs, nix-darwin, home-manager, determinate, sops-nix, ... }:
     let
       # Phase 16: ホスト追加が 1 行で済むよう mkDarwin factory 化。
+      # Phase 20: hosts/<name>/default.nix を hosts/common.nix に統合。
+      #           ホスト固有差分は `extraModules` 引数で per-host モジュールを注入できる。
       # 新ホストは下の darwinConfigurations に `mkDarwin { hostname = "..."; username = "..."; }` を 1 行追加。
       # `dotfilesRoot` は別マシンで `~/code/dotfiles` 等にクローンする場合の上書き用。
       # デフォルトは `/Users/<username>/dotfiles`。`mkOutOfStoreSymlink` の絶対パス解決に使う。
-      mkDarwin = { hostname, username, dotfilesRoot ? "/Users/${username}/dotfiles", system ? "aarch64-darwin" }:
+      mkDarwin =
+        { hostname
+        , username
+        , dotfilesRoot ? "/Users/${username}/dotfiles"
+        , system ? "aarch64-darwin"
+        , extraModules ? [ ]
+        }:
         nix-darwin.lib.darwinSystem {
           inherit system;
           specialArgs = { inherit inputs username hostname dotfilesRoot; };
@@ -47,7 +55,7 @@
             ({ ... }: {
               determinateNix.enable = true;
             })
-            ./hosts/${hostname}
+            ./hosts/common.nix
             home-manager.darwinModules.home-manager
             {
               home-manager.useGlobalPkgs = true;
@@ -74,7 +82,7 @@
                 })
               ];
             })
-          ];
+          ] ++ extraModules;
         };
     in
     {
