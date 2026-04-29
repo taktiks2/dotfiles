@@ -34,6 +34,11 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$HOME/.dotfiles_install_logs"
 LOG_FILE="$LOG_DIR/install_$(date +%Y%m%d_%H%M%S).log"
 
+# Phase 20: hostname は scutil から動的解決し、引数があれば優先（multi-host 対応）。
+# darwinConfigurations の attribute 名と一致している必要がある。
+# 例: ./install.sh MacBook-Pro
+HOST_NAME="${1:-$(scutil --get LocalHostName 2>/dev/null || echo MacBook-Air)}"
+
 log()     { echo -e "${CYAN}[$(date +'%H:%M:%S')]${NC} $*"     | tee -a "$LOG_FILE"; }
 success() { echo -e "${GREEN}✓${NC} $*"                          | tee -a "$LOG_FILE"; }
 error()   { echo -e "${RED}✗${NC} $*"                            | tee -a "$LOG_FILE"; }
@@ -80,12 +85,12 @@ bootstrap_nix() {
   # 2 回目以降は確立した /run/current-system 配下の darwin-rebuild を直接使う。
   # ※ 旧実装は両方走っており初回 switch が 2 重 + master / 25.11 の不一致があったため整理。
   if ! exists darwin-rebuild && [ ! -x "/run/current-system/sw/bin/darwin-rebuild" ]; then
-    log "初回 darwin-rebuild ブートストラップ中 (flake の nix-darwin-25.11 ピンを使用)..."
+    log "初回 darwin-rebuild ブートストラップ中 (flake の nix-darwin-25.11 ピンを使用、host=$HOST_NAME)..."
     sudo nix run "github:nix-darwin/nix-darwin/nix-darwin-25.11#darwin-rebuild" -- \
-      switch --flake "$DOTFILES_DIR#MacBook-Air"
+      switch --flake "$DOTFILES_DIR#$HOST_NAME"
   else
-    log "darwin-rebuild switch (flake 一括同期) 中..."
-    sudo /run/current-system/sw/bin/darwin-rebuild switch --flake "$DOTFILES_DIR#MacBook-Air"
+    log "darwin-rebuild switch (flake 一括同期、host=$HOST_NAME) 中..."
+    sudo /run/current-system/sw/bin/darwin-rebuild switch --flake "$DOTFILES_DIR#$HOST_NAME"
   fi
   success "Nix システム同期完了"
 }
@@ -153,7 +158,7 @@ setup_global_npm() {
 
 final_check() {
   step "完了"
-  cat <<'EOS'
+  cat <<EOS
 次のステップ:
   - 新しいターミナルで Nix fish が起動するか確認
   - 言語ランタイム別 devShell:
@@ -162,10 +167,11 @@ final_check() {
       nix flake init -t ~/dotfiles#ruby     (Ruby)
       direnv allow
   - secrets 移行: docs/sops-migration.md 参照
+  - git user.{name,email} を埋める: ~/.config/git/config.local
 
 日常運用:
-  $EDITOR ~/dotfiles/home/taktiks2.nix
-  sudo darwin-rebuild switch --flake ~/dotfiles#MacBook-Air
+  \$EDITOR ~/dotfiles/home/<username>.nix
+  sudo darwin-rebuild switch --flake ~/dotfiles#${HOST_NAME}
 
 ロールバック:
   sudo darwin-rebuild --rollback
@@ -175,7 +181,7 @@ EOS
 
 main() {
   mkdir -p "$LOG_DIR"
-  log "dotfiles bootstrap 開始: $DOTFILES_DIR"
+  log "dotfiles bootstrap 開始: $DOTFILES_DIR (host=$HOST_NAME)"
   check_system
   install_homebrew
   bootstrap_nix

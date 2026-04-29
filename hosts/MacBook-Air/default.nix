@@ -1,4 +1,4 @@
-{ pkgs, username, hostname, ... }:
+{ pkgs, lib, username, hostname, ... }:
 
 {
   imports = [
@@ -27,7 +27,8 @@
   ];
 
   networking.hostName = hostname;
-  networking.computerName = "MacBook Air";
+  # Phase 20: computerName は hostname のハイフンを空白に置換して派生（"MacBook-Air" → "MacBook Air"）。
+  networking.computerName = lib.replaceStrings [ "-" ] [ " " ] hostname;
 
   # ユーザ定義（home-manager がホームディレクトリ解決に参照する）
   users.users.${username} = {

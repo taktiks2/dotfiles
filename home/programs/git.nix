@@ -56,6 +56,8 @@
 
   # Phase 19: user.{name,email} を含むローカル include を bootstrap。dotfiles repo 外なので tracked にならない。
   # 既存ファイルがあれば上書きしない（ホスト毎の上書きを尊重）。
+  # Phase 20: 公開リポにメールを含めないため雛形は generic な TODO 行のみ。
+  #           初回 switch 後にユーザが手動で埋める運用。
   home.activation.bootstrapGitLocalConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     LOCAL_CFG="$HOME/.config/git/config.local"
     if [ ! -f "$LOCAL_CFG" ]; then
@@ -64,11 +66,11 @@
 # git ホスト固有設定（dotfiles repo 外、git 追跡対象外）。
 # user.{name,email} など、公開リポに露出させたくない値をここに記述する。
 [user]
-  name = taktiks2
-  email = deathproof.lee@gmail.com
+  # name  = your-name
+  # email = your-email@example.com
 EOF
       $DRY_RUN_CMD chmod 600 "$LOCAL_CFG"
-      echo "git/config.local template created at $LOCAL_CFG"
+      echo "git/config.local template created at $LOCAL_CFG (please fill user.name / user.email)"
     fi
   '';
 }
