@@ -103,6 +103,7 @@
     git-filter-repo
     lazydocker
     docker-client      # CLI + compose v2 plugin。daemon は OrbStack / Docker Desktop 側が提供
+    docker-credential-helpers  # docker-credential-osxkeychain (~/.docker/config.json の credsStore=osxkeychain 用)
     cocogitto
 
     # エディタ / マルチプレクサ
