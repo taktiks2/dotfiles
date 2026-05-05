@@ -102,6 +102,8 @@
     gh
     git-filter-repo
     lazydocker
+    docker-client      # CLI + compose v2 plugin。daemon は OrbStack / Docker Desktop 側が提供
+    docker-credential-helpers  # docker-credential-osxkeychain (~/.docker/config.json の credsStore=osxkeychain 用)
     cocogitto
 
     # エディタ / マルチプレクサ
@@ -116,20 +118,10 @@
     bash
     bats               # brew: bats-core
 
-    # ビジュアル / システム
-    graphviz
-    television
-
     # 言語ランタイム / ビルド
-    zig
-    deno
     bun
-    uv
-    sbcl
-    cargo-binstall
 
-    # AI / その他
-    aichat
+    # その他
     just
     nh         # darwin-rebuild の Rust 再実装 (`nh darwin switch ~/dotfiles -H private`)。
                # diff 表示・confirm prompt・nix-output-monitor 統合を提供。

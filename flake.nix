@@ -2,20 +2,18 @@
   description = "taktiks2 dotfiles — nix-darwin + home-manager (Step 1 minimal bootstrap)";
 
   inputs = {
-    # 25.11 stable (2025-11 release, サポート 2026-06-30 まで)。
-    # 個人 dotfiles は半年に 1 度の手動 follow で十分なため stable channel を採用し、
-    # nixpkgs-unstable の stale lock より事故率が低い構成にする。
-    # 25.05 → 25.11 系の場合は sudo darwin-rebuild switch 後に
+    # nixpkgs-unstable channel。最新パッケージ追従が必要なため stable から切替。
+    # トレードオフ: lock 更新ごとに大規模リビルドが走る、release branch 限定の修正は外れる。
     # `home.stateVersion` は変更しない（HM 公式が初回値固定を明記）。
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-25.11-darwin";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
 
     nix-darwin = {
-      url = "github:nix-darwin/nix-darwin/nix-darwin-25.11";
+      url = "github:nix-darwin/nix-darwin/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
     home-manager = {
-      url = "github:nix-community/home-manager/release-25.11";
+      url = "github:nix-community/home-manager/master";
       inputs.nixpkgs.follows = "nixpkgs";
     };
 
