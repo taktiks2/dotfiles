@@ -120,6 +120,7 @@
 
     # 言語ランタイム / ビルド
     bun
+    fnm        # Node.js version manager。fish 統合は home/programs/fish.nix の interactiveShellInit で行う。
 
     # その他
     just

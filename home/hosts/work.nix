@@ -5,13 +5,10 @@
 
 {
   # 1. brew → Nix 移行する追加パッケージ
-  #    （bun は home/common.nix に統合済のためここでは指定しない）
-  #    fnm は home-manager 25.11 に programs.fnm が無いため pkgs から直接配布し、
-  #    fish 統合は programs.fish.interactiveShellInit で別途行う。
+  #    （bun, fnm は home/common.nix に統合済のためここでは指定しない）
   home.packages = with pkgs; [
     bandwhich
     eza
-    fnm
     gum
     httpie
     nushell
@@ -23,21 +20,13 @@
     visidata
   ];
 
-  # 2. fnm fish 統合（home-manager 25.11 に programs.fnm が無いため手動）。
-  #    home/programs/fish.nix の interactiveShellInit に追記される（attrset merge）。
-  programs.fish.interactiveShellInit = ''
-    if command -q fnm
-        fnm env --use-on-cd --shell fish | source
-    end
-  '';
-
-  # 3. zoxide: cd jumper
+  # 2. zoxide: cd jumper
   programs.zoxide = {
     enable = true;
     enableFishIntegration = true;
   };
 
-  # 4. PATH から ~/.nodebrew/current/bin を除去（fnm に統一）。
+  # 3. PATH から ~/.nodebrew/current/bin を除去（fnm に統一）。
   home.sessionPath = lib.mkForce [
     "/opt/homebrew/bin"
     "${config.home.homeDirectory}/Library/Android/sdk/platform-tools"

@@ -119,6 +119,12 @@
       if test -f $HOME/google-cloud-sdk/path.fish.inc
           . $HOME/google-cloud-sdk/path.fish.inc
       end
+
+      # fnm: Node.js version manager。Phase 23 で全ユーザー共通化。
+      # home-manager 25.11 に programs.fnm が無いため shellInit 経由で env を eval。
+      if command -q fnm
+          fnm env --use-on-cd --shell fish | source
+      end
     '';
   };
 }

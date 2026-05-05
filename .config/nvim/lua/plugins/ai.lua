@@ -74,18 +74,6 @@ return {
           reverse_switch_windows = "<S-Tab>",
         },
       },
-      -- system_prompt as function ensures LLM always has latest MCP server state
-      -- This is evaluated for every message, even in existing chats
-      system_prompt = function()
-        local hub = require("mcphub").get_hub_instance()
-        return hub and hub:get_active_servers_prompt() or ""
-      end,
-      -- Using function prevents requiring mcphub before it's loaded
-      custom_tools = function()
-        return {
-          require("mcphub.extensions.avante").mcp_tool(),
-        }
-      end,
       disabled_tools = {
         "list_files", -- Built-in file operations
         "search_files",
@@ -106,23 +94,6 @@ return {
       },
     },
     build = LazyVim.is_win() and "powershell -ExecutionPolicy Bypass -File Build.ps1 -BuildFromSource false" or "make",
-  },
-  {
-    "ravitemer/mcphub.nvim",
-    dependencies = {
-      "nvim-lua/plenary.nvim",
-    },
-    build = "bundled_build.lua",
-    config = function()
-      require("mcphub").setup({
-        use_bundled_binary = true,
-        extensions = {
-          avante = {
-            make_slash_commands = true,
-          },
-        },
-      })
-    end,
   },
   {
     "saghen/blink.cmp",
