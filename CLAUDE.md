@@ -133,11 +133,6 @@ wm           → workmux
 - fish 4.2.x の SIGKILL 問題は `hosts/common.nix` の
   `system.activationScripts.postActivation` で ad-hoc 再署名済（自動）
 
-## CI
-
-- `.github/workflows/nix-check.yml` — push / PR ごとに `flake-checker` + `nix flake check` + `darwin-rebuild build` (macos-14)
-- `.github/workflows/update-flake-lock.yml` — 毎月 1 日に `flake.lock` 更新 PR を自動生成
-
 ## Notes
 
 - 対象 OS: macOS (Apple Silicon 専用)

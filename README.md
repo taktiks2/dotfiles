@@ -146,9 +146,6 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   └── secrets.yaml              # AGE 暗号化 (sops-nix 管理)
 ├── .sops.yaml                    # sops creation_rules
 ├── install.sh                    # Nix bootstrap + post-config orchestration (363 行)
-├── .github/workflows/
-│   ├── nix-check.yml             # CI: flake-checker + nix flake check + darwin build
-│   └── update-flake-lock.yml     # 月次 flake.lock 自動更新 PR
 └── docs/
     ├── nix-adoption-report.md    # Nix 導入レポート (Step 1〜7)
     ├── nix-bestpractice-followup.md # 監査フォローアップ実装レポート (Phase 6–16)
@@ -256,7 +253,7 @@ dotfiles 全体は **「git に宣言されていなければ、存在しない�
 | fish エイリアス / 関数 | `programs.fish.shellAliases` / `.functions` | `lg = "lazygit"` |
 | macOS の defaults | `modules/macos-defaults.nix` | Dock 自動隠し |
 | 新しい言語の devShell | `templates/<name>/` + `flake.nix` の `templates` | `templates/python/` |
-| 新ホスト | `flake.nix` の `darwinConfigurations` に `mkDarwin { hostname; username; }` を 1 行 + CI matrix.host に追加 | MacBook-Pro |
+| 新ホスト | `flake.nix` の `darwinConfigurations` に `mkDarwin { hostname; username; }` を 1 行追加 | MacBook-Pro |
 
 ### 2. 新しい設定ファイル（`~/.config/<tool>`）を足す
 
@@ -388,8 +385,6 @@ nix flake update determinate      # Determinate Nix だけ更新
 sudo darwin-rebuild switch --flake .#private
 ```
 
-毎月 1 日に `update-flake-lock.yml` が自動 PR を出すので、CI が緑のままレビューしてマージするのが既定運用です。
-
 ### 8. ディスクを掃除する
 
 ```bash
@@ -442,15 +437,8 @@ darwinConfigurations = {
 };
 ```
 
-```yaml
-# 2. .github/workflows/nix-check.yml の matrix.host にも追加（CI build 検証）
-strategy:
-  matrix:
-    host: [private, MacBook-Pro]   # ← 追加
-```
-
 ```bash
-# 3. 新 Mac で実行
+# 2. 新 Mac で実行
 ./install.sh MacBook-Pro
 ```
 
@@ -581,11 +569,6 @@ sudo darwin-rebuild switch --flake ~/dotfiles#private
 ### xdg.configFile activation の競合
 
 既存の `~/.config/<name>` が同ターゲットへの symlink でない場合、HM が `*.hm-backup` で退避してから新規 symlink を貼ります。`hm-backup` ファイルが残ったら内容を確認のうえ削除してください。
-
-### CI（GitHub Actions）
-
-- `nix-check.yml`: push / PR ごとに `flake-checker` → `nix flake check` → `darwin-rebuild build` を macos-14 ランナーで実行
-- `update-flake-lock.yml`: 毎月 1 日に `flake.lock` を更新する PR を自動生成（生成された PR で `nix-check.yml` が再実行されるため、ビルドが通った状態でレビュー可能）
 
 ## 📚 詳細ドキュメント
 
