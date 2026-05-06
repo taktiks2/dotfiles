@@ -20,7 +20,15 @@
       copycat
       pain-control
       yank
-      resurrect
+      {
+        plugin = resurrect;
+        extraConfig = ''
+          # save は prefix + S に再割当て（デフォルト C-s C-s は prefix と同指連打で打ち間違えやすい）。
+          # restore は prefix + R に移設（sensible が R に持っていた reload-config は extraConfig 末尾で C-r に再配置）。
+          set -g @resurrect-save 'S'
+          set -g @resurrect-restore 'R'
+        '';
+      }
       continuum
       logging
       {
@@ -77,6 +85,9 @@
       # btop / lazydocker をポップアップで開く
       bind b display-popup -E -w 90% -h 90% "btop"
       bind C display-popup -E -w 90% -h 90% "lazydocker"
+
+      # config reload。sensible の prefix + R から prefix + C-r に移設（R は resurrect restore に譲った）。
+      bind C-r run-shell "tmux source-file ~/.config/tmux/tmux.conf > /dev/null; tmux display-message 'Sourced tmux.conf'"
     '';
   };
 }
