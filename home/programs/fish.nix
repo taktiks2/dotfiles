@@ -40,6 +40,7 @@
                 return 1
         end
       '';
+
     };
 
     shellAliases = {
@@ -62,6 +63,8 @@
       set -g theme_color_scheme dracula
       set -g theme_display_git yes
       set -g theme_display_git_default_branch yes
+      # __bobthefish_prompt_node は interactiveShellInit で再定義し、PATH 上の `node --version` を表示する。
+      # `yes` 指定により package.json / .nvmrc / .node-version が見つかったディレクトリでのみ表示される。
       set -g theme_display_node yes
       set -g theme_display_date no
       set -g theme_powerline_fonts yes
@@ -120,11 +123,43 @@
           . $HOME/google-cloud-sdk/path.fish.inc
       end
 
-      # fnm: Node.js version manager。Phase 23 で全ユーザー共通化。
-      # home-manager 25.11 に programs.fnm が無いため shellInit 経由で env を eval。
-      if command -q fnm
-          fnm env --use-on-cd --shell fish | source
+      # bobthefish の __bobthefish_prompt_node を上書き。
+      # bobthefish の fish_prompt.fish は内部で __bobthefish_prompt_node を inline 定義するため、
+      # ~/.config/fish/functions/ に置く autoload override は fish_prompt.fish のロード時に
+      # 上書きされてしまう。解決策: 先に fish_prompt を autoload させ (= bobthefish の関数群を
+      # メモリへ展開)、そのあとで再定義することで我々の実装を勝たせる。
+      # 標準実装は `fnm current` を呼ぶため、Nix flake + direnv で切替えた Node が prompt に
+      # 反映されない。PATH 上の `node --version` をそのまま使う実装に置き換える。
+      functions -q fish_prompt
+      function __bobthefish_prompt_node --description 'Display current node version (PATH-based)' --no-scope-shadowing
+          [ "$theme_display_node" = no ]
+          and return
+
+          if [ "$theme_display_node" = yes ]
+              __bobthefish_prompt_find_file_up "$PWD" package.json .nvmrc .node-version
+              or return
+          end
+
+          command -q node
+          or return
+
+          set -l node_version (node --version 2>/dev/null)
+          [ -z "$node_version" ]
+          and return
+
+          __bobthefish_start_segment $color_node
+          echo -ns $node_glyph $node_version ' '
+          set_color normal
       end
+
+      # fnm の interactive 統合は廃止 (Phase 24)。
+      # 理由:
+      #   - `fnm env` が PATH 先頭に fnm multishell dir を prepend するため、
+      #     direnv (nix-direnv) で用意した devShell の Node が子シェルで上書きされる。
+      #   - `--use-on-cd` は `.node-version` を読みに行くので、Nix flake 化したリポジトリで
+      #     未 install バージョンを要求してエラーが出る。
+      # Node のバージョン管理はリポジトリ単位の flake.nix + direnv に一本化する。
+      # fnm コマンド自体は home.packages に残すため、必要なら `eval (fnm env | source)` で手動有効化可。
     '';
   };
 }

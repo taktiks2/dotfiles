@@ -50,8 +50,11 @@
       set-option -g default-command /run/current-system/sw/bin/fish
       set-environment -g PATH "/etc/profiles/per-user/${username}/bin:/run/current-system/sw/bin:/opt/homebrew/bin:/usr/bin:/bin"
 
-      # gh dash をポップアップで開く（prefix + g）
-      bind g display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "gh dash"
+      # lazygit をポップアップで開く（prefix + g）
+      bind g display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "lazygit"
+
+      # gh dash をポップアップで開く（prefix + G）
+      bind G display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "gh dash"
 
       # workmux dashboard をポップアップで開く（prefix + W）
       bind W display-popup -E -w 50% -h 100% -d "#{pane_current_path}" "workmux dashboard"
