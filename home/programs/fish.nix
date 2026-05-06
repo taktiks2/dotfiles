@@ -78,6 +78,12 @@
           set -gx PATH $nix_path $PATH
         end
       end
+
+      # fish 4.3 で fish_key_bindings の scope が universal → global に変更された移行対応。
+      # 旧 fish (< 4.3) が起動時に universal var を再セットするのを毎回消去する。
+      # 旧来 ~/.config/fish/conf.d/fish_frozen_key_bindings.fish に置かれていた処理を
+      # ここに内蔵化（Nix 管理外の手動配置ファイルを排除）。
+      set --erase --universal fish_key_bindings
     '';
 
     # 対話シェル限定の初期化

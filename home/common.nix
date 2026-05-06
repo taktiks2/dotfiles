@@ -131,6 +131,8 @@
     # 第二陣 (Step 7 follow-up): brew LATER から Nix へ移行
     tbls       # DB スキーマドキュメント生成
     joshuto    # ranger 風ファイラ
+    # mysql-shell は brew 管理 (modules/homebrew/default.nix)。
+    # nixpkgs 版は V8 抜きビルドのため `--js` 不可 → `just db restore` が動かない。
 
     # 第三陣: nvim none-ls から呼ばれる外部 CLI
     cspell     # Spell checker (lua/plugins/lsp.lua の cspell.nvim が PATH 上の `cspell` を要求)

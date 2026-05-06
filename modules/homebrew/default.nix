@@ -53,6 +53,9 @@ in
       "font-hack-nerd-font"
       "font-hackgen-nerd"
       "ghostty"
+      "mysql-shell"  # mysqlsh (公式 .pkg): dump 取り込み (util.loadDump) 用。
+                     #   nixpkgs 版は V8 を含まずビルドされるため `--js` が
+                     #   "JavaScript is not supported." で落ちる。brew は cask 配布のみ。
       "visual-studio-code"
     ];
   };
