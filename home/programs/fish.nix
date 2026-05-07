@@ -138,11 +138,6 @@
           workmux completions fish | source
       end
 
-      # Google Cloud SDK (homeDirectory 経由で username に依存しない)
-      if test -f $HOME/google-cloud-sdk/path.fish.inc
-          . $HOME/google-cloud-sdk/path.fish.inc
-      end
-
       # bobthefish の __bobthefish_prompt_node を上書き。
       # bobthefish の fish_prompt.fish は内部で __bobthefish_prompt_node を inline 定義するため、
       # ~/.config/fish/functions/ に置く autoload override は fish_prompt.fish のロード時に

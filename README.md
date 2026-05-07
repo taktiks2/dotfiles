@@ -20,7 +20,7 @@ cd ~/dotfiles
 
 ## 🏗️ アーキテクチャ
 
-完全宣言化された 6 層構造（Phase 6–16 で post-config を最小化済）:
+完全宣言化された 6 層構造:
 
 ```
 ┌────────────────────────────────────────────────────────────────┐
@@ -43,7 +43,7 @@ cd ~/dotfiles
 └────────────────────────────────────────────────────────────────┘
 ```
 
-`install.sh` (363 行) の役割は最小 orchestration のみ:
+`install.sh` の役割は最小 orchestration のみ:
 1. macOS / Apple Silicon / Xcode CLT チェック → 2. Homebrew 本体投入 →
 3. Determinate Nix install + 初回 `darwin-rebuild switch` → 4. fish chsh →
 5. Nix 管理境界外の npm global (claude / ccstatusline / ccusage / diffity)。
@@ -62,7 +62,7 @@ JSON/テキスト: jq, gnused
 AI/その他: aichat, just
 direnv (+ nix-direnv)
 
-Fish plugins (Fisher 撤廃、Nix 直接管理): bobthefish / z / bass
+Fish plugins (Nix 直接管理): bobthefish / z / bass
 
 ### Homebrew (`modules/homebrew/{default,local}.nix` で宣言)
 
@@ -72,7 +72,7 @@ Fish plugins (Fisher 撤廃、Nix 直接管理): bobthefish / z / bass
   - tap: arto-app/tap / raine/workmux
 - **ホスト固有 (`local.nix`、git tracked + skip-worktree)** — upstream は空 stub。各 PC で自由に上乗せ可能（業務 PC では awscli / acli / lazyjira / jira-cli / oath-toolkit / csv 系 / lnav / claude-squad / cursor / docker-desktop / orbstack / firefox / raycast / obsidian / mysqlworkbench / dbeaver-community / alacritty 等を実装中）。
 
-完全な内訳は `modules/homebrew/default.nix`（共通）/ `modules/homebrew/local.nix`（host 固有）/ `docs/brew-triage.md` を参照。
+完全な内訳は `modules/homebrew/default.nix`（共通）/ `modules/homebrew/local.nix`（host 固有）を参照。
 
 ### macOS system.defaults
 
@@ -80,16 +80,16 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 
 ### xdg.configFile + home.activation
 
-- `xdg.configFile.<name>.source = mkOutOfStoreSymlink` で `~/.config/{nvim, atac, ccstatusline, cspell, mcphub, workmux}` の 6 ディレクトリと `gh-dash/bin/octo-review.sh`（PR レビュー連携シェル）を live link（`darwin-rebuild` 不要で編集即反映）
-- alacritty / btop / gh-dash / ghostty / git / lazygit は Phase 17 で `programs.*` に移行済（生成 config を Nix store 経由で配置、`darwin-rebuild` で反映）
-- `home.activation.bootstrapSideEffects`: `~/.config/fish/secret-env.fish` のテンプレ生成のみ（最小化済、sops-nix 移行完了後は削除予定）
+- `xdg.configFile.<name>.source = mkOutOfStoreSymlink` で `~/.config/{nvim, atac, ccstatusline, cspell, workmux}` の 5 ディレクトリと `gh-dash/bin/octo-review.sh`（PR レビュー連携シェル）を live link（`darwin-rebuild` 不要で編集即反映）
+- alacritty / btop / gh-dash / ghostty / git / lazygit は `programs.*` で生成（`darwin-rebuild` で反映）
+- `home.activation.bootstrapSideEffects`: `~/.config/fish/secret-env.fish` のテンプレ生成のみ（sops-nix 移行完了後は削除予定）
 
 ### secrets (sops-nix)
 
 - `.sops.yaml` で AGE 公開鍵を宣言、`secrets/secrets.yaml` を AGE 暗号化のうえ git tracked
 - AGE 秘密鍵は `~/Library/Application Support/sops/age/keys.txt`（Mic92/sops-nix README 推奨パス）
 - 起動時に `programs.fish.interactiveShellInit` が `~/.config/sops-nix/secrets/<KEY>` を環境変数へ展開
-- 旧 `secret-env.fish` との併用フェーズ（移行手順は `docs/sops-migration.md`）
+- `secret-env.fish` も併用可（sops に未投入のキーや per-host 上書きの逃げ道）
 
 ### Nix 管理境界外 (install.sh の post-config)
 
@@ -136,26 +136,20 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 │   ├── atac/                     # ATAC (API クライアント) 設定
 │   ├── ccstatusline/             # Claude Code statusline 設定
 │   ├── cspell/                   # cspell ユーザー辞書
-│   ├── mcphub/                   # MCP Hub 設定
 │   ├── workmux/                  # workmux 設定
 │   ├── gh-dash/bin/octo-review.sh # PR レビュー連携 shell (config.yml は programs.gh-dash.settings)
-│   ├── (alacritty/btop/ghostty/git/lazygit は Phase 17 で programs.* に移行済 → 当ディレクトリ不在)
+│   ├── (alacritty/btop/ghostty/git/lazygit は programs.* で管理 → 当ディレクトリ不在)
 │   ├── (fish も programs.fish 直管理 → .config/fish/ 不要)
-│   └── (tmux も programs.tmux 直管理 → .config/tmux/ は Phase 8 で撤廃済)
+│   └── (tmux も programs.tmux 直管理 → .config/tmux/ 不在)
 ├── secrets/
 │   └── secrets.yaml              # AGE 暗号化 (sops-nix 管理)
 ├── .sops.yaml                    # sops creation_rules
-├── install.sh                    # Nix bootstrap + post-config orchestration (363 行)
-└── docs/
-    ├── nix-adoption-report.md    # Nix 導入レポート (Step 1〜7)
-    ├── nix-bestpractice-followup.md # 監査フォローアップ実装レポート (Phase 6–16)
-    ├── brew-triage.md            # brew formula 仕分け表
-    └── sops-migration.md         # sops-nix 移行手順
+└── install.sh                    # Nix bootstrap + post-config orchestration
 ```
 
 秘匿情報の二系統:
 
-- **推奨**: `secrets/secrets.yaml` を sops-nix で AGE 暗号化、git tracked。AGE 鍵だけ別端末配布（`docs/sops-migration.md`）
+- **推奨**: `secrets/secrets.yaml` を sops-nix で AGE 暗号化、git tracked。AGE 鍵だけ別端末配布
 - **互換維持**: `~/.config/fish/secret-env.fish`（dotfiles repo 外、`bootstrapSideEffects` がテンプレ生成。sops 移行完了後は削除予定）
 
 ## 🎯 日常運用
@@ -191,8 +185,6 @@ nix run nixpkgs#sops -- secrets/secrets.yaml
 
 # home/common.nix の sops.secrets に各 KEY を列挙して switch
 ```
-
-詳細手順は `docs/sops-migration.md`。
 
 ### 新規プロジェクトの devShell
 
@@ -572,10 +564,6 @@ sudo darwin-rebuild switch --flake ~/dotfiles#private
 
 ## 📚 詳細ドキュメント
 
-- [docs/nix-adoption-report.md](./docs/nix-adoption-report.md) — Nix 導入レポート（Step 1〜7）
-- [docs/nix-bestpractice-followup.md](./docs/nix-bestpractice-followup.md) — 監査フォローアップ実装レポート（Phase 6–16）
-- [docs/brew-triage.md](./docs/brew-triage.md) — brew formula 仕分け表
-- [docs/sops-migration.md](./docs/sops-migration.md) — sops-nix 移行手順
 - [CLAUDE.md](./CLAUDE.md) — Claude Code 用のリポジトリガイド
 - [LazyVim](https://www.lazyvim.org/) / [Fish Shell](https://fishshell.com/docs/current/)
 

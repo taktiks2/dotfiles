@@ -1,6 +1,6 @@
 #!/bin/bash
 ################################################################################
-# dotfiles bootstrap スクリプト (Phase 14: Nix-first slim 化)
+# dotfiles bootstrap スクリプト (Nix-first slim 化)
 #
 # 役割は最小限の orchestration:
 #   1. システム前提 (macOS / Apple Silicon / xcode-select) のチェック
@@ -16,18 +16,6 @@
 #   6. Nix 管理境界外の最小 bootstrap:
 #      - fnm + 4 つの npm global (claude / ccstatusline / ccusage / diffity)
 #        ※ 頻繁に upstream が更新されるため npm 直管理を意図的に維持
-#
-# 削除済の責務 (Phase 6-13 + Phase 18 follow-up で Nix 化):
-#   - PHP / Composer / Laravel Installer       → templates/laravel devShell
-#   - Rust / cargo                              → Nix 化済 (home.packages の cargo-binstall)
-#   - rbenv + Ruby                              → templates/ruby devShell
-#   - Fish plugins (Fisher / bobthefish 等)     → programs.fish.plugins (Nix)
-#   - tmux + TPM                                → programs.tmux.plugins (Nix)
-#   - dotfiles symlink                          → xdg.configFile + mkOutOfStoreSymlink
-#   - ~/.claude symlink                         → home.file.".claude" (mkOutOfStoreSymlink)
-#   - Neovim プラグイン (:Lazy)                 → ユーザ手動 (`nvim +Lazy +qa`)
-#
-# 詳細: docs/nix-adoption-report.md
 ################################################################################
 
 set -u
@@ -39,7 +27,7 @@ DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_DIR="$HOME/.dotfiles_install_logs"
 LOG_FILE="$LOG_DIR/install_$(date +%Y%m%d_%H%M%S).log"
 
-# Phase 20: hostname 解決ポリシー（multi-host 対応）。
+# hostname 解決ポリシー（multi-host 対応）。
 #   1. 引数 $1 があればそれを使う          (./install.sh MacBook-Pro)
 #   2. scutil --get LocalHostName で取得   (既設 Mac で自動解決)
 #   3. 取得失敗ならエラー終了              (フレッシュ Mac は出荷時 LocalHostName が
@@ -121,9 +109,8 @@ bootstrap_nix() {
       | sh -s -- install --determinate
     success "Determinate Nix インストール完了"
 
-    # Phase 20: インストーラは /etc/{zshenv,bashrc} に PATH を仕込むだけで
-    # 現在の bash プロセスには反映されない。同セッションで `nix run` を呼ぶため
-    # nix-daemon プロファイルを source して PATH を取り込む。
+    # インストーラは /etc/{zshenv,bashrc} に PATH を仕込むだけで現在の bash プロセスには
+    # 反映されない。同セッションで `nix run` を呼ぶため nix-daemon プロファイルを source。
     if [ -f /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh ]; then
       # shellcheck source=/dev/null
       . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
@@ -132,7 +119,7 @@ bootstrap_nix() {
     success "Nix 既にあり"
   fi
 
-  # Phase 20: switch 前に flake に host attribute が存在するか軽量検証。
+  # switch 前に flake に host attribute が存在するか軽量検証。
   # 出荷時 LocalHostName が flake と一致しないケース等で意味不明なエラーを出さないため。
   local flake_attr="$DOTFILES_DIR#darwinConfigurations.\"$HOST_NAME\""
   if ! nix eval --no-warn-dirty "$flake_attr" --apply 'x: true' >/dev/null 2>&1; then
@@ -144,7 +131,6 @@ bootstrap_nix() {
 
   # 初回は flake 同梱の nix-darwin (25.11 ピン) を `nix run` で取得して switch。
   # 2 回目以降は確立した /run/current-system 配下の darwin-rebuild を直接使う。
-  # ※ 旧実装は両方走っており初回 switch が 2 重 + master / 25.11 の不一致があったため整理。
   #
   # ホスト固有の brew/cask は `modules/homebrew/local.nix`（git tracked + skip-worktree）
   # で上書き可能。setup_local_overrides で skip-worktree フラグを冪等にセット済。
@@ -172,7 +158,7 @@ setup_fish_default_shell() {
 
 # ── Nix 管理境界外 ──────────────────────────────────────────────────────────
 # 以下の 4 npm パッケージは upstream の更新が極めて頻繁なため、Nix 化せず
-# `npm i -g` 直管理を意図的に維持する (Phase 12 決定):
+# `npm i -g` 直管理を意図的に維持する:
 #   - claude (Claude Code 本体)
 #   - ccstatusline (settings.json の statusLine から呼ぶ)
 #   - ccusage (Claude Code のトークン使用量・コスト集計)
@@ -211,9 +197,6 @@ setup_global_npm() {
 
   # pkg:bin マッピング (bash 3.2 互換のため文字列で管理)
   # @anthropic-ai/claude-code は `claude` という実バイナリを公開する点に注意。
-  # 旧実装の `exists "$bin" || [ "$bin" = "claude-code" ] && exists claude` は
-  # bash の `||`/`&&` 同優先度・左結合のため `(LHS) && exists claude` と評価され、
-  # claude 未インストール時に他パッケージも誤って install 分岐に落ちる不具合があった。
   for entry in \
     "@anthropic-ai/claude-code:claude" \
     "ccstatusline:ccstatusline" \
@@ -231,8 +214,7 @@ setup_global_npm() {
     fi
   done
 
-  # ~/.claude → dotfiles/.claude symlink は home-manager (home.file.".claude") で管理されるため
-  # 旧 ln -s ロジックは撤廃済（home/common.nix の home.file.".claude" 参照）。
+  # ~/.claude → dotfiles/.claude symlink は home-manager (home.file.".claude") で管理。
 }
 
 setup_ssh_keys() {
@@ -333,7 +315,7 @@ final_check() {
       nix flake init -t ~/dotfiles#node     (Node)
       nix flake init -t ~/dotfiles#ruby     (Ruby)
       direnv allow
-  - secrets 移行: docs/sops-migration.md 参照
+  - secrets: secrets/secrets.yaml に sops で書く（home/common.nix の sops.secrets で declare）
   - git user.{name,email} を埋める: ~/.config/git/config.local
   - SSH 鍵 (~/.ssh/id_ed25519*.pub) を https://github.com/settings/keys に登録
 

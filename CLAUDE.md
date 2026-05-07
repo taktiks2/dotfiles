@@ -1,7 +1,7 @@
 # CLAUDE.md
 
 このファイルは Claude Code (claude.ai/code) がこのリポジトリを操作する際のガイドです。
-ユーザー向けの全体像は `README.md`、設計の経緯は `docs/` 配下を参照してください。
+ユーザー向けの全体像は `README.md` を参照してください。
 
 ## Repository Overview
 
@@ -12,12 +12,12 @@ CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期�
 
 ## Architecture
 
-完全宣言化された 6 層構造（Phase 6–16 で post-config を最小化済）:
+完全宣言化された 6 層構造:
 
 | レイヤ | 実体 | 場所 |
 |---|---|---|
-| Nix (home-manager) | CLI 33 本 + Fish 4.2 + plugins + tmux | `home/common.nix` (+ `home/users/<username>.nix`) |
-| Homebrew (nix-darwin で宣言) | 共通 brew 4 / cask 6 / tap 2 + host 固有上書き | `modules/homebrew/{default,local}.nix` |
+| Nix (home-manager) | CLI バンドル + Fish 4.x + plugins + tmux | `home/common.nix` (+ `home/users/<username>.nix`) |
+| Homebrew (nix-darwin で宣言) | 共通 brew/cask/tap + host 固有上書き | `modules/homebrew/{default,local}.nix` |
 | macOS `system.defaults` | Dock / Finder / Trackpad / NSGlobalDomain 等 | `modules/macos-defaults.nix` |
 | `xdg.configFile` (live link) | `~/.config/<tool>` → dotfiles repo を `mkOutOfStoreSymlink` | `home/common.nix` |
 | sops-nix | AGE 暗号化 `secrets/secrets.yaml` を `~/.config/sops-nix/secrets/` に復号 | `home/common.nix` の `sops` |
@@ -53,7 +53,7 @@ cd ~/dotfiles
 
 新ホスト追加手順は `README.md` の「新しい Mac に導入する」を参照。
 
-`install.sh` (363 行) は **薄い orchestration** に集約:
+`install.sh` は **薄い orchestration** に集約:
 
 1. macOS / Apple Silicon / Xcode CLT チェック
 2. Homebrew 本体投入（nix-darwin の homebrew モジュールが `/opt/homebrew` を参照）
@@ -87,7 +87,7 @@ cd ~/dotfiles
 
 - **推奨**: `secrets/secrets.yaml` を sops-nix で AGE 暗号化、git tracked。
   AGE 鍵は `~/Library/Application Support/sops/age/keys.txt`
-  （Mic92/sops-nix README 推奨パス）。手順: `docs/sops-migration.md`
+  （Mic92/sops-nix README 推奨パス）。
 - **互換**: `~/.config/fish/secret-env.fish`（dotfiles repo 外、
   `home.activation.bootstrapSideEffects` がテンプレ生成。sops 移行完了後は撤廃予定）
 
@@ -137,8 +137,4 @@ wm           → workmux
 
 - 対象 OS: macOS (Apple Silicon 専用)
 - 言語: 日本語環境
-- nixpkgs channel: `nixpkgs-25.11-darwin` (stable)
-- 詳細: `docs/nix-adoption-report.md`（導入レポート Step 1–7） /
-  `docs/nix-bestpractice-followup.md`（監査フォローアップ Phase 6–16） /
-  `docs/brew-triage.md`（formula 仕分け表） /
-  `docs/sops-migration.md`（sops-nix 移行手順）
+- nixpkgs channel: `nixpkgs-unstable`

@@ -41,7 +41,6 @@
   # 以下を全て満たす時のみ有効化（設定不備での暴発を防ぐ）:
   #   1. secrets/secrets.yaml が存在
   #   2. .sops.yaml の AGE 公開鍵が `AGE_PUBLIC_KEY_PLACEHOLDER` のまま放置されていない
-  # 移行手順は dotfiles/docs/sops-migration.md 参照。
   sops = lib.mkIf (
     builtins.pathExists ../secrets/secrets.yaml
     && !lib.hasInfix "AGE_PUBLIC_KEY_PLACEHOLDER" (builtins.readFile ../.sops.yaml)
@@ -150,7 +149,7 @@
   #                 git pull を忘れるとリンク先が古い。Pure 派は `source = ./.config/<name>`
   #                 で nix store inclusion し、再現性を取る。
   # 本リポジトリは「日常 1 マシン運用 + 編集快適性優先」として live を選択。
-  # 引っ越し / 多 host 化が進んだら store inclusion に切替検討。詳細は docs/config-management-strategy.md。
+  # 引っ越し / 多 host 化が進んだら store inclusion に切替検討。
   xdg.configFile = let
     configRoot = "${dotfilesRoot}/.config";
     link = name: {
@@ -161,7 +160,6 @@
     atac         = link "atac";
     ccstatusline = link "ccstatusline";
     cspell       = link "cspell";
-    mcphub       = link "mcphub";
     nvim         = link "nvim";
     workmux      = link "workmux";
     # tmux は programs.tmux 経由で生成されるため除外（generated tmux.conf と競合回避）

@@ -24,9 +24,6 @@
     uv
     sbcl
     cargo-binstall
-
-    # nvim none-ls から呼ばれる外部 CLI
-    cspell     # Spell checker (lua/plugins/lsp.lua の cspell.nvim が PATH 上の `cspell` を要求)
   ];
   # Zulu JDK 17 を使う install 環境への hard-coded path。
   # 別 username の Mac で別 JDK を使うなら、その user file 側で同様に上書きする。
