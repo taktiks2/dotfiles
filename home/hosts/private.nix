@@ -1,6 +1,6 @@
 { pkgs, ... }:
 
-# Phase 21: taktiks2 個人の install-specific 差分。
+# taktiks2 個人の install-specific 差分。
 # home/common.nix の baseline を override する形で hard-coded path 等を上書きする。
 # 中身は最小スタート (YAGNI)。今後の追加候補:
 #   - 個人用追加 packages (home.packages = with pkgs; [ ... ])
@@ -25,7 +25,7 @@
     sbcl
     cargo-binstall
 
-    # 第三陣: nvim none-ls から呼ばれる外部 CLI
+    # nvim none-ls から呼ばれる外部 CLI
     cspell     # Spell checker (lua/plugins/lsp.lua の cspell.nvim が PATH 上の `cspell` を要求)
   ];
   # Zulu JDK 17 を使う install 環境への hard-coded path。

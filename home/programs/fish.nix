@@ -1,12 +1,12 @@
 { pkgs, lib, config, ... }:
 
-# Phase 3: Fish 本格宣言化。Phase 9 で PATH / 環境変数を home.sessionPath / sessionVariables へ移譲。
-# Phase 13 で sops 復号 secrets の interactiveShellInit 取り込みを追加。
-# Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し（Phase 21 で taktiks2.nix → common.nix へ rename）。
-# Phase 26: tmux の default-command (= "fish -c <fish>") 二段起動下では home-manager 生成の
-#           hm-session-vars.fish が __HM_SESS_VARS_SOURCED guard で再 source されず、
-#           home.sessionPath が PATH に届かない。shellInit 末尾で fish ネイティブ list 形式に
-#           append し直すことで、新規 tmux pane でも home.sessionPath の各 path が確実に PATH に載る。
+# Fish 宣言化。PATH / 環境変数は home.sessionPath / sessionVariables 経由、sops 復号 secrets
+# は interactiveShellInit で読み込む。
+#
+# tmux の default-command (= "fish -c <fish>") 二段起動下では home-manager 生成の
+# hm-session-vars.fish が __HM_SESS_VARS_SOURCED guard で再 source されず、home.sessionPath
+# が PATH に届かない。shellInit 末尾で fish ネイティブ list 形式に append し直すことで、
+# 新規 tmux pane でも home.sessionPath の各 path が確実に PATH に載る。
 
 {
   programs.fish = {
@@ -19,8 +19,7 @@
     ];
 
     # rbenv は brew 管理の binary を呼びつつ、sh-rehash / sh-shell だけ source 評価する。
-    # 旧 interactiveShellInit 内のインライン関数定義から宣言形へ移譲。
-    # 依存: `modules/homebrew.nix` の `brews = [... "rbenv" ...]` (brew 経由で `rbenv` バイナリを供給)。
+    # 依存: `modules/homebrew/default.nix` の `brews = [... "rbenv" ...]` (brew 経由で `rbenv` バイナリを供給)。
     functions = {
       rbenv = ''
         set command $argv[1]
@@ -60,8 +59,8 @@
       wm = "workmux";
     };
 
-    # Phase 9: PATH と環境変数は home.sessionPath / home.sessionVariables に移譲済。
-    # shellInit には bobthefish theme と Nix profile 最優先化だけを残す。
+    # PATH / 環境変数は home.sessionPath / home.sessionVariables 側で集約。
+    # shellInit には bobthefish theme と Nix profile 最優先化、tmux 子 fish への PATH 補填だけを置く。
     shellInit = ''
       # bobthefish theme（plugin が読まれる前に評価される必要があるため shellInit）
       set -g theme_color_scheme dracula
@@ -83,13 +82,11 @@
         end
       end
 
-      # fish 4.3 で fish_key_bindings の scope が universal → global に変更された移行対応。
-      # 旧 fish (< 4.3) が起動時に universal var を再セットするのを毎回消去する。
-      # 旧来 ~/.config/fish/conf.d/fish_frozen_key_bindings.fish に置かれていた処理を
-      # ここに内蔵化（Nix 管理外の手動配置ファイルを排除）。
+      # fish 4.3 で fish_key_bindings の scope が universal → global に変更された。
+      # 古い universal 値が残っていると起動時に毎回上書きされるため、ここで削除する。
       set --erase --universal fish_key_bindings
 
-      # Phase 26: home.sessionPath を fish ネイティブ list 形式で append。
+      # home.sessionPath を fish ネイティブ list 形式で append。
       # 上の Nix profiles prepend より後に評価されるため、Nix の最高優先は崩れない。
       # 経緯: tmux.nix の `default-command = fish` により新規 pane は `fish -c <fish>` の
       # 二段起動になる。外側 fish が __HM_SESS_VARS_SOURCED=1 を export 済の状態で
@@ -105,7 +102,7 @@
 
     # 対話シェル限定の初期化
     interactiveShellInit = ''
-      # Phase 13: sops-nix で復号された secrets を環境変数に展開。
+      # sops-nix で復号された secrets を環境変数に展開。
       # `home/common.nix` の sops.secrets 配下に登録した KEY を順次読み込む。
       # SAFETY:
       #   - `set -gx` は変数名を validate しないため、`sops.secrets.PATH = {}` のような
@@ -127,7 +124,7 @@
           end
       end
 
-      # 後方互換: 旧来の secret-env.fish も sops 移行が完了するまで併用可能。
+      # secret-env.fish も併用可（sops に未投入のキーや per-host 上書きの逃げ道）。
       if test -f ~/.config/fish/secret-env.fish
           source ~/.config/fish/secret-env.fish
       end
@@ -175,7 +172,7 @@
           set_color normal
       end
 
-      # fnm の interactive 統合は廃止 (Phase 24)。
+      # fnm の interactive 統合 (`fnm env --use-on-cd`) は使わない。
       # 理由:
       #   - `fnm env` が PATH 先頭に fnm multishell dir を prepend するため、
       #     direnv (nix-direnv) で用意した devShell の Node が子シェルで上書きされる。

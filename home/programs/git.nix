@@ -1,11 +1,9 @@
 { lib, config, ... }:
 
-# Phase 17: ~/.gitconfig + .config/git/ignore + lazygit pagers/git connection を programs.git / programs.delta に統合。
-# Phase 19: user.{name,email} を ~/.config/git/config.local に分離（公開リポ上の平文露出を回避、
-#           sops-nix 移行後はそちらに集約）。
-# Phase 22: my.git.extraIdentities option を追加。各 host の per-user 設定から conditional な
-#           git identity (includeIf) と SSH host alias を 1 ブロックで宣言できるようにする。
-#           例: 社用 PC で「dotfiles 等 taktiks2 所有 repo だけ taktiks2 アカウントでコミット」。
+# programs.git / programs.delta による git 設定。
+# user.{name,email} は ~/.config/git/config.local に分離（公開リポ上の平文露出を回避）。
+# my.git.extraIdentities option で条件付き identity (includeIf) と SSH host alias を 1 ブロックで宣言可能。
+# 例: 社用 PC で「dotfiles 等 taktiks2 所有 repo だけ taktiks2 アカウントでコミット」。
 
 let
   identities = config.my.git.extraIdentities;
@@ -79,15 +77,14 @@ in
     programs.git = {
       enable = true;
 
-      # 旧 .config/git/ignore (4 行) を Nix 化。
       ignores = [
         ".worktree"
         ".DS_Store"
         "**/.claude/settings.local.json"
       ];
 
-      # 旧 ~/.gitconfig 内容を 1:1 移植。HM 25.11 で userName/userEmail/extraConfig は
-      # settings に統合された (settings.user.name / settings.user.email / settings.<section>.<key>)。
+      # HM 25.11 では userName/userEmail/extraConfig は settings に統合された
+      # (settings.user.name / settings.user.email / settings.<section>.<key>)。
       # delta 関連は programs.delta が interactive.diffFilter / pager.* / [delta] navigate
       # 等を自動で注入するため重複定義しない。
       # user.{name,email} はローカル include ファイル（後述 bootstrap）に分離。
@@ -96,7 +93,7 @@ in
         core.editor         = "nvim";
         merge.conflictstyle = "diff3";
         diff.colorMoved     = "default";
-        # Phase 22: identity 解決失敗時に $USER@$HOSTNAME 由来の偽 identity でコミットさせない。
+        # identity 解決失敗時に $USER@$HOSTNAME 由来の偽 identity でコミットさせない。
         # extraIdentities の include がリモート URL 不整合等で外れた状態でのコミット試行を fail-fast に。
         # mkDefault で個別 host が必要なら無効化可。
         user.useConfigOnly  = lib.mkDefault true;
@@ -139,10 +136,9 @@ in
       fi
     '';
 
-    # Phase 19: user.{name,email} を含むローカル include を bootstrap。dotfiles repo 外なので tracked にならない。
+    # user.{name,email} を含むローカル include を bootstrap。dotfiles repo 外なので tracked にならない。
     # 既存ファイルがあれば上書きしない（ホスト毎の上書きを尊重）。
-    # Phase 20: 公開リポにメールを含めないため雛形は generic な TODO 行のみ。
-    #           初回 switch 後にユーザが手動で埋める運用。
+    # 公開リポにメールを含めないため雛形は generic な TODO 行のみ。初回 switch 後にユーザが手動で埋める。
     home.activation.bootstrapGitLocalConfig = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       LOCAL_CFG="$HOME/.config/git/config.local"
       if [ ! -f "$LOCAL_CFG" ]; then
@@ -159,7 +155,7 @@ EOF
       fi
     '';
 
-    # Phase 22: extraIdentities 各 <id> につき ~/.config/git/config.<id> の雛形を bootstrap。
+    # extraIdentities 各 <id> につき ~/.config/git/config.<id> の雛形を bootstrap。
     # 既存ファイルがあれば上書きしない。
     home.activation.bootstrapGitExtraIdentities = lib.hm.dag.entryAfter [ "writeBoundary" ] (
       lib.concatStringsSep "\n" (lib.mapAttrsToList (id: idCfg: ''

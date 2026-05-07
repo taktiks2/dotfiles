@@ -1,14 +1,12 @@
 { ... }:
 
-# Phase 17: alacritty / ghostty を programs.* へ移行。両者とも Nix package は不要
-# （alacritty は cask 由来、ghostty は cask の .app 配布）のため package = null。
+# alacritty / ghostty を programs.* で管理。両者とも cask 経由の .app 配布なので Nix package は不要 (package = null)。
 
 {
   programs.alacritty = {
     enable  = true;
-    package = null;  # alacritty は modules/homebrew.nix の cask 経由でインストールされるため Nix package は不要
-    # 旧 .config/alacritty/alacritty.toml （Shift+Return キーバインドのみ）。
-    # 旧 TOML の `chars = "\r"` 相当: ESC (0x1B) + CR を送出。
+    package = null;  # alacritty は modules/homebrew/default.nix の cask 経由でインストールされるため Nix package は不要
+    # Shift+Return で ESC (0x1B) + CR を送出。
     # Nix の文字列リテラルは \u 16 進エスケープ非対応のため、JSON 経由で ESC を生成。
     settings = {
       keyboard.bindings = [
@@ -23,8 +21,7 @@
 
   programs.ghostty = {
     enable  = true;
-    package = null;  # ghostty は modules/homebrew.nix の cask 経由でインストールされるため Nix package は不要（macOS の ghostty は .app 配布）
-    # 旧 .config/ghostty/config からの移植。
+    package = null;  # ghostty は modules/homebrew/default.nix の cask 経由でインストールされるため Nix package は不要（macOS の ghostty は .app 配布）
     settings = {
       command       = "/run/current-system/sw/bin/fish";
       font-family   = "HackGen Console NF";

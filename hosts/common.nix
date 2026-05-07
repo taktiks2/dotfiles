@@ -1,6 +1,6 @@
 { pkgs, lib, username, hostname, ... }:
 
-# Phase 20: ホスト固有値ゼロのため hosts/<name>/default.nix を統合し本ファイル 1 本に集約。
+# 全ホスト共通の nix-darwin 設定。
 # ホスト固有差分が必要になったら mkDarwin の `extraModules` 引数で per-host モジュールを注入する。
 
 {
@@ -19,9 +19,6 @@
   # 設定の互換性バージョン（後方互換のため固定）。
   system.stateVersion = 6;
 
-  # Phase 6: Apple Silicon の system は flake.nix で `inherit system` 渡し済のため
-  # `nixpkgs.hostPlatform` の重複指定は削除。
-
   # 救出用ツール: home-manager がぶっ壊れた緊急時にも
   # /run/current-system/sw/bin/{git,vim} で復旧できるよう確保。
   environment.systemPackages = with pkgs; [
@@ -30,7 +27,7 @@
   ];
 
   networking.hostName = hostname;
-  # Phase 20: computerName は hostname のハイフンを空白に置換して派生（例: "MacBook-Pro" → "MacBook Pro"）。
+  # computerName は hostname のハイフンを空白に置換して派生（例: "MacBook-Pro" → "MacBook Pro"）。
   networking.computerName = lib.replaceStrings [ "-" ] [ " " ] hostname;
 
   # ユーザ定義（home-manager がホームディレクトリ解決に参照する）
@@ -57,15 +54,15 @@
   # 対策: rebuild 後に ad-hoc 再署名でハッシュを引き直す（冪等）。
   # 検証: `log show --predicate 'eventMessage CONTAINS "fish"'` で SIGKILL 履歴確認。
   # 注意点:
-  #   - 旧実装の `readlink` は 1 段しか辿らないため `realpath` で完全解決する。
+  #   - `readlink` は 1 段しか辿らないため `realpath` で完全解決する。
   #     macOS には `/usr/bin/realpath` が無い (macOS 26 Tahoe で確認、おそらく以前から存在しない)
   #     ため、Nix の coreutils 由来 `realpath` を絶対パスで呼ぶ。
   #     pkgs.coreutils は flake 評価時点で固定されるため activation の PATH に依存しない。
   #   - `chmod u+w` は /nix/store のパーミッション (mode 555) を一時的に書込可へ変更する。
   #     Determinate Nix の store は rw-mounted のため root で動く activation から書込可能。
   #   - 失敗時は WARN ログを出すのみで activation 全体は continue する。
-  #     ただし旧実装のように全エラーを `2>/dev/null || true` で握り潰さない。
-  #     再署名が無効化される事象（=fish SIGKILL 再発）を検知できるようにする。
+  #     エラーを `2>/dev/null || true` で握り潰すと再署名失敗（=fish SIGKILL 再発）を検知できないため、
+  #     必ず WARN を出す。
   #   - upstream (nixpkgs#461406 など) で fix backport が確認できたら本ブロックごと撤廃する。
   system.activationScripts.postActivation.text = ''
     echo "[fish-resign] re-signing fish to bypass macOS page integrity issue..."

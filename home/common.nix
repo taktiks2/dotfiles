@@ -1,7 +1,6 @@
 { pkgs, lib, config, username, dotfilesRoot, ... }:
 
-# Phase 18 (modular split): per-tool の programs.* 設定は home/programs/*.nix へ抜き出し。
-# 本ファイルには「複数ツールに跨るプラットフォーム設定」のみを残す:
+# 「複数ツールに跨るプラットフォーム設定」のみを置く:
 #   - stateVersion / sops（メタ）
 #   - sessionPath / sessionVariables（PATH と環境変数）
 #   - home.packages（Nix CLI バンドル）
@@ -38,8 +37,8 @@
   # home-manager 自身の管理を有効化。
   programs.home-manager.enable = true;
 
-  # Phase 13: sops-nix によるシークレット管理。
-  # 以下を全て満たす時のみ有効化（移行前 build や設定不備での暴発を防ぐ）:
+  # sops-nix によるシークレット管理。
+  # 以下を全て満たす時のみ有効化（設定不備での暴発を防ぐ）:
   #   1. secrets/secrets.yaml が存在
   #   2. .sops.yaml の AGE 公開鍵が `AGE_PUBLIC_KEY_PLACEHOLDER` のまま放置されていない
   # 移行手順は dotfiles/docs/sops-migration.md 参照。
@@ -58,9 +57,8 @@
     secrets = { };
   };
 
-  # Phase 9: PATH と環境変数を home.sessionPath / home.sessionVariables へ移譲。
+  # PATH と環境変数は home.sessionPath / home.sessionVariables に集約。
   # HM が ~/.config/fish/conf.d/hm-session-vars.fish に展開し、shell 起動時に評価される。
-  # fish 固有の手書きは bobthefish theme と Nix profile prepend だけに縮小。
   home.sessionPath = [
     "/opt/homebrew/bin"
     # Android SDK 実体側に存在するサブディレクトリのみ宣言（cmdline-tools/tools/tools/bin は実機に無いので除外）
@@ -70,16 +68,14 @@
     "/opt/homebrew/opt/mysql@8.0/bin"
     "${config.home.homeDirectory}/.composer/vendor/bin"
     "${config.home.homeDirectory}/.cargo/bin"
-    # rbenv shim も sessionPath に集約（旧 fish interactiveShellInit からの移譲）
     "${config.home.homeDirectory}/.rbenv/shims"
     # fnm の `default` alias 経由で `npm install -g` した CLI (claude/ccusage/...) を解決する。
     # PID 非依存の symlink (~/.local/share/fnm/aliases/default → node-versions/<v>/installation) なので
     # 新規 tmux pane でも安定。append 位置のため direnv が刺す devShell の Node が優先される。
-    # 旧 nodebrew bootstrap (~/.nodebrew/current/bin) はここで fnm に統一済 (Phase 25)。
     "${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin"
   ];
 
-  # Phase 21: install-specific な hard-coded path (JAVA_HOME など) は home/users/<username>.nix へ移譲。
+  # install-specific な hard-coded path (JAVA_HOME など) は home/users/<username>.nix へ。
   # LANG はロケール変更があり得るため lib.mkDefault でラップし、user 側で `mkForce` 不要で上書き可能にする。
   home.sessionVariables = {
     ANDROID_SDK_ROOT           = "${config.home.homeDirectory}/Library/Android/sdk";
@@ -93,8 +89,6 @@
     RBENV_SHELL                = "fish";
   };
 
-  # Step 2 第一陣: brew leaves 57 本のうち、移行確度が高い 31 本を Nix 化。
-  # 仕分け根拠は docs/brew-triage.md を参照。
   # 設定が programs.* で管理されている CLI（bat / fzf / lsd / lazygit / btop / delta 等）は
   # ./programs/<tool>.nix の `enable` で配布されるため、本リストには含まない。
   home.packages = with pkgs; [
@@ -127,10 +121,10 @@
 
     # 言語ランタイム / ビルド
     bun
-    fnm        # Node.js version manager。fish の interactive 統合 (`fnm env --use-on-cd`) は廃止
-               # (home/programs/fish.nix の Phase 24 コメント参照)。default Node は home.sessionPath の
-               # `~/.local/share/fnm/aliases/default/bin` 経由で解決する。`--use-on-cd` を再有効化したい
-               # ホストは home/users/<username>.nix の programs.fish.interactiveShellInit で個別に注入する。
+    fnm        # Node.js version manager。fish の interactive 統合 (`fnm env --use-on-cd`) は使わず、
+               # default Node は home.sessionPath の `~/.local/share/fnm/aliases/default/bin` 経由で解決する。
+               # `--use-on-cd` を再有効化したいホストは home/users/<username>.nix の
+               # programs.fish.interactiveShellInit で個別に注入する。
 
     # その他
     just
@@ -138,21 +132,19 @@
                # diff 表示・confirm prompt・nix-output-monitor 統合を提供。
                # Determinate Nix 環境でも darwin-rebuild を呼ぶ wrapper として動作する想定。
 
-    # 第二陣 (Step 7 follow-up): brew LATER から Nix へ移行
     tbls       # DB スキーマドキュメント生成
     joshuto    # ranger 風ファイラ
     # mysql-shell は brew 管理 (modules/homebrew/default.nix)。
     # nixpkgs 版は V8 抜きビルドのため `--js` 不可 → `just db restore` が動かない。
 
-    # 第三陣: nvim none-ls から呼ばれる外部 CLI
+    # nvim none-ls から呼ばれる外部 CLI
     cspell     # Spell checker (lua/plugins/lsp.lua の cspell.nvim が PATH 上の `cspell` を要求)
   ];
 
-  # Phase 7: ~/.config 配下の symlink を home-manager の純宣言形へ移行。
-  # `mkOutOfStoreSymlink` は store に格納せず dotfiles repo を直接参照するため、
-  # `git pull` 後の rebuild 不要で編集が即時反映される（live link）。
+  # ~/.config 配下を home-manager で管理。`mkOutOfStoreSymlink` は store に格納せず
+  # dotfiles repo を直接参照するため、編集が即時反映される（live link）。
   #
-  # Trade-off (2026-04 ベスプラ監査): live edit は再現性を犠牲にする選択。
+  # Trade-off: live edit は再現性を犠牲にする選択。
   #   - メリット: nvim/cspell/ccstatusline 等の頻繁編集対象を `darwin-rebuild switch` 不要で更新
   #   - デメリット: dotfiles repo が `~/dotfiles` に存在することが前提。別 host で
   #                 git pull を忘れるとリンク先が古い。Pure 派は `source = ./.config/<name>`
@@ -166,14 +158,13 @@
     };
   in {
     # 専用 programs.* モジュール非対応のもののみ live link で残す。
-    # alacritty/btop/gh-dash/ghostty/git/lazygit は programs.* に移行済（Phase 17）。
     atac         = link "atac";
     ccstatusline = link "ccstatusline";
     cspell       = link "cspell";
     mcphub       = link "mcphub";
     nvim         = link "nvim";
     workmux      = link "workmux";
-    # tmux は Phase 8 で programs.tmux 一本化のため除外（generated tmux.conf と競合回避）
+    # tmux は programs.tmux 経由で生成されるため除外（generated tmux.conf と競合回避）
 
     # gh-dash の keybindings から呼ばれるシェルスクリプトのみ残す
     # （config.yml は programs.gh-dash.settings 側で管理）
@@ -182,14 +173,10 @@
   };
 
   # ~/.claude も dotfiles 配下を live link で参照（Claude Code 設定 / agents / skills / plugins）。
-  # 旧 install.sh の `setup_global_npm` 内で行っていた手動 `ln -s` を home-manager に集約。
   home.file.".claude".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/.claude";
 
-  # Step 7 follow-up: install.sh の post-config 関数のうち、idempotent で
-  # bootstrap 専用ではないものを home.activation に移譲。
-  # Phase 8: TPM clone は撤廃。tmux plugins は programs.tmux.plugins で Nix 配布。
-  # 注: programs.git / .gitconfig 移行用 activation は ./programs/git.nix 側で定義。
+  # idempotent な bootstrap 副作用。programs.git / .gitconfig 用 activation は ./programs/git.nix 側に定義。
   home.activation.bootstrapSideEffects = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # secret-env.fish が無ければテンプレを作成（gitignore 相当、機密のため dotfiles repo 外に配置）
     SECRET_ENV="$HOME/.config/fish/secret-env.fish"
@@ -204,11 +191,5 @@
 EOF
       echo "secret-env.fish template created at $SECRET_ENV"
     fi
-
-    # Phase 3: Fisher / bobthefish の curl パイプは廃止。
-    # bobthefish/z/bass は programs.fish.plugins により Nix で宣言管理される。
-
-    # Phase 10: Laravel Installer の自動 install (composer global) は撤廃。
-    # 代わりに `nix flake init -t ~/dotfiles#laravel` で per-project devShell へ。
   '';
 }

@@ -1,8 +1,7 @@
 { pkgs, username, ... }:
 
-# Phase 8: tmux 完全宣言化。TPM 撤廃、plugins は Nix 経由で配布。
-# tmux.conf は HM が programs.tmux 設定から生成するため、~/dotfiles/.config/tmux/ 側は不要。
-# Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し（Phase 21 で taktiks2.nix → common.nix へ rename）。username は specialArgs から受け取る。
+# tmux 設定。plugins は Nix 経由 (pkgs.tmuxPlugins) で配布、tmux.conf は HM が programs.tmux から生成。
+# username は specialArgs から受け取り、PATH 注入に使う。
 
 {
   programs.tmux = {
@@ -59,7 +58,7 @@
 
       # ghostty (TERM=xterm-ghostty) の RGB / 装飾系ケイパビリティ
       set -as terminal-features ",xterm-ghostty*:RGB:usstyle:hyperlinks:ccolour:cstyle:strikethrough:overline"
-      # 旧 Tc フラグでのフォールバック
+      # 古い terminfo 向けフォールバック (Tc フラグ)
       set -ag terminal-overrides ",xterm-ghostty:Tc"
       set -ag terminal-overrides ",*256col*:Tc"
 

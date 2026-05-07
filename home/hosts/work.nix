@@ -4,8 +4,7 @@
 # home/common.nix の baseline を override / extend する。
 
 {
-  # 1. brew → Nix 移行する追加パッケージ
-  #    （bun, fnm は home/common.nix に統合済のためここでは指定しない）
+  # 追加 Nix パッケージ（bun, fnm は home/common.nix で配布済）。
   home.packages = with pkgs; [
     bandwhich
     eza
@@ -20,33 +19,32 @@
     visidata
   ];
 
-  # 2. zoxide: cd jumper
+  # zoxide: cd jumper
   programs.zoxide = {
     enable = true;
     enableFishIntegration = true;
   };
 
-  # 3. /usr/local/bin: Apple Silicon Homebrew では PATH 外だが、cask の mysql-shell が
-  #    公式 .pkg を /usr/local/mysql-shell/ に置き /usr/local/bin/mysqlsh を貼るため必要。
-  #    home/programs/fish.nix:Phase 26 のループが home.sessionPath を fish list 形式で
-  #    append し直すため、ここに足すだけで tmux 子 fish にも反映される。
+  # /usr/local/bin: Apple Silicon Homebrew では PATH 外だが、cask の mysql-shell が
+  # 公式 .pkg を /usr/local/mysql-shell/ に置き /usr/local/bin/mysqlsh を貼るため必要。
+  # home/programs/fish.nix の sessionPath 補填ループが tmux 子 fish にも append し直すため、
+  # ここに足すだけで反映される。
   home.sessionPath = [
     "/usr/local/bin"
   ];
 
-  # 4. fnm の `--use-on-cd` を個人 override で再有効化。
-  #     home/programs/fish.nix の Phase 24 コメント (廃止) に対する例外措置。
-  #     理由: 一部プロジェクトは flake.nix で fnm を介して Node を提供する設計のため、
-  #           fish 側で .node-version の自動切替が必要。
-  #     既知の副作用 (Phase 24 廃止理由のうち本 override で再発するもの):
-  #       - 未 install バージョンを要求するリポジトリで fnm がエラーを吐く
-  #       - direnv で devShell の Node を刺している場合、fnm の PATH prepend で上書きされる
+  # fnm の `--use-on-cd` を本ホストでだけ有効化（home/common.nix では明示的に無効）。
+  # 理由: 一部プロジェクトは flake.nix で fnm を介して Node を提供する設計のため、
+  #       fish 側で .node-version の自動切替が必要。
+  # 既知の副作用:
+  #   - 未 install バージョンを要求するリポジトリで fnm がエラーを吐く
+  #   - direnv で devShell の Node を刺している場合、fnm の PATH prepend で上書きされる
   programs.fish.interactiveShellInit = ''
     fnm env --use-on-cd --shell fish | source
   '';
 
-  # 5. tmux: 業務用 lazyjira ポップアップ（prefix + J）。
-  #    programs.tmux.extraConfig は types.lines なので home/programs/tmux.nix の設定に連結される。
+  # tmux: 業務用 lazyjira ポップアップ（prefix + J）。
+  # programs.tmux.extraConfig は types.lines なので home/programs/tmux.nix の設定に連結される。
   programs.tmux.extraConfig = ''
     # lazyjira をポップアップで開く（prefix + J）
     bind J display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "lazyjira"
@@ -55,7 +53,7 @@
   # ghostty は main の programs.ghostty で十分（command/font/theme の差は
   # Nix 化後 /run/current-system/sw/bin/fish で動作するため override 不要）。
 
-  # Phase 22: 社用 PC ではデフォルト identity = 社用アカウント (~/.config/git/config.local)。
+  # 社用 PC ではデフォルト identity = 社用アカウント (~/.config/git/config.local)。
   # taktiks2 所有 repo (dotfiles 等) は github-taktiks2 host alias 経由で taktiks2 identity に切替える。
   # 連携手順:
   #   1. darwin-rebuild switch  → ~/.ssh/config に Host github-taktiks2 が生成

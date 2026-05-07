@@ -1,5 +1,5 @@
 {
-  description = "taktiks2 dotfiles — nix-darwin + home-manager (Step 1 minimal bootstrap)";
+  description = "taktiks2 dotfiles — nix-darwin + home-manager";
 
   inputs = {
     # nixpkgs-unstable channel。最新パッケージ追従が必要なため stable から切替。
@@ -22,7 +22,7 @@
     # https://docs.determinate.systems/guides/nix-darwin/
     determinate.url = "https://flakehub.com/f/DeterminateSystems/determinate/3";
 
-    # Phase 13: シークレット管理。AGE/PGP 暗号化の YAML を git tracked にできる。
+    # シークレット管理。AGE/PGP 暗号化の YAML を git tracked にできる。
     # https://github.com/Mic92/sops-nix
     sops-nix = {
       url = "github:Mic92/sops-nix";
@@ -32,9 +32,8 @@
 
   outputs = inputs@{ self, nixpkgs, nix-darwin, home-manager, determinate, sops-nix, ... }:
     let
-      # Phase 16: ホスト追加が 1 行で済むよう mkDarwin factory 化。
-      # Phase 20: hosts/<name>/default.nix を hosts/common.nix に統合。
-      #           ホスト固有差分は `extraModules` 引数で per-host モジュールを注入できる。
+      # ホスト追加が 1 行で済むよう mkDarwin factory 化。
+      # ホスト固有差分は `extraModules` 引数で per-host モジュールを注入できる。
       # 新ホストは下の darwinConfigurations に `mkDarwin { hostname = "..."; username = "..."; }` を 1 行追加。
       # `dotfilesRoot` は別マシンで `~/code/dotfiles` 等にクローンする場合の上書き用。
       # デフォルトは `/Users/<username>/dotfiles`。`mkOutOfStoreSymlink` の絶対パス解決に使う。
@@ -47,7 +46,7 @@
         , homeExtraModules ? [ ]
         }:
         let
-          # Phase 21: ユーザ単位の差分を home/users/<username>.nix で auto-import。
+          # ユーザ単位の差分を home/users/<username>.nix で auto-import。
           # ファイルが無ければ pathExists=false で skip され common.nix のみが適用される。
           userFile = ./home/users + "/${username}.nix";
         in
@@ -66,9 +65,9 @@
               home-manager.useUserPackages = true;
               home-manager.backupFileExtension = "hm-backup";
               home-manager.extraSpecialArgs = { inherit username dotfilesRoot; };
-              # Phase 13: sops-nix を home-manager に注入（secrets を ~/.config/sops-nix/secrets/ に復号配置）
+              # sops-nix を home-manager に注入（secrets を ~/.config/sops-nix/secrets/ に復号配置）
               home-manager.sharedModules = [ sops-nix.homeManagerModules.sops ];
-              # Phase 21: home/common.nix を baseline、home/users/<username>.nix を user 差分、
+              # home/common.nix を baseline、home/users/<username>.nix を user 差分、
               # homeExtraModules を per-host one-off escape hatch として import。
               home-manager.users.${username} = { lib, ... }: {
                 imports =

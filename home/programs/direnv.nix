@@ -1,6 +1,6 @@
 { ... }:
 
-# Step 6: direnv + nix-direnv（プロジェクト単位の devShell 自動有効化）
+# direnv + nix-direnv（プロジェクト単位の devShell 自動有効化）。
 # direnv の doCheck=false overlay とその理由は flake.nix を参照。
 
 {

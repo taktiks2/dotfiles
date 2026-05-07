@@ -1,6 +1,6 @@
 { lib, ... }:
 
-# Phase 23: Claude Code multi-account profile switcher.
+# Claude Code multi-account profile switcher.
 # `claude` 自体はラップしない (npm 経由の binary を素のまま実行)。
 # `claude-switch <work|private>` で macOS Keychain entry を差し替え、
 # `CLAUDE_CONFIG_DIR` を universal variable に永続セットすることで

@@ -1,7 +1,6 @@
 { ... }:
 
-# Phase 17: 「設定なしで enable のみ」の小物 CLI を programs.* へ集約。
-# どれも旧 home.packages からの移行（モジュール化することで shell integration / fish hook が自動）。
+# 「設定なしで enable のみ」の小物 CLI。programs.* で宣言することで shell integration / fish hook が自動付く。
 
 {
   # `bat` — `cat` クローン。programs.fish.enable と連動して fish 補完が自動。

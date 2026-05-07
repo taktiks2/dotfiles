@@ -1,9 +1,8 @@
 { ... }:
 
-# Phase 17: btop を programs.btop へ移行。旧 .config/btop/btop.conf の値を Nix attrset 化。
-#
-# NOTE: HM が書き出す btop.conf は store 内 read-only symlink なので、
-#       btop の終了時オートセーブが失敗しないよう save_config_on_exit を無効化。
+# btop の設定を Nix attrset で宣言。
+# HM が書き出す btop.conf は store 内 read-only symlink なので、
+# 終了時オートセーブが失敗しないよう save_config_on_exit を無効化している。
 
 {
   programs.btop = {
@@ -79,7 +78,7 @@
       selected_battery      = "Auto";
       show_battery_watts    = true;
       log_level             = "WARNING";
-      save_config_on_exit   = false;  # 書き出し先が read-only のため無効化（旧設定 true から変更）
+      save_config_on_exit   = false;  # 書き出し先が read-only のため無効化
     };
   };
 }
