@@ -94,7 +94,7 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 ### Nix 管理境界外 (install.sh の post-config)
 
 - npm global 4 本（`claude` / `ccstatusline` / `ccusage` / `diffity`）— upstream の更新が頻繁なため意図的に npm 直管理
-- `nodebrew` 最小 bootstrap（上記 npm 用の土台。本格的な Node 利用は `templates/node` devShell）
+- `fnm` 経由の Node LTS 最小 bootstrap（上記 npm 用の土台。本格的な Node 利用は `templates/node` devShell）
 - `fish` の chsh
 - Neovim プラグインの初回展開は手動（`nvim +Lazy +qa`）
 

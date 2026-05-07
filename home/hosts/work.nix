@@ -26,56 +26,15 @@
     enableFishIntegration = true;
   };
 
-  # 3. PATH から ~/.nodebrew/current/bin を除去（fnm に統一）。
-  #    /usr/local/bin は Apple Silicon Homebrew では PATH 外だが、
-  #    cask の mysql-shell が公式 .pkg を /usr/local/mysql-shell/ に置き
-  #    /usr/local/bin/mysqlsh シンボリックリンクを貼るため必要。
-  #
-  #    home.sessionPath は bash/zsh / sessionVariables 連動の互換用に残す。
-  #    fish では home-manager 生成の hm-session-vars.fish が
-  #    `set -gx PATH 'a:b:c:...'` と単一 POSIX 文字列で代入するため、
-  #    fish 内 builtin の command lookup から /usr/local/bin が落ちる
-  #    （特に tmux 子 fish）。そのため下の programs.fish.shellInit で
-  #    fish ネイティブ list 形式に組み直す。
-  home.sessionPath = lib.mkForce [
-    "/opt/homebrew/bin"
+  # 3. /usr/local/bin: Apple Silicon Homebrew では PATH 外だが、cask の mysql-shell が
+  #    公式 .pkg を /usr/local/mysql-shell/ に置き /usr/local/bin/mysqlsh を貼るため必要。
+  #    home/programs/fish.nix:Phase 26 のループが home.sessionPath を fish list 形式で
+  #    append し直すため、ここに足すだけで tmux 子 fish にも反映される。
+  home.sessionPath = [
     "/usr/local/bin"
-    "${config.home.homeDirectory}/Library/Android/sdk/platform-tools"
-    "${config.home.homeDirectory}/Library/Android/sdk/emulator"
-    "${config.home.homeDirectory}/bin"
-    "/opt/homebrew/opt/mysql@8.0/bin"
-    "${config.home.homeDirectory}/.composer/vendor/bin"
-    "${config.home.homeDirectory}/.cargo/bin"
-    "${config.home.homeDirectory}/.rbenv/shims"
-    # fnm の `default` alias 経由で `npm install -g` した CLI (claude/ccusage/...) を解決する。
-    # PID 非依存の symlink (~/.local/share/fnm/aliases/default → node-versions/<v>/installation) なので
-    # 新規 tmux pane でも安定。append 位置のため direnv が刺す devShell の Node が優先される。
-    "${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin"
   ];
 
-  # 4.1 home.sessionPath を fish ネイティブ list 形式で再宣言。
-  #     home/programs/fish.nix の shellInit が先に Nix profiles を最先頭に
-  #     prepend するので、ここでは append (set -gx PATH $PATH $p) で
-  #     Nix の最高優先を温存する。
-  programs.fish.shellInit = ''
-    for p in \
-        /opt/homebrew/bin \
-        /usr/local/bin \
-        ${config.home.homeDirectory}/Library/Android/sdk/platform-tools \
-        ${config.home.homeDirectory}/Library/Android/sdk/emulator \
-        ${config.home.homeDirectory}/bin \
-        /opt/homebrew/opt/mysql@8.0/bin \
-        ${config.home.homeDirectory}/.composer/vendor/bin \
-        ${config.home.homeDirectory}/.cargo/bin \
-        ${config.home.homeDirectory}/.rbenv/shims \
-        ${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin
-      if test -d $p; and not contains $p $PATH
-        set -gx PATH $PATH $p
-      end
-    end
-  '';
-
-  # 4.2 fnm の `--use-on-cd` を個人 override で再有効化。
+  # 4. fnm の `--use-on-cd` を個人 override で再有効化。
   #     home/programs/fish.nix の Phase 24 コメント (廃止) に対する例外措置。
   #     理由: 一部プロジェクトは flake.nix で fnm を介して Node を提供する設計のため、
   #           fish 側で .node-version の自動切替が必要。

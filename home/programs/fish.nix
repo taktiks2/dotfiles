@@ -1,8 +1,12 @@
-{ pkgs, ... }:
+{ pkgs, lib, config, ... }:
 
 # Phase 3: Fish 本格宣言化。Phase 9 で PATH / 環境変数を home.sessionPath / sessionVariables へ移譲。
 # Phase 13 で sops 復号 secrets の interactiveShellInit 取り込みを追加。
 # Phase 18 (modular split): home/taktiks2.nix から本ファイルへ抜き出し（Phase 21 で taktiks2.nix → common.nix へ rename）。
+# Phase 26: tmux の default-command (= "fish -c <fish>") 二段起動下では home-manager 生成の
+#           hm-session-vars.fish が __HM_SESS_VARS_SOURCED guard で再 source されず、
+#           home.sessionPath が PATH に届かない。shellInit 末尾で fish ネイティブ list 形式に
+#           append し直すことで、新規 tmux pane でも home.sessionPath の各 path が確実に PATH に載る。
 
 {
   programs.fish = {
@@ -84,6 +88,19 @@
       # 旧来 ~/.config/fish/conf.d/fish_frozen_key_bindings.fish に置かれていた処理を
       # ここに内蔵化（Nix 管理外の手動配置ファイルを排除）。
       set --erase --universal fish_key_bindings
+
+      # Phase 26: home.sessionPath を fish ネイティブ list 形式で append。
+      # 上の Nix profiles prepend より後に評価されるため、Nix の最高優先は崩れない。
+      # 経緯: tmux.nix の `default-command = fish` により新規 pane は `fish -c <fish>` の
+      # 二段起動になる。外側 fish が __HM_SESS_VARS_SOURCED=1 を export 済の状態で
+      # 内側 fish が config.fish を読むと、hm-session-vars.fish 冒頭の guard で早期 return し、
+      # home.sessionPath の中身が PATH に展開されない。本ループで取り戻す。
+      # 各 user 側で `home.sessionPath = [ "/usr/local/bin" ];` 等を追記すれば自動で取り込まれる。
+      for p in ${lib.concatStringsSep " " config.home.sessionPath}
+        if test -d $p; and not contains $p $PATH
+          set -gx PATH $PATH $p
+        end
+      end
     '';
 
     # 対話シェル限定の初期化

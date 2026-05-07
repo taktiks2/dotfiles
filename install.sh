@@ -178,7 +178,9 @@ setup_fish_default_shell() {
 #   - ccusage (Claude Code のトークン使用量・コスト集計)
 #   - diffity (ブラウザで GitHub 風 git diff)
 # 更新は `npm update -g <pkg>` を手動実行する運用。
-# Node 管理は fnm (home/users/takeru.osoegawa.nix で programs.fnm.enable) を使用する。
+# Node 管理は fnm (home/common.nix の home.packages で配布) を使用する。
+# 共通の sessionPath に `~/.local/share/fnm/aliases/default/bin` が含まれるため、
+# `fnm default lts-latest` 後は `claude`/`ccusage` 等の global CLI が直接 PATH 解決される。
 setup_global_npm() {
   step "グローバル npm パッケージ (Nix 管理外、fnm 経由)"
 

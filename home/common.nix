@@ -67,12 +67,16 @@
     "${config.home.homeDirectory}/Library/Android/sdk/platform-tools"
     "${config.home.homeDirectory}/Library/Android/sdk/emulator"
     "${config.home.homeDirectory}/bin"
-    "${config.home.homeDirectory}/.nodebrew/current/bin"
     "/opt/homebrew/opt/mysql@8.0/bin"
     "${config.home.homeDirectory}/.composer/vendor/bin"
     "${config.home.homeDirectory}/.cargo/bin"
     # rbenv shim も sessionPath に集約（旧 fish interactiveShellInit からの移譲）
     "${config.home.homeDirectory}/.rbenv/shims"
+    # fnm の `default` alias 経由で `npm install -g` した CLI (claude/ccusage/...) を解決する。
+    # PID 非依存の symlink (~/.local/share/fnm/aliases/default → node-versions/<v>/installation) なので
+    # 新規 tmux pane でも安定。append 位置のため direnv が刺す devShell の Node が優先される。
+    # 旧 nodebrew bootstrap (~/.nodebrew/current/bin) はここで fnm に統一済 (Phase 25)。
+    "${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin"
   ];
 
   # Phase 21: install-specific な hard-coded path (JAVA_HOME など) は home/users/<username>.nix へ移譲。
@@ -123,7 +127,10 @@
 
     # 言語ランタイム / ビルド
     bun
-    fnm        # Node.js version manager。fish 統合は home/programs/fish.nix の interactiveShellInit で行う。
+    fnm        # Node.js version manager。fish の interactive 統合 (`fnm env --use-on-cd`) は廃止
+               # (home/programs/fish.nix の Phase 24 コメント参照)。default Node は home.sessionPath の
+               # `~/.local/share/fnm/aliases/default/bin` 経由で解決する。`--use-on-cd` を再有効化したい
+               # ホストは home/users/<username>.nix の programs.fish.interactiveShellInit で個別に注入する。
 
     # その他
     just

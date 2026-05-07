@@ -40,6 +40,7 @@ secret-env.fish
 .claude/tasks/
 .claude/mcp-needs-auth-cache.json
 .claude/settings.json.bak
+.claude/.last-cleanup
 
 # Claude Code plugin runtime/cache
 .claude/plugins/cache/

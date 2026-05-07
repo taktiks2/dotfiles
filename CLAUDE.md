@@ -59,7 +59,7 @@ cd ~/dotfiles
 2. Homebrew 本体投入（nix-darwin の homebrew モジュールが `/opt/homebrew` を参照）
 3. Determinate Nix install + 初回 `darwin-rebuild switch`
 4. fish の chsh
-5. Nix 管理境界外の最小 bootstrap (nodebrew + npm global 4 本: `claude` / `ccstatusline` / `ccusage` / `diffity`)
+5. Nix 管理境界外の最小 bootstrap (fnm 経由 Node LTS + npm global 4 本: `claude` / `ccstatusline` / `ccusage` / `diffity`)
 
 ## Daily Operations
 
