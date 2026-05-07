@@ -47,6 +47,10 @@
     "${config.home.homeDirectory}/.composer/vendor/bin"
     "${config.home.homeDirectory}/.cargo/bin"
     "${config.home.homeDirectory}/.rbenv/shims"
+    # fnm の `default` alias 経由で `npm install -g` した CLI (claude/ccusage/...) を解決する。
+    # PID 非依存の symlink (~/.local/share/fnm/aliases/default → node-versions/<v>/installation) なので
+    # 新規 tmux pane でも安定。append 位置のため direnv が刺す devShell の Node が優先される。
+    "${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin"
   ];
 
   # 4.1 home.sessionPath を fish ネイティブ list 形式で再宣言。
@@ -63,7 +67,8 @@
         /opt/homebrew/opt/mysql@8.0/bin \
         ${config.home.homeDirectory}/.composer/vendor/bin \
         ${config.home.homeDirectory}/.cargo/bin \
-        ${config.home.homeDirectory}/.rbenv/shims
+        ${config.home.homeDirectory}/.rbenv/shims \
+        ${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin
       if test -d $p; and not contains $p $PATH
         set -gx PATH $PATH $p
       end

@@ -21,6 +21,9 @@
     ./programs/tmux.nix
     ./programs/fish.nix
     ./programs/claude.nix      # claude work / claude private profile switcher
+    ./programs/yazi.nix
+    ./programs/helix.nix
+    ./programs/jujutsu.nix
   ];
 
   # home.username / home.homeDirectory は nix-darwin の users.users.<name> から自動解決されるため指定しない。

@@ -45,6 +45,13 @@
       # ペインのインデックスも 1 から（programs.tmux.baseIndex は window のみ）
       setw -g pane-base-index 1
 
+      # Shift+Enter / Ctrl+Shift+* 等の拡張キー（CSI u）を内側アプリへ転送する。
+      # Claude Code は Ghostty/kitty 由来の CSI u を期待しているが、tmux のデフォルトは off で
+      # `\r` に丸めてしまう。`always` でアプリの要求有無に関わらず CSI u 形式で常時転送。
+      set -s extended-keys always
+      # 外側ターミナル（xterm-ghostty 含む）が extkeys 対応であることを tmux に宣言。
+      set -as terminal-features ",xterm*:extkeys"
+
       # ghostty (TERM=xterm-ghostty) の RGB / 装飾系ケイパビリティ
       set -as terminal-features ",xterm-ghostty*:RGB:usstyle:hyperlinks:ccolour:cstyle:strikethrough:overline"
       # 旧 Tc フラグでのフォールバック
