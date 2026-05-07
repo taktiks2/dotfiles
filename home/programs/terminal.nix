@@ -31,6 +31,9 @@
       font-size     = 10;
       font-thicken  = true;
       theme         = "TokyoNight Night";
+      # Option キーを Alt 修飾子として扱う（macOS デフォルトの Unicode 入力モードを無効化）。
+      # tmux の `bind -n M-*` 系キーバインドが届くようにするため。
+      macos-option-as-alt = true;
     };
   };
 }

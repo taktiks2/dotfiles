@@ -75,6 +75,17 @@
     end
   '';
 
+  # 4.2 fnm の `--use-on-cd` を個人 override で再有効化。
+  #     home/programs/fish.nix の Phase 24 コメント (廃止) に対する例外措置。
+  #     理由: 一部プロジェクトは flake.nix で fnm を介して Node を提供する設計のため、
+  #           fish 側で .node-version の自動切替が必要。
+  #     既知の副作用 (Phase 24 廃止理由のうち本 override で再発するもの):
+  #       - 未 install バージョンを要求するリポジトリで fnm がエラーを吐く
+  #       - direnv で devShell の Node を刺している場合、fnm の PATH prepend で上書きされる
+  programs.fish.interactiveShellInit = ''
+    fnm env --use-on-cd --shell fish | source
+  '';
+
   # 5. tmux: 業務用 lazyjira ポップアップ（prefix + J）。
   #    programs.tmux.extraConfig は types.lines なので home/programs/tmux.nix の設定に連結される。
   programs.tmux.extraConfig = ''
