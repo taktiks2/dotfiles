@@ -26,12 +26,14 @@
 
       git = {
         # push 時のみ署名する（作業中の都度署名はスキップして割り込みを最小化）
-        sign-on-push       = true;
-        # --allow-new フラグなしで新規 bookmark を push 可（jj 0.25+）
-        push-new-bookmarks = true;
+        sign-on-push    = true;
         # "wip:*" prefix の commit を push ガード（誤 push の安全弁）
-        private-commits    = "description(glob:'wip:*')";
+        private-commits = "description(glob:'wip:*')";
       };
+
+      # 旧 git.push-new-bookmarks の後継（jj 0.36+ で deprecated → リモート単位の設定へ）。
+      # origin に push した bookmark を自動 track（pull 時のローカル更新が走るようになる）。
+      remotes.origin.auto-track-bookmarks = "*";
 
       signing = {
         # 既存 SSH 鍵（~/.ssh/id_ed25519*）を再利用、GPG 鍵管理を増やさない

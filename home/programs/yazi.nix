@@ -10,6 +10,9 @@
   programs.yazi = {
     enable = true;
     enableFishIntegration = true;
+    # home.stateVersion < 26.05 では legacy 既定 "yy" が選ばれるため、
+    # 26.05 で変わった新既定の `y` を明示して warning を黙らせる。
+    shellWrapperName = "y";
 
     settings = {
       # 隠しファイルを常時表示（`.` でトグルも可）。
