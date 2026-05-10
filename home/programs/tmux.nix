@@ -72,6 +72,9 @@
       # lazygit をポップアップで開く（prefix + g）
       bind g display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "lazygit"
 
+      # jjui をポップアップで開く（prefix + v = vcs）
+      bind v display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "jjui"
+
       # gh dash をポップアップで開く（prefix + G）
       bind G display-popup -E -w 90% -h 90% -d "#{pane_current_path}" "gh dash"
 
