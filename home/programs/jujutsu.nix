@@ -25,8 +25,9 @@
       };
 
       git = {
-        # push 時のみ署名する（作業中の都度署名はスキップして割り込みを最小化）
-        sign-on-push    = true;
+        # 署名なしで push（GitHub に signing key 未登録の状態だと "Unverified" バッジが付くため無効化）。
+        # 検証バッジを付けたくなったら true に戻し、`gh ssh-key add ... --type signing` で公開鍵を登録する。
+        sign-on-push    = false;
         # "wip:*" prefix の commit を push ガード（誤 push の安全弁）
         private-commits = "description(glob:'wip:*')";
       };
