@@ -14,7 +14,7 @@
 #        sshIdentityFile を生成（host 側で宣言ゼロなら no-op）
 #      - 公開鍵を表示し、GitHub への登録 URL を提示（自動登録はしない）
 #   6. Nix 管理境界外の最小 bootstrap:
-#      - fnm + 4 つの npm global (claude / ccstatusline / ccusage / diffity)
+#      - fnm + 5 つの npm global (claude / ccstatusline / ccusage / diffity / codex)
 #        ※ 頻繁に upstream が更新されるため npm 直管理を意図的に維持
 ################################################################################
 
@@ -157,12 +157,13 @@ setup_fish_default_shell() {
 }
 
 # ── Nix 管理境界外 ──────────────────────────────────────────────────────────
-# 以下の 4 npm パッケージは upstream の更新が極めて頻繁なため、Nix 化せず
+# 以下の 5 npm パッケージは upstream の更新が極めて頻繁なため、Nix 化せず
 # `npm i -g` 直管理を意図的に維持する:
 #   - claude (Claude Code 本体)
 #   - ccstatusline (settings.json の statusLine から呼ぶ)
 #   - ccusage (Claude Code のトークン使用量・コスト集計)
 #   - diffity (ブラウザで GitHub 風 git diff)
+#   - codex (Claude Code の /codex:* プラグインが PATH 上の `codex` を要求)
 # 更新は `npm update -g <pkg>` を手動実行する運用。
 # Node 管理は fnm (home/common.nix の home.packages で配布) を使用する。
 # 共通の sessionPath に `~/.local/share/fnm/aliases/default/bin` が含まれるため、
@@ -176,7 +177,7 @@ setup_global_npm() {
 
   if ! exists fnm; then
     warning "fnm が PATH に無いため npm global packages をスキップ"
-    warning "post-install: 新シェルで fnm install --lts && npm install -g claude ccstatusline ccusage diffity"
+    warning "post-install: 新シェルで fnm install --lts && npm install -g claude ccstatusline ccusage diffity @openai/codex"
     return
   fi
 
@@ -201,7 +202,8 @@ setup_global_npm() {
     "@anthropic-ai/claude-code:claude" \
     "ccstatusline:ccstatusline" \
     "ccusage:ccusage" \
-    "diffity:diffity"
+    "diffity:diffity" \
+    "@openai/codex:codex"
   do
     local pkg="${entry%%:*}"
     local bin="${entry##*:}"

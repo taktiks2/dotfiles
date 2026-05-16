@@ -222,13 +222,20 @@
     "rust-analyzer-lsp@claude-plugins-official": true,
     "serena@claude-plugins-official": false,
     "superpowers@claude-plugins-official": true,
-    "zundamon@cc-zundamon-plugins": true
+    "zundamon@cc-zundamon-plugins": true,
+    "codex@openai-codex": true
   },
   "extraKnownMarketplaces": {
     "everything-claude-code": {
       "source": {
         "source": "github",
         "repo": "affaan-m/everything-claude-code"
+      }
+    },
+    "openai-codex": {
+      "source": {
+        "source": "github",
+        "repo": "openai/codex-plugin-cc"
       }
     }
   },
