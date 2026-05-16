@@ -59,6 +59,9 @@
         "immutable_heads()" = "present(trunk()) | tags() | remote_bookmarks()";
         # 現在の作業 stack（mutable な祖先を遡る）
         "stack()"           = "ancestors(reachable(@, mutable()), 10)";
+        # `to` から遡って最も近い bookmark を返す。`tug` alias から参照される。
+        # heads(::to & bookmarks()) = (to の祖先 ∩ bookmark) の先端
+        "closest_bookmark(to)" = "heads(::to & bookmarks())";
       };
 
       template-aliases = {
