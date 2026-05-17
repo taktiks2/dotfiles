@@ -61,6 +61,11 @@
             name    = "Checkout & Review";
             command = "tmux new-window -c {{.RepoPath}} -n \"review#{{.PrNumber}}-$(basename {{.RepoName}})\" \"~/.config/gh-dash/bin/octo-review.sh {{.RepoName}} {{.PrNumber}}\" ; tmux display-popup -C";
           }
+          {
+            key     = "b";
+            name    = "Open in Browser";
+            command = "gh pr view {{.PrNumber}} --repo {{.RepoName}} --web";
+          }
         ];
         branches = [];
       };
