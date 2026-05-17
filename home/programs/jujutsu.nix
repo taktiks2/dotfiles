@@ -121,7 +121,14 @@
       flash({ text = "No revision selected", error = true })
       return
     end
-    exec_shell(string.format("jj diff -r %q --git --color=always | delta", change_id))
+    -- delta --pager に明示的に less --mouse を渡してマウススクロールを有効化。
+    -- delta は内部 pager に -R/--no-init/--quit-if-one-screen は付けるが --mouse は
+    -- 付けないため、ここで上書き指定する（他経路の delta は影響を受けない）。
+    -- -F は 1 画面に収まる場合即終了、-X で代替画面に切替えず scrollback を残す。
+    exec_shell(string.format(
+      "jj diff -r %q --git --color=always | delta --pager 'less -R -F -X --mouse'",
+      change_id
+    ))
     """
 
     [[bindings]]
