@@ -74,6 +74,63 @@
   # TUI: jjui (2026 時点で最も活発な jj TUI)
   home.packages = [ pkgs.jjui ];
 
+  # jjui 設定（~/.config/jjui/config.toml）。programs.* モジュール非対応なので
+  # xdg.configFile で declare。Lua の function setup(config) 形式ではなく、docs の
+  # Minimal Example が示す TOML inline 形式 ([[actions]] + [[bindings]]) で統一して
+  # 設定ファイルを 1 本にまとめる（lua = ''' ... ''' に Lua スニペットを埋め込む）。
+  #
+  # 設計メモ:
+  # - jjui の preview commands は `jj <args>` として exec される（jjui ソース: preview.go:
+  #   RunCommandImmediateWithEnv → exec.Command("jj", args...)）。シェルパイプは使えないので
+  #   `jj util exec -- bash -c "..."` で bash サブプロセスを起こす。
+  # - placeholder（$change_id / $file 等）は jjui 側で各 arg 文字列に対し strings.ReplaceAll で
+  #   置換される（templated_args.go: TemplatedArgs）。よって bash -c の文字列内で参照できる
+  #   （bash の env var として解決されるのではない）。
+  # - delta は `--no-gitconfig` で git.nix 側の [delta] 既定（side-by-side / navigate / line-numbers）
+  #   を完全リセットしてから、preview に必要なものだけ CLI で opt-in する。
+  #   理由: delta 0.19.2 の `[delta "feature"]` 機構は paging のような string 値は反映するが、
+  #   `side-by-side = false` / `navigate = false` のような boolean 偽による base 上書きが効かず
+  #   side-by-side が残って preview pane が左右分割→片側だけに diff が偏る不具合を踏む。
+  #   `--no-gitconfig` ならその bug を回避できる。`--side-by-side=false` も `--no-side-by-side` も
+  #   delta CLI には存在しないため、base を消す以外に side-by-side を off にする手段がない。
+  # - COLUMNS/LINES が preview pane サイズに set されるので幅は delta が自動追従。
+  # - `d` (revisions scope) は jjui 既定の内蔵 diff viewer (revisions.diff action) を上書きして
+  #   外部 delta launcher に差し替える。理由: 内蔵 viewer は `jj diff --color always --ignore-working-copy`
+  #   の生出力を直接表示するだけで delta を介在させるフックが存在しないため（jjui ソース:
+  #   revisions.go:showDiff → context.RunCommandImmediate → exec.Command("jj", ...)）。
+  #   delta 経由で見たい場合は binding を奪うのが唯一の道。
+  #   内蔵 viewer を残したくなったら `key = "ctrl+d"` 等に逃がす binding を追記する。
+  xdg.configFile."jjui/config.toml".text = ''
+    [preview]
+    revision_command = [
+      "util", "exec", "--",
+      "bash", "-c",
+      "jj show --color=always --git -r $change_id | delta --no-gitconfig --paging=never --line-numbers",
+    ]
+    file_command = [
+      "util", "exec", "--",
+      "bash", "-c",
+      "jj diff --color=always --git -r $change_id -- $file | delta --no-gitconfig --paging=never --line-numbers",
+    ]
+
+    [[actions]]
+    name = "show-diff-in-delta"
+    lua = """
+    local change_id = context.change_id()
+    if not change_id or change_id == "" then
+      flash({ text = "No revision selected", error = true })
+      return
+    end
+    exec_shell(string.format("jj diff -r %q --git --color=always | delta", change_id))
+    """
+
+    [[bindings]]
+    action = "show-diff-in-delta"
+    key    = "d"
+    scope  = "revisions"
+    desc   = "show diff in delta"
+  '';
+
   # JJ_CONFIG をディレクトリにすると配下の *.toml を辞書順 merge（後勝ち）。
   # config.toml (HM 生成、'c') の後に local.toml ('l') が読まれて [user]/[signing.key] を上書きする。
   home.sessionVariables.JJ_CONFIG = "${config.home.homeDirectory}/.config/jj";
