@@ -115,7 +115,61 @@
       "mcp__github__add_issue_comment",
       "mcp__github__get_issue_comments",
       "mcp__devinwiki__read_wiki_contents",
-      "mcp__devinwiki__ask_question"
+      "mcp__devinwiki__ask_question",
+
+      "Bash(jj st)",
+      "Bash(jj st:*)",
+      "Bash(jj status)",
+      "Bash(jj status:*)",
+      "Bash(jj log)",
+      "Bash(jj log:*)",
+      "Bash(jj l)",
+      "Bash(jj l:*)",
+      "Bash(jj ll)",
+      "Bash(jj ll:*)",
+      "Bash(jj diff)",
+      "Bash(jj diff:*)",
+      "Bash(jj show)",
+      "Bash(jj show:*)",
+      "Bash(jj evolog:*)",
+      "Bash(jj op log)",
+      "Bash(jj op log:*)",
+      "Bash(jj op show:*)",
+      "Bash(jj op diff:*)",
+      "Bash(jj describe:*)",
+      "Bash(jj new)",
+      "Bash(jj new:*)",
+      "Bash(jj edit:*)",
+      "Bash(jj prev)",
+      "Bash(jj next)",
+      "Bash(jj squash)",
+      "Bash(jj squash --from:*)",
+      "Bash(jj squash --into:*)",
+      "Bash(jj split:*)",
+      "Bash(jj abandon:*)",
+      "Bash(jj rebase:*)",
+      "Bash(jj duplicate:*)",
+      "Bash(jj bookmark list)",
+      "Bash(jj bookmark list:*)",
+      "Bash(jj bookmark create:*)",
+      "Bash(jj bookmark move:*)",
+      "Bash(jj bookmark delete:*)",
+      "Bash(jj bookmark track:*)",
+      "Bash(jj bookmark untrack:*)",
+      "Bash(jj git fetch)",
+      "Bash(jj git fetch:*)",
+      "Bash(jj git push --dry-run:*)",
+      "Bash(jj resolve --list)",
+      "Bash(jj undo)",
+      "Bash(jj redo)",
+      "Bash(jj op restore:*)",
+      "Bash(jj op revert:*)",
+      "Bash(jj config get:*)",
+      "Bash(jj config list:*)",
+      "Bash(jj config path:*)",
+      "Bash(jj metaedit:*)",
+      "Bash(jj fix:*)",
+      "Bash(jj tug)"
     ],
     "deny": [
       "Read(./.env)",
@@ -140,13 +194,57 @@
       "Bash(git clean -ffd:*)",
       "Bash(git checkout -- :*)",
       "Bash(git restore . :*)",
-      "Bash(brew uninstall:*)"
+      "Bash(brew uninstall:*)",
+
+      "Bash(jj resolve)",
+      "Bash(jj diffedit:*)",
+      "Bash(jj squash -i)",
+      "Bash(jj squash --interactive)",
+      "Bash(jj split -i)",
+      "Bash(jj split --interactive)",
+      "Bash(jj si)"
     ],
     "defaultMode": "auto",
     "preferredNotifChannel": "terminal_bell"
   },
   "model": "claude-opus-4-7[1m]",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/jj-context.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreCompact": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/jj-context.sh",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/jj-guard.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "Notification": [
       {
         "matcher": "permission_prompt|elicitation_dialog",
