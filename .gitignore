@@ -48,6 +48,7 @@ secret-env.fish
 .claude/bash-commands.log
 .claude/cost-tracker.log
 .claude/policy-limits.json
+.claude/skills/
 
 # Claude Code: 個人トークンを含む可能性のある local 設定
 .claude/settings.local.json
@@ -57,10 +58,41 @@ secret-env.fish
 # .claude/skills/, .claude/agents/, .claude/commands/, CLAUDE.md は追跡対象
 # (gitignore 上の明示は不要だが、誤って追加しないよう ! 例外も書かない)
 
+# Codex CLI / app server: 機密・ランタイム生成物。tracked にしない
+.codex/auth.json
+.codex/.credentials.json
+.codex/installation_id
+.codex/.personality_migration
+.codex/version.json
+.codex/models_cache.json
+.codex/logs_*.sqlite
+.codex/logs_*.sqlite-shm
+.codex/logs_*.sqlite-wal
+.codex/state_*.sqlite
+.codex/state_*.sqlite-shm
+.codex/state_*.sqlite-wal
+.codex/cache/
+.codex/log/
+.codex/shell_snapshots/
+.codex/tmp/
+.codex/.tmp/
+.codex/memories/
+.codex/plugins/cache/
+.codex/skills/.system/
+
+# Codex: tracked 対象は config.toml / AGENTS.md / plugins/ / skills/
+# (除外漏れがあれば随時追加。誤コミット防止のため `! 例外` は書かない)
+
 # atac (HTTP client) のリクエストコレクションは runtime データのため追跡しない。
 # settings/ 配下の keybinding/theme は config として tracked のまま。
 .config/atac/*.json
 .config/atac/*.log
+
+# nvim/lua: ローカル試行をデフォルトで非追跡。新規ファイルは git status に現れない。
+# 既存 tracked 21 ファイルは skip-worktree でローカル変更を隠蔽 (modules/homebrew/local.nix と同じパターン)。
+# push したいファイル: `git update-index --no-skip-worktree <path>` で一時解除 → add/commit/push → 再 skip。
+# push したい新規ファイル: `git add -f <path>` で gitignore を上書きして add。
+.config/nvim/lua/
 
 # Editor / app local backups
 *.bak

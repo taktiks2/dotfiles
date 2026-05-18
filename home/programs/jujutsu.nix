@@ -29,6 +29,10 @@
         sign-on-push    = true;
         # "wip:*" prefix の commit を push ガード（誤 push の安全弁）
         private-commits = "description(glob:'wip:*')";
+        # fetch 時に remote bookmark から ローカル bookmark を自動生成しない
+        # （colocated repo で他人のブランチが一斉にローカルに落ちて lazygit/git branch が
+        #  汚染されるのを防ぐ）。明示的に track したい時のみ `jj bookmark track` を使う。
+        auto-local-bookmark = false;
       };
 
       # 旧 git.push-new-bookmarks の後継（jj 0.36+ で deprecated → リモート単位の設定へ）。

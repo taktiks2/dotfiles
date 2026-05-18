@@ -174,6 +174,10 @@
   home.file.".claude".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/.claude";
 
+  # ~/.codex も dotfiles 配下を live link で参照（Codex CLI / app server 設定・AGENTS.md・plugins・skills）。
+  home.file.".codex".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfilesRoot}/.codex";
+
   # idempotent な bootstrap 副作用。programs.git / .gitconfig 用 activation は ./programs/git.nix 側に定義。
   home.activation.bootstrapSideEffects = lib.hm.dag.entryAfter [ "writeBoundary" ] ''
     # secret-env.fish が無ければテンプレを作成（gitignore 相当、機密のため dotfiles repo 外に配置）
