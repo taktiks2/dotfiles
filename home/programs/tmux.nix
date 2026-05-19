@@ -36,6 +36,10 @@
           set -g @theme_left_separator '${""}'
           set -g @theme_right_separator '${""}'
           set -g @theme_enable_icons '0'
+          # git-status.sh が .git/index をポーリングし jj colocated repo で
+          # `jj duplicate` / `jj rebase` の HEAD 同期と競合して index.lock を取れず失敗するため無効化。
+          # ブランチ名・変更状態は fish prompt 側で十分確認できる。
+          set -g @tokyo-night-tmux_show_git 0
         '';
       }
     ];

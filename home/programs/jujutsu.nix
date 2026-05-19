@@ -55,6 +55,8 @@
         si  = [ "squash" "--interactive" ];
         # 直近 bookmark を @- に追従（作業 commit を進めた後に bookmark を進める頻出操作）
         tug = [ "bookmark" "move" "--from" "closest_bookmark(@-)" "--to" "@-" ];
+        # @ から遡って最も近い bookmark 名を改行区切りで出力（"今どのブランチに乗っているか" 確認用）
+        on  = [ "log" "-r" "heads(::@ & bookmarks())" "--no-graph" "-T" "bookmarks ++ \"\\n\"" ];
       };
 
       # revset-aliases / template-aliases は識別子に () を含むため key を quote
