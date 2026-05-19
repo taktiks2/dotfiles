@@ -82,6 +82,7 @@ in
         ".DS_Store"
         "**/.claude/settings.local.json"
         ".jj/"
+        "tmp/"
       ];
 
       # HM 25.11 では userName/userEmail/extraConfig は settings に統合された
