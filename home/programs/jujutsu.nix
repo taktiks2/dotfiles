@@ -47,6 +47,7 @@
         # 作業ブランチ周辺を log（trunk から @ までと、@ の子孫）
         l   = [ "log" "-r" "(trunk()..@):: | (trunk()..@)-" ];
         ll  = [ "log" "--limit" "20" ];
+        r   = [ "log" "-r" "::@ & conflicts()" ];
         s   = [ "status" ];
         si  = [ "squash" "--interactive" ];
         # 直近 bookmark を @- に追従（作業 commit を進めた後に bookmark を進める頻出操作）
