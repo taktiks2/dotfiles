@@ -35,10 +35,6 @@
         auto-local-bookmark = false;
       };
 
-      # 旧 git.push-new-bookmarks の後継（jj 0.36+ で deprecated → リモート単位の設定へ）。
-      # origin に push した bookmark を自動 track（pull 時のローカル更新が走るようになる）。
-      remotes.origin.auto-track-bookmarks = "*";
-
       signing = {
         # 既存 SSH 鍵（~/.ssh/id_ed25519*）を再利用、GPG 鍵管理を増やさない
         backend  = "ssh";

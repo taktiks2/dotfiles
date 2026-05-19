@@ -34,7 +34,6 @@ Solo-jj × team-git の colocated 運用を前提とした、自分用の作業�
 | `wip:*` push ガード | `git.private-commits = "description(glob:'wip:*')"` | description が `wip:` 始まりの change は push 拒否 |
 | `tug` alias | `bookmark move --from closest_bookmark(@-) --to @-` | 直近 bookmark を `@-` まで追従 |
 | Lazy signing | `signing.behavior = "drop"` + `git.sign-on-push = true` | 履歴編集中は無署名／push 瞬間に SSH 鍵で署名 |
-| 自動 track | `remotes.origin.auto-track-bookmarks = "*"` | push した bookmark は自動 track |
 | `immutable_heads()` | `present(trunk()) | tags() | remote_bookmarks()` | 不変保護を保守的に |
 | `stack()` revset | `ancestors(reachable(@, mutable()), 10)` | `jj log -r 'stack()'` で現スタック |
 | `l` alias | `log -r '(trunk()..@):: | (trunk()..@)-'` | 作業範囲だけ log |
