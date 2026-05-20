@@ -47,6 +47,7 @@
         # 作業ブランチ周辺を log（trunk から @ までと、@ の子孫）
         l   = [ "log" "-r" "(trunk()..@):: | (trunk()..@)-" ];
         ll  = [ "log" "--limit" "20" ];
+        lb  = [ "log" "-r" "bookmarks()"];
         r   = [ "log" "-r" "::@ & conflicts()" ];
         s   = [ "status" ];
         si  = [ "squash" "--interactive" ];
