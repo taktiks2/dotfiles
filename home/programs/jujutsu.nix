@@ -108,12 +108,12 @@
     revision_command = [
       "util", "exec", "--",
       "bash", "-c",
-      "jj show --color=always --git -r $change_id | delta --no-gitconfig --paging=never --line-numbers",
+      "jj show --color=always --git -r $change_id | delta --no-gitconfig --paging=never --line-numbers --plus-style='syntax #004466' --minus-style='syntax #660000' --plus-emph-style='syntax #0077B3' --minus-emph-style='syntax #B30000' --line-numbers-plus-style='#0077B3' --line-numbers-minus-style='#B30000'",
     ]
     file_command = [
       "util", "exec", "--",
       "bash", "-c",
-      "jj diff --color=always --git -r $change_id -- $file | delta --no-gitconfig --paging=never --line-numbers",
+      "jj diff --color=always --git -r $change_id -- $file | delta --no-gitconfig --paging=never --line-numbers --plus-style='syntax #004466' --minus-style='syntax #660000' --plus-emph-style='syntax #0077B3' --minus-emph-style='syntax #B30000' --line-numbers-plus-style='#0077B3' --line-numbers-minus-style='#B30000'",
     ]
 
     [[actions]]
@@ -127,9 +127,12 @@
     -- delta --pager に明示的に less --mouse を渡してマウススクロールを有効化。
     -- delta は内部 pager に -R/--no-init/--quit-if-one-screen は付けるが --mouse は
     -- 付けないため、ここで上書き指定する（他経路の delta は影響を受けない）。
-    -- -F は 1 画面に収まる場合即終了、-X で代替画面に切替えず scrollback を残す。
+    -- 以前は -F -X を付けていたが、いずれも jjui の TUI と相性が悪く除外:
+    --   -F (quit-if-one-screen): short diff だと less が即終了 → jjui 再描画で diff が一瞬で消える
+    --   -X (no-init):            alt-screen に切替えないため、d 連打で前回 diff がメイン画面の
+    --                             scrollback に残り、次の diff がその下に積まれる
     exec_shell(string.format(
-      "jj diff -r %q --git --color=always | delta --pager 'less -R -F -X --mouse'",
+      "jj diff -r %q --git --color=always | delta --pager 'less -R --mouse'",
       change_id
     ))
     """

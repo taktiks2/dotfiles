@@ -117,6 +117,25 @@ in
         navigate     = true;
         side-by-side = true;
         line-numbers = true;
+
+        # Claude Code dark-daltonized テーマと同じ diff 配色を適用する。
+        # 色値の出典: tmp/claude-code-dark-daltonized-diff-colors.md
+        # *Dimmed 系は delta の描画モデルに対応キーが無いため移植していない。
+        features = "claude-dark-daltonized";
+
+        claude-dark-daltonized = {
+          # 行全体の背景。fg は syntax のまま (bat のシンタックスハイライトを残す)。
+          plus-style  = ''syntax "#004466"'';
+          minus-style = ''syntax "#660000"'';
+
+          # 変更された語の強調（明るい青 / 鮮やかな赤）。
+          plus-emph-style  = ''syntax "#0077B3"'';
+          minus-emph-style = ''syntax "#B30000"'';
+
+          # 行番号ガター（fg のみ）。emph と同色で識別性を上げる。
+          line-numbers-plus-style  = ''"#0077B3"'';
+          line-numbers-minus-style = ''"#B30000"'';
+        };
       };
     };
 
