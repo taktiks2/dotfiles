@@ -24,6 +24,7 @@
     ./programs/helix.nix
     ./programs/jujutsu.nix
     ./programs/atuin.nix
+    ./programs/herdr.nix       # pkgs.herdr + config.toml 生成（tmux 互換キーバインド）
   ];
 
   # home.username / home.homeDirectory は nix-darwin の users.users.<name> から自動解決されるため指定しない。
@@ -169,6 +170,7 @@
     # （config.yml は programs.gh-dash.settings 側で管理）
     "gh-dash/bin/octo-review.sh".source =
       config.lib.file.mkOutOfStoreSymlink "${configRoot}/gh-dash/bin/octo-review.sh";
+    # herdr の config.toml は ./programs/herdr.nix が store 生成物として配布（live link ではない）
   };
 
   # ~/.claude も dotfiles 配下を live link で参照（Claude Code 設定 / agents / skills / plugins）。

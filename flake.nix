@@ -28,6 +28,13 @@
       url = "github:Mic92/sops-nix";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+
+    # nixpkgs 未収録のため upstream flake から取得。overlay で `pkgs.herdr` を提供。
+    # https://herdr.dev/docs/install/
+    herdr = {
+      url = "github:ogulcancelik/herdr";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = inputs@{ self, nixpkgs, nix-darwin, home-manager, determinate, sops-nix, ... }:
@@ -90,6 +97,7 @@
                 (final: prev: {
                   direnv = prev.direnv.overrideAttrs (_: { doCheck = false; });
                 })
+                inputs.herdr.overlays.default
               ];
             })
           ] ++ extraModules;
