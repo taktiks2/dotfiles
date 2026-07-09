@@ -28,9 +28,25 @@ let
       # tmux と同じ prefix (C-s)
       prefix = "ctrl+s";
 
+      # ワークスペース切替はデフォルト未割当のため割当てる。
+      # workmux sidebar (./tmux.nix の M-j / M-k / M-1..9) と同じ prefix 無しの直接キー。
+      # alt 系は Ghostty の macos-option-as-alt = true (./terminal.nix) が前提。
+      # prefix+shift+j/k は swap_pane_down/up の隠れデフォルトと被るため使わない
+      # (--default-config には出ないが v0.7.1 src/config/model.rs で prefix+shift+h/j/k/l)。
+      next_workspace = "alt+j";
+      previous_workspace = "alt+k";
+      switch_workspace = "alt+1..9";
+
+      # worktree の open / 削除もデフォルト未割当。キーは公式 docs の例に合わせる。
+      # remove は確認ダイアログ付きで git worktree remove を実行（ブランチは消さない）。
+      open_worktree = "prefix+shift+o";
+      remove_worktree = "prefix+alt+d";
+
       # tmux の display-popup 相当。type = "pane" は一時ペインで開き、終了で閉じる。
+      # lazygit を g に置くとデフォルトの goto (セッションナビゲーター) を潰すため alt+g に退避。
       command = [
-        { key = "prefix+g";       type = "pane"; command = "lazygit";    description = "lazygit"; }
+        { key = "prefix+alt+g";   type = "pane"; command = "lazygit";    description = "lazygit"; }
+        { key = "prefix+d";       type = "pane"; command = "hunk diff";    description = "hunk diff"; }
         { key = "prefix+shift+c"; type = "pane"; command = "lazydocker"; description = "lazydocker"; }
       ];
     };

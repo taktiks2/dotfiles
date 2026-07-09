@@ -41,6 +41,18 @@
   #   - direnv で devShell の Node を刺している場合、fnm の PATH prepend で上書きされる
   programs.fish.interactiveShellInit = ''
     fnm env --use-on-cd --shell fish | source
+
+    # hunk 同梱の Claude Code skill (hunk-review) を work プロファイルへ常時リンク。
+    # 実体は fnm の node-versions/<ver>/ 配下にあり Node 更新でリンクが切れるため、
+    # リンク切れ時のみ `hunk skill path`（node 起動で重い）を呼んで張り直す。
+    # リンク正常時のコストは test 1 回分のみ。
+    set -l hunk_skill_link ~/.claude-profiles/work/skills/hunk-review
+    if not test -e $hunk_skill_link/SKILL.md; and command -q hunk
+        set -l hunk_skill_dir (hunk skill path 2>/dev/null | path dirname)
+        if test -d "$hunk_skill_dir"
+            ln -sfn $hunk_skill_dir $hunk_skill_link
+        end
+    end
   '';
 
   # tmux: 業務用 lazyjira ポップアップ（prefix + J）。
