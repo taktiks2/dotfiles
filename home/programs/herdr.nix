@@ -42,11 +42,22 @@ let
       open_worktree = "prefix+shift+o";
       remove_worktree = "prefix+alt+d";
 
+      # goto (セッションナビゲーター) はデフォルト g を lazygit に譲り alt+g へ移設。
+      goto = "prefix+alt+g";
+
       # tmux の display-popup 相当。type = "pane" は一時ペインで開き、終了で閉じる。
-      # lazygit を g に置くとデフォルトの goto (セッションナビゲーター) を潰すため alt+g に退避。
       command = [
-        { key = "prefix+alt+g";   type = "pane"; command = "lazygit";    description = "lazygit"; }
-        { key = "prefix+d";       type = "pane"; command = "hunk diff";    description = "hunk diff"; }
+        { key = "prefix+g";       type = "pane"; command = "lazygit";    description = "lazygit"; }
+        # f = diff。素の f は working tree、shift+f はベースブランチ指定。
+        { key = "prefix+f";       type = "pane"; command = "hunk diff";    description = "hunk diff"; }
+        # ベースブランチを fzf で選んで hunk diff <base>..HEAD を開く。
+        # type = "pane" は /bin/sh -c の実 PTY 実行なので対話コマンド (fzf) が使える。
+        {
+          key = "prefix+shift+f";
+          type = "pane";
+          command = "base=$(git branch --sort=-committerdate --format='%(refname:short)' | fzf --prompt='base branch> ') && hunk diff \"$base..HEAD\"";
+          description = "hunk diff vs base";
+        }
         { key = "prefix+shift+c"; type = "pane"; command = "lazydocker"; description = "lazydocker"; }
       ];
     };
