@@ -76,30 +76,39 @@ install_homebrew() {
   fi
 }
 
+# skip-worktree で「git tracked だがローカル編集を追跡しない」運用にするファイル群。
+# upstream には空 stub がコミットされており、各マシンの実内容は push されない。
+SKIP_WORKTREE_FILES=(
+  "modules/homebrew/local.nix"
+  "home/hosts/work.nix"
+)
+
 setup_local_overrides() {
-  step "ホスト固有 brew/cask の skip-worktree 設定 (modules/homebrew/local.nix)"
-  local local_file="modules/homebrew/local.nix"
-  local full_path="$DOTFILES_DIR/$local_file"
+  step "ホスト固有ファイルの skip-worktree 設定"
 
-  if [ ! -f "$full_path" ]; then
-    warning "$local_file が存在しません (git pull 漏れ？) — スキップ"
-    return 0
-  fi
+  local local_file full_path flag
+  for local_file in "${SKIP_WORKTREE_FILES[@]}"; do
+    full_path="$DOTFILES_DIR/$local_file"
 
-  if ! (cd "$DOTFILES_DIR" && git ls-files --error-unmatch "$local_file" >/dev/null 2>&1); then
-    warning "$local_file が git tracked ではありません — skip-worktree 設定をスキップ"
-    return 0
-  fi
+    if [ ! -f "$full_path" ]; then
+      warning "$local_file が存在しません (git pull 漏れ？) — スキップ"
+      continue
+    fi
 
-  # `git ls-files -v` の先頭が 'S' なら skip-worktree 済 (idempotent check)。
-  local flag
-  flag=$(cd "$DOTFILES_DIR" && git ls-files -v "$local_file" | head -c1)
-  if [ "$flag" = "S" ]; then
-    success "skip-worktree 既に設定済 ($local_file)"
-  else
-    (cd "$DOTFILES_DIR" && git update-index --skip-worktree "$local_file")
-    success "skip-worktree 設定完了 ($local_file の編集は git status に出ません)"
-  fi
+    if ! (cd "$DOTFILES_DIR" && git ls-files --error-unmatch "$local_file" >/dev/null 2>&1); then
+      warning "$local_file が git tracked ではありません — skip-worktree 設定をスキップ"
+      continue
+    fi
+
+    # `git ls-files -v` の先頭が 'S' なら skip-worktree 済 (idempotent check)。
+    flag=$(cd "$DOTFILES_DIR" && git ls-files -v "$local_file" | head -c1)
+    if [ "$flag" = "S" ]; then
+      success "skip-worktree 既に設定済 ($local_file)"
+    else
+      (cd "$DOTFILES_DIR" && git update-index --skip-worktree "$local_file")
+      success "skip-worktree 設定完了 ($local_file の編集は git status に出ません)"
+    fi
+  done
 }
 
 bootstrap_nix() {
@@ -322,8 +331,8 @@ final_check() {
   - SSH 鍵 (~/.ssh/id_ed25519*.pub) を https://github.com/settings/keys に登録
 
 日常運用:
-  \$EDITOR ~/dotfiles/home/common.nix                    # 全ユーザ共通の baseline
-  \$EDITOR ~/dotfiles/home/hosts/<hostname>.nix         # ホスト固有差分 (任意)
+  \$EDITOR ~/dotfiles/home/common.nix                    # 全ホスト共通の baseline
+  \$EDITOR ~/dotfiles/home/hosts/<hostname>.nix          # ホスト固有差分 (skip-worktree で git status 非表示)
   \$EDITOR ~/dotfiles/modules/homebrew/local.nix         # ホスト固有 brew/cask (skip-worktree で git status 非表示)
   sudo darwin-rebuild switch --flake ~/dotfiles#${HOST_NAME}
 
