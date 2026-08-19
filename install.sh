@@ -323,7 +323,7 @@ final_check() {
 
 日常運用:
   \$EDITOR ~/dotfiles/home/common.nix                    # 全ユーザ共通の baseline
-  \$EDITOR ~/dotfiles/home/users/<username>.nix          # 個人差分 (任意)
+  \$EDITOR ~/dotfiles/home/hosts/<hostname>.nix         # ホスト固有差分 (任意)
   \$EDITOR ~/dotfiles/modules/homebrew/local.nix         # ホスト固有 brew/cask (skip-worktree で git status 非表示)
   sudo darwin-rebuild switch --flake ~/dotfiles#${HOST_NAME}
 

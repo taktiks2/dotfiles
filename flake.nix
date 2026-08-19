@@ -53,9 +53,9 @@
         , homeExtraModules ? [ ]
         }:
         let
-          # ユーザ単位の差分を home/users/<username>.nix で auto-import。
+          # ホスト単位の差分を home/hosts/<hostname>.nix で auto-import。
           # ファイルが無ければ pathExists=false で skip され common.nix のみが適用される。
-          userFile = ./home/users + "/${username}.nix";
+          hostFile = ./home/hosts + "/${hostname}.nix";
         in
         nix-darwin.lib.darwinSystem {
           inherit system;
@@ -74,12 +74,12 @@
               home-manager.extraSpecialArgs = { inherit username dotfilesRoot; };
               # sops-nix を home-manager に注入（secrets を ~/.config/sops-nix/secrets/ に復号配置）
               home-manager.sharedModules = [ sops-nix.homeManagerModules.sops ];
-              # home/common.nix を baseline、home/users/<username>.nix を user 差分、
+              # home/common.nix を baseline、home/hosts/<hostname>.nix を host 差分、
               # homeExtraModules を per-host one-off escape hatch として import。
               home-manager.users.${username} = { lib, ... }: {
                 imports =
                   [ ./home/common.nix ]
-                  ++ lib.optional (builtins.pathExists userFile) userFile
+                  ++ lib.optional (builtins.pathExists hostFile) hostFile
                   ++ homeExtraModules;
               };
             }

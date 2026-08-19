@@ -76,7 +76,7 @@
     "${config.home.homeDirectory}/.local/share/fnm/aliases/default/bin"
   ];
 
-  # install-specific な hard-coded path (JAVA_HOME など) は home/users/<username>.nix へ。
+  # install-specific な hard-coded path (JAVA_HOME など) は home/hosts/<hostname>.nix へ。
   # LANG はロケール変更があり得るため lib.mkDefault でラップし、user 側で `mkForce` 不要で上書き可能にする。
   home.sessionVariables = {
     ANDROID_SDK_ROOT           = "${config.home.homeDirectory}/Library/Android/sdk";
@@ -124,7 +124,7 @@
     bun
     fnm        # Node.js version manager。fish の interactive 統合 (`fnm env --use-on-cd`) は使わず、
                # default Node は home.sessionPath の `~/.local/share/fnm/aliases/default/bin` 経由で解決する。
-               # `--use-on-cd` を再有効化したいホストは home/users/<username>.nix の
+               # `--use-on-cd` を再有効化したいホストは home/hosts/<hostname>.nix の
                # programs.fish.interactiveShellInit で個別に注入する。
 
     # その他

@@ -16,7 +16,7 @@ CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期�
 
 | レイヤ | 実体 | 場所 |
 |---|---|---|
-| Nix (home-manager) | CLI バンドル + Fish 4.x + plugins + tmux | `home/common.nix` (+ `home/users/<username>.nix`) |
+| Nix (home-manager) | CLI バンドル + Fish 4.x + plugins + tmux | `home/common.nix` (+ `home/hosts/<hostname>.nix`) |
 | Homebrew (nix-darwin で宣言) | 共通 brew/cask/tap + host 固有上書き | `modules/homebrew/{default,local}.nix` |
 | macOS `system.defaults` | Dock / Finder / Trackpad / NSGlobalDomain 等 | `modules/macos-defaults.nix` |
 | `xdg.configFile` (live link) | `~/.config/<tool>` → dotfiles repo を `mkOutOfStoreSymlink` | `home/common.nix` |
@@ -29,7 +29,7 @@ CLI / Homebrew / macOS defaults / `~/.config/*` の symlink まで全て同期�
 flake.nix                       # inputs / mkDarwin factory (extraModules / homeExtraModules で per-host 差分注入可) / devShell templates
 hosts/common.nix                # 全ホスト共通: networking / system.primaryUser / programs.fish / fish 再署名 activation
 home/common.nix                 # home-manager 共通 baseline: home.packages / programs.{fish,tmux,direnv} / xdg.configFile / sops / activation
-home/users/<username>.nix       # ユーザ個人差分 (auto-import, 任意): JAVA_HOME 等の install-specific 値
+home/hosts/<hostname>.nix      # ホスト固有差分 (auto-import, 任意): JAVA_HOME 等の install-specific 値
 home/programs/                  # per-tool 設定: fish / git / tmux / direnv / lazygit / btop / gh-dash / terminal / cli
 modules/homebrew/default.nix    # 全 PC 共通 taps / brews / casks (cleanup = "uninstall")
 modules/homebrew/local.nix      # ホスト固有 (git tracked + skip-worktree、upstream は空 stub)
@@ -65,11 +65,11 @@ cd ~/dotfiles
 
 | 何を | 編集ファイル | 適用 |
 |---|---|---|
-| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#private` |
+| Nix CLI | `home/common.nix` の `home.packages` (そのホストだけなら `home/hosts/<hostname>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#private` |
 | brew formula / cask（共通） | `modules/homebrew/default.nix` の `brews` / `casks` / `taps` | 同上 |
 | brew formula / cask（ホスト固有） | `modules/homebrew/local.nix`（git tracked + skip-worktree でローカル変更非追跡） | 同上 |
 | macOS 設定 | `modules/macos-defaults.nix` | 同上 |
-| Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases, plugins}` (個人 alias は `home/users/<username>.nix`) | 同上 |
+| Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases, plugins}` (ホスト固有 alias は `home/hosts/<hostname>.nix`) | 同上 |
 | tmux 設定 | `home/programs/tmux.nix` の `programs.tmux.*` | 同上 |
 | 月次更新 | `nix flake update` → `darwin-rebuild switch` | — |
 

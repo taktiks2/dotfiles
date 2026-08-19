@@ -158,17 +158,17 @@ Dock 自動隠し、Finder リスト表示、ダーク Mode、スクリーンシ
 
 | 種類 | 編集ファイル | 適用 |
 |---|---|---|
-| Nix CLI | `home/common.nix` の `home.packages` (個人だけなら `home/users/<username>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#private` |
+| Nix CLI | `home/common.nix` の `home.packages` (そのホストだけなら `home/hosts/<hostname>.nix`) | `sudo darwin-rebuild switch --flake ~/dotfiles#private` |
 | brew formula / cask（共通） | `modules/homebrew/default.nix` の `brews` / `casks` / `taps` | 同上 |
 | brew formula / cask（ホスト固有） | `modules/homebrew/local.nix`（git tracked + skip-worktree） | 同上 |
 | macOS 設定 | `modules/macos-defaults.nix` | 同上 |
-| Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases}` (個人 alias は `home/users/<username>.nix`) | 同上 |
+| Fish 設定 | `home/programs/fish.nix` の `programs.fish.{shellInit, interactiveShellInit, shellAliases}` (ホスト固有 alias は `home/hosts/<hostname>.nix`) | 同上 |
 
 > `modules/homebrew/local.nix` は upstream に空 stub が commit されており、`install.sh` が `git update-index --skip-worktree` をセットすることでローカル編集を `git status` / `git diff` から隠蔽する。各マシンで自由に brew/cask を上乗せでき、誤って push される心配がない。skip-worktree が外れた場合は `./install.sh` 再実行で復元される。設計根拠は NixOS Wiki / Discourse の調査結果（pure-mode 維持と再現性確保のため `--impure` を避けた）。
 
 ### Fish 設定の編集
 
-`~/.config/fish/config.fish` は **Nix 生成 symlink** のため直接編集してはいけません。共通設定は `home/programs/fish.nix`、個人 alias / 関数は `home/users/<username>.nix` の `programs.fish.*` セクションを編集してください（後者は HM が set/list を merge するため追加方向は `mkForce` 不要）。
+`~/.config/fish/config.fish` は **Nix 生成 symlink** のため直接編集してはいけません。共通設定は `home/programs/fish.nix`、ホスト固有 alias / 関数は `home/hosts/<hostname>.nix` の `programs.fish.*` セクションを編集してください（後者は HM が set/list を merge するため追加方向は `mkForce` 不要）。
 
 ### 秘匿情報の管理（sops-nix 推奨）
 
@@ -237,7 +237,7 @@ dotfiles 全体は **「git に宣言されていなければ、存在しない�
 | GUI を入れる（共通） | `modules/homebrew/default.nix` の `casks` | ghostty, vscode, bruno |
 | GUI を入れる（ホスト固有） | `modules/homebrew/local.nix` の `casks` | cursor, docker-desktop, raycast |
 | ツールが `programs.<tool>` を持つ | `home/programs/<tool>.nix` の `programs.<tool>` | fish, tmux, direnv |
-| 個人ユーザだけの差分（JAVA_HOME / 個人 alias / 個人 packages） | `home/users/<username>.nix` (auto-import) | JAVA_HOME, 業務用 awscli2 |
+| ホスト固有の差分（JAVA_HOME / alias / packages） | `home/hosts/<hostname>.nix` (auto-import) | JAVA_HOME, 業務用 awscli2 |
 | 任意の dotfile を `~/.config/<name>` に置きたい | `.config/<name>/` を repo に置く + `xdg.configFile.<name> = link "<name>"` | nvim, btop, ghostty |
 | `~/.config` 外のパスに置きたい | `home.file."<path>".source` | `Library/Application Support/lazygit/` |
 | 環境変数 | `home.sessionVariables` | `JAVA_HOME`, `LANG` |
@@ -440,13 +440,13 @@ darwinConfigurations = {
 # 1. flake.nix の darwinConfigurations に新 username のブロックを 1 行追加
 #    "Company-MBP" = mkDarwin { hostname = "Company-MBP"; username = "firstname.lastname"; };
 
-# 2. 個人差分が必要なら home/users/<username>.nix を新規作成（auto-import される）
-$EDITOR home/users/firstname.lastname.nix
+# 2. ホスト固有差分が必要なら home/hosts/<hostname>.nix を新規作成（auto-import される）
+$EDITOR home/hosts/<hostname>.nix
 ```
 
-`home/common.nix` の baseline はそのまま使い回し、JAVA_HOME / proxy / 業務固有 packages 等の差分だけを user file に書く運用です。`home/users/<username>.nix` は **存在すれば自動 import**、無ければ skip されます。
+`home/common.nix` の baseline はそのまま使い回し、JAVA_HOME / proxy / 業務固有 packages 等の差分だけを host file に書く運用です。`home/hosts/<hostname>.nix` は **存在すれば自動 import**、無ければ skip されます。
 
-例: 会社配布 PC で JDK / proxy / awscli を上書きする `home/users/firstname.lastname.nix`:
+例: 別マシンで JDK / proxy を上書きする `home/hosts/<hostname>.nix`:
 
 ```nix
 { lib, pkgs, ... }:
@@ -480,7 +480,7 @@ $EDITOR home/users/firstname.lastname.nix
 `flake.nix` の `mkDarwin` は 2 種類の引数を持ちます:
 
 - `extraModules ? []` — **darwin-level** (homebrew / system.defaults / networking 等)
-- `homeExtraModules ? []` — **home-manager-level** (home.packages / programs.* / sessionVariables 等)。ファイルを作らず inline で済ませたい場合用。基本は `home/users/<username>.nix` を使う
+- `homeExtraModules ? []` — **home-manager-level** (home.packages / programs.* / sessionVariables 等)。ファイルを作らず inline で済ませたい場合用。基本は `home/hosts/<hostname>.nix` を使う
 
 ```nix
 "MacBook-Pro" = mkDarwin {
